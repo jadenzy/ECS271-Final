@@ -1,0 +1,40 @@
+{
+  "status": "complete",
+  "dataset": "v2",
+  "split": "train",
+  "features": 55,
+  "trees": 300,
+  "questions": 18532,
+  "candidate_rows": 4273942,
+  "positive_rows": 57069,
+  "label_policy": "binary original-reference membership; no Qwen-generated labels",
+  "parameters": {
+    "objective": "lambdarank",
+    "label_gain": [
+      0,
+      1
+    ],
+    "n_estimators": 300,
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "max_depth": 5,
+    "min_child_samples": 100,
+    "reg_lambda": 5.0,
+    "max_bin": 63,
+    "lambdarank_truncation_level": 13,
+    "random_state": 1271,
+    "n_jobs": 4,
+    "deterministic": true,
+    "force_col_wise": true,
+    "verbosity": -1
+  },
+  "statistics_fingerprint": "fbd35c221f24c51a4b2ad627cfb6c158217ae950ab43ec8ff6b16cf397846077",
+  "training_features_sha256": "0fbac60458a13e8c160878595ee65c2e595ea050300d0a7a389c0b1a1e973867",
+  "model_path": "C:\\Users\\jaden\\Code\\ECS271\\models\\selector\\ranker55.txt",
+  "model_sha256": "6cb8d7ce9d6c523b2ac298e174bf93616bcc2ca6fb175a65f809c4da86987b96",
+  "runtime": {
+    "elapsed_seconds": 131.5516907,
+    "command": "scripts/ranker55.py --features data/ranker55/v2/train/features.npz --output models/selector/ranker55.txt",
+    "exit_code": 0
+  }
+}

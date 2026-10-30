@@ -1,0 +1,9 @@
+.venv/
+.cache/
+__pycache__/
+*.pyc
+models/
+!models/README.md
+.vscode/
+# Generated ranker features and embeddings.
+data/ranker55/

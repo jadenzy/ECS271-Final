@@ -1,0 +1,314 @@
+{
+  "seed": 271,
+  "dataset": "PersonaMem-v2",
+  "dataset_subset": "compact",
+  "subset_personas": {
+    "train": 800,
+    "val": 40,
+    "test": 50
+  },
+  "context_version": "32k",
+  "comparison_dataset": "PersonaMem-v1 32K",
+  "split_policy": "custom_persona_disjoint_with_unused_benchmark_training_transfers",
+  "retrieval_query": "question_only",
+  "retrieval_roles": [
+    "user",
+    "assistant"
+  ],
+  "embedding": {
+    "model": "google/embeddinggemma-2",
+    "local_path": "models/embeddinggemma-2",
+    "dimensions": 768,
+    "max_input_tokens": 1200,
+    "batch_size": 16,
+    "batch_tokens": 4800,
+    "pooling": "masked_mean_including_prompt",
+    "normalized": true,
+    "input": "complete original messages and auxiliary 48-word dense spans at stride 24 for messages over 64 words",
+    "overflow": "error; never split or truncate",
+    "script": "scripts/build_ranker_features.py",
+    "output_root": "data/ranker55",
+    "supported_datasets": [
+      "v2",
+      "v1",
+      "locomo"
+    ],
+    "token_audit": "results/embeddinggemma2_single_message_tokens/summary.json",
+    "split_root": "data/splits"
+  },
+  "bm25": {
+    "script": "scripts/build_ranker_features.py",
+    "output_root": "data/ranker55",
+    "k1": 2.0,
+    "b": 0.0,
+    "corpus": "whole-message: visible pool; lexical chunks: frozen global training parent-message DF",
+    "split_root": "data/splits"
+  },
+  "reference_labels": {
+    "script": "scripts/label_reference_messages.py",
+    "dataset": "v2",
+    "default_splits": [
+      "train"
+    ],
+    "output_root": "data/reference_labels",
+    "message_rule": "2 for exact reference role and content matches; 0 otherwise (unjudged, not verified irrelevant)",
+    "memory_rule": "Each memory is one original message; 2 for exact reference role/content matches, 0 otherwise",
+    "unmatched_references": "error",
+    "split_root": "data/splits"
+  },
+  "retrieval_diagnostics": {
+    "script": "scripts/diagnose_retrieval.py",
+    "dataset": "v2",
+    "split": "train",
+    "rrf_constant": 60,
+    "cutoffs": [
+      5,
+      10,
+      20,
+      30,
+      50
+    ],
+    "rrf_output_root": "data/rrf",
+    "report_output_root": "results/selector_diagnostics_single_message",
+    "histogram_bin_width": 1,
+    "metric_aggregation": "equal-weight mean across questions",
+    "percentile_aggregation": "pooled positive memory positions; linear interpolation",
+    "feature_root": "data/ranker55/v2/train"
+  },
+  "selector": {
+    "model": "LightGBM",
+    "estimator": "LGBMRanker",
+    "objective": "lambdarank",
+    "label_gain": [
+      0,
+      1
+    ],
+    "baseline_features": [
+      "bm25_b0",
+      "cosine"
+    ],
+    "features": [
+      "cosine",
+      "cosine_rank_fraction",
+      "cosine_zscore",
+      "cosine_gap",
+      "role_assistant",
+      "log_lexical_length",
+      "log_content_tokens",
+      "bm25_b0",
+      "bm25_rank_fraction",
+      "bm25_zscore",
+      "bm25_gap",
+      "winning_fusion",
+      "chunk_max",
+      "chunk_rank_fraction",
+      "chunk_zscore",
+      "chunk_gap",
+      "chunk_top2mean",
+      "log_chunk_count",
+      "qweight_bm25",
+      "qweight_bm25_rank_fraction",
+      "qweight_bm25_zscore",
+      "qweight_bm25_gap",
+      "qweight_fusion",
+      "qweight_chunk_max",
+      "qweight_chunk_rank_fraction",
+      "qweight_chunk_zscore",
+      "qweight_chunk_gap",
+      "qweight_chunk_top2mean",
+      "neighbor_minus2_cosine",
+      "neighbor_minus2_cosine_rank",
+      "neighbor_minus2_weighted_bm25",
+      "neighbor_minus2_weighted_bm25_rank",
+      "neighbor_minus2_available",
+      "neighbor_minus1_cosine",
+      "neighbor_minus1_cosine_rank",
+      "neighbor_minus1_weighted_bm25",
+      "neighbor_minus1_weighted_bm25_rank",
+      "neighbor_minus1_available",
+      "neighbor_plus1_cosine",
+      "neighbor_plus1_cosine_rank",
+      "neighbor_plus1_weighted_bm25",
+      "neighbor_plus1_weighted_bm25_rank",
+      "neighbor_plus1_available",
+      "neighbor_plus2_cosine",
+      "neighbor_plus2_cosine_rank",
+      "neighbor_plus2_weighted_bm25",
+      "neighbor_plus2_weighted_bm25_rank",
+      "neighbor_plus2_available",
+      "dense_chunk_max",
+      "dense_chunk_rank",
+      "dense_chunk_zscore",
+      "dense_chunk_gap",
+      "dense_chunk_top2mean",
+      "dense_chunk_minus_whole",
+      "relative_conversation_position"
+    ],
+    "join_keys": [
+      "example_id",
+      "message_id"
+    ],
+    "group_by": "example_id",
+    "early_stopping_metric": "nonforget_type_macro_ndcg@10",
+    "evaluation_cutoffs": [
+      5,
+      10,
+      20
+    ],
+    "diagnostic_cutoffs": [
+      5,
+      10,
+      20,
+      30,
+      50
+    ],
+    "baselines": [
+      "bm25",
+      "embeddinggemma2_cosine",
+      "tuned_zscore_fusion",
+      "rrf"
+    ],
+    "validation_pilot_questions": 300,
+    "planned_memory_token_budgets": [
+      1024,
+      2048,
+      4096
+    ],
+    "monotone_constraints_policy": "compare unconstrained model with positive raw-score constraints as an ablation",
+    "question_metadata_policy": "evaluation strata only unless independently available at inference",
+    "cross_question_features": {
+      "enabled": false,
+      "primary_protocol": "single current query and visible history",
+      "benchmark_batch_protocol": "separate declared ablation using other available unlabeled queries of the same persona",
+      "online_protocol": "genuinely observed prior queries with temporal and memory-visibility checks",
+      "exclude_current_query": true,
+      "uses_reference_labels_or_answers": false,
+      "respect_memory_visibility": true,
+      "scope": "same persona and allowed split only"
+    },
+    "next_step": "freeze_protocol_and_audit_validation_reference_coverage",
+    "ranking_label_policy": "complete-reference questions only; retain full validation/test splits for answer evaluation",
+    "status": "selected_55_feature_architecture",
+    "early_stopping_policy": "custom query-group metric with equal type weighting and first_metric_only=True",
+    "primary_ranking_metric": "nonforget_type_macro_hit@10",
+    "primary_answer_metric": "nonforget_type_macro_accuracy",
+    "aggregation": "mean questions within each eligible type, then mean non-forget types; absent eligible types are N/A",
+    "fusion_cosine_weight_grid": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      0.9,
+      1.0
+    ],
+    "gold_smoke_questions": 100,
+    "label_audit_questions": 200,
+    "maximum_initial_pilot_conditions": 12,
+    "gold_question_type_policy": "oracle ablation only; unsupported sensitive_info class must be reported",
+    "predicted_question_type_policy": "out-of-fold probabilities by training persona; final training-only head for held-out inference",
+    "test_policy": "matching/extraction policy frozen before blind test preprocessing; one frozen final evaluation round",
+    "threshold_policy": "validation-tuned raw score threshold allowed; probability interpretation requires calibration",
+    "optional_feature_groups": {
+      "visible_neighbors": [
+        "cosine_max_pm1",
+        "cosine_mean_pm1",
+        "bm25_max_pm1",
+        "bm25_mean_pm1",
+        "cosine_max_pm2",
+        "cosine_mean_pm2",
+        "bm25_max_pm2",
+        "bm25_mean_pm2"
+      ],
+      "sentence_embeddings": [
+        "user_sentence_max_cosine",
+        "assistant_sentence_max_cosine"
+      ],
+      "predicted_type": [
+        "out_of_fold_question_type_probabilities"
+      ],
+      "fact_extraction": [
+        "fact_to_question_cosine",
+        "has_supported_facts"
+      ],
+      "message_length": [
+        "message_qwen_tokens"
+      ]
+    },
+    "training_script": "scripts/ranker55.py",
+    "model_path": "models/selector/ranker55.txt"
+  },
+  "training": false,
+  "laptop_plan": {
+    "status": "planned",
+    "review": "PLAN_REVIEW.md",
+    "verified_gpu_vram_mib": 6144,
+    "verified_physical_ram_gib": 15.76,
+    "maximum_gpu_models_at_once": 1,
+    "sentence_embedding_benchmark_segments": 5000,
+    "fact_extraction_benchmark_memories": 500,
+    "fact_extraction_manual_review_outputs": 100,
+    "fact_extraction_training_persona_pilot": [
+      150,
+      200
+    ],
+    "cross_encoder_benchmark_pairs": 100,
+    "storage_policy": "stream/memmap feature inputs; retain original float32 caches; new auxiliary fp16 arrays require precision checks",
+    "runtime_policy": "estimate from representative pilots; no unmeasured wall-time promises",
+    "reference_recovery_policy": "separate exact, normalized and reviewed fuzzy tiers; preserve current exact labels/IDs",
+    "fact_grounding_policy": "source quotes and speaker/subject attribution; no questions, labels, answers or persona-profile fields in extractor inputs",
+    "proposed_audit_useful_negative_trigger": 0.1,
+    "proposed_practical_improvement_target_pp": 2.0,
+    "gate_policy": "pre-register gates; interpret paired uncertainty and downstream QA, not annotation Hit alone"
+  },
+  "answer_model": {
+    "model": "unsloth/Qwen3.5-4B-GGUF",
+    "revision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+    "local_path": "models/Qwen3.5-4B-GGUF/Qwen3.5-4B-Q4_K_M.gguf",
+    "dtype": "Q4_K_M",
+    "backend": "llama_cpp",
+    "text_only": true,
+    "cpu_offload": false,
+    "thinking": false,
+    "context_tokens": 41216,
+    "no_memory_context_tokens": 4096,
+    "runtime_fit_verified": false,
+    "status": "qwen4b_q4_native_verified",
+    "full_history_context_tokens": {
+      "v2": 41216,
+      "v1": 33280,
+      "locomo": 32256
+    },
+    "context_audit": "data/qwen_prompt_lengths/summary.json",
+    "api_client": "requests",
+    "api_endpoint": "http://127.0.0.1:8080",
+    "format": "gguf",
+    "flash_attention": true,
+    "prompt_cache": true,
+    "server_path": "models/llama.cpp/llama-server.exe",
+    "quantization": "Q4_K_M",
+    "native_pilot_report": ".cache/qwen4b_restore/verification.json"
+  },
+  "message_dataset": {
+    "module": "scripts/message_dataset.py",
+    "split_root": "data/splits",
+    "raw_root": "data/raw",
+    "unit": "one complete original nonempty user or assistant message",
+    "format": "unchanged original content; role and source index are metadata",
+    "reference_answers": "never loaded by retrieval",
+    "visibility": "apply each original question cutoff before selecting messages",
+    "storage": "read original sources directly; no preparation or intermediate dataset required"
+  },
+  "feature_builder": {
+    "script": "scripts/build_ranker_features.py",
+    "output_root": "data/ranker55",
+    "default_dataset": "v2",
+    "default_split": "train",
+    "features": 55,
+    "statistics": "data/ranker55/statistics.json",
+    "fit_scope": "active V2 training questions only",
+    "training_npz": "data/ranker55/v2/train/features.npz",
+    "reference_labels": "2=reference, 0=annotation non-membership",
+    "judged_labels": "2=reference, -1=unjudged",
+    "binary_y": "exact-reference membership for existing baseline ranker"
+  }
+}

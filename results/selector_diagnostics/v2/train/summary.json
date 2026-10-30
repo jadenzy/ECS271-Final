@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "dataset": "v2",
+  "split": "train",
+  "questions": 18532,
+  "candidate_memories": 2144257,
+  "positive_memories": 28546,
+  "rrf_constant": 60,
+  "rrf_formula": "1/(c+bm25_rank) + 1/(c+cosine_rank)",
+  "cutoffs": [
+    5,
+    10,
+    20,
+    30,
+    50
+  ],
+  "rank_base": 1,
+  "tie_policy": "original chronological source memory order",
+  "metric_aggregation": "unweighted mean across questions; every question has at least one positive",
+  "positive_rank_aggregation": "pooled positions of all positive memory occurrences",
+  "percentile_method": "numpy linear interpolation",
+  "histogram_bin_width": 1,
+  "bm25_zero_score_candidates": 24112,
+  "bm25_questions_with_zero_scores": 9352,
+  "methods": {
+    "bm25": {
+      "positive_memories": 28546,
+      "positive_rank_median": 24.0,
+      "positive_rank_p90": 99.0,
+      "positive_rank_min": 1,
+      "positive_rank_max": 166,
+      "at_k": {
+        "5": {
+          "recall": 0.25906090366213413,
+          "hit": 0.33390891431038205,
+          "full_reference_coverage": 0.18524714008202028
+        },
+        "10": {
+          "recall": 0.34983182243326844,
+          "hit": 0.4316317720699331,
+          "full_reference_coverage": 0.2694258579753939
+        },
+        "20": {
+          "recall": 0.46447136484639145,
+          "hit": 0.5512626807684006,
+          "full_reference_coverage": 0.3793438376861645
+        },
+        "30": {
+          "recall": 0.5476787898409957,
+          "hit": 0.6368443772933304,
+          "full_reference_coverage": 0.46023095186704077
+        },
+        "50": {
+          "recall": 0.6703854593855674,
+          "hit": 0.7556658752428232,
+          "full_reference_coverage": 0.586121303690913
+        }
+      }
+    },
+    "cosine": {
+      "positive_memories": 28546,
+      "positive_rank_median": 11.0,
+      "positive_rank_p90": 69.0,
+      "positive_rank_min": 1,
+      "positive_rank_max": 163,
+      "at_k": {
+        "5": {
+          "recall": 0.3500656522051947,
+          "hit": 0.3987696956615584,
+          "full_reference_coverage": 0.3023418951003669
+        },
+        "10": {
+          "recall": 0.4628975106122739,
+          "hit": 0.5138679041657673,
+          "full_reference_coverage": 0.41350097129289876
+        },
+        "20": {
+          "recall": 0.6095942154111806,
+          "hit": 0.6677099071875674,
+          "full_reference_coverage": 0.5525037772501619
+        },
+        "30": {
+          "recall": 0.704533599539535,
+          "hit": 0.7624649255342111,
+          "full_reference_coverage": 0.6467731491474207
+        },
+        "50": {
+          "recall": 0.8242589394920488,
+          "hit": 0.8713576516296136,
+          "full_reference_coverage": 0.7759011439671919
+        }
+      }
+    },
+    "rrf": {
+      "positive_memories": 28546,
+      "positive_rank_median": 13.0,
+      "positive_rank_p90": 77.0,
+      "positive_rank_min": 1,
+      "positive_rank_max": 161,
+      "at_k": {
+        "5": {
+          "recall": 0.3268760342470681,
+          "hit": 0.39763652061299376,
+          "full_reference_coverage": 0.2572846967407727
+        },
+        "10": {
+          "recall": 0.4440112598028631,
+          "hit": 0.5182926829268293,
+          "full_reference_coverage": 0.37135765162961365
+        },
+        "20": {
+          "recall": 0.5866699043096624,
+          "hit": 0.6585365853658537,
+          "full_reference_coverage": 0.5164580185624865
+        },
+        "30": {
+          "recall": 0.6857732570688537,
+          "hit": 0.7513490179149579,
+          "full_reference_coverage": 0.6210338873300237
+        },
+        "50": {
+          "recall": 0.807603064968702,
+          "hit": 0.8666630692855601,
+          "full_reference_coverage": 0.7477336499028707
+        }
+      }
+    }
+  },
+  "histogram_plot": true,
+  "script_sha256": "5e85ab56f88e11f8afb321b6bcb92daa45963a72bad45f90dc7dd08b0230ed59",
+  "source_sha256": {
+    "data/splits/v2/train_ids.json": "a0a0f385a507f911cb588ccc958d4fbb30890bfa8e04354bed12e1be435651b4",
+    "data/reference_labels/v2/train.jsonl": "78d51bb5ce8246e9e8a2472c7981bbe3be8bb32b7d9528afdd61473c0133407f",
+    "data/reference_labels/v2/report.json": "3dda913ad1b7f323cef7599f7d5803df2003f181d83ed2693f497778ec24e0b3",
+    "data/bm25_pairs/v2/scores/train.jsonl": "aa6a27628d69b024223f278b1413ed06df579a895b1d3821652af0ecaa1aee04",
+    "data/bm25_pairs/v2/report.json": "de6cbf29d0fd92fa00aa8adbe92c585d647b42d60309b9eeb3cd608aa5a65b01",
+    "data/embeddinggemma2_pairs/v2/scores/train.jsonl": "76789495e78ba9fa490339a6327311ecde66838640dbe594e0d20327b8ff350f",
+    "data/embeddinggemma2_pairs/v2/report.json": "1c98467859efbf03ebd57ec31992f2d60d1b02bafb0c94348325a5be5c728fba"
+  },
+  "packages": {
+    "numpy": "2.5.4",
+    "matplotlib": "3.11.2"
+  },
+  "files_sha256": {
+    "data/rrf_pairs/v2/scores/train.jsonl": "d84c0c70ec89a2908eb6bd919becebd83deea9e480d2a7970eb2dfbe2445fe18",
+    "results/selector_diagnostics/v2/train/positive_ranks.jsonl": "4313950d02dacbbd1cadde12453cfb3904ec3a13b5fa417897d96ca7b9b96f06",
+    "results/selector_diagnostics/v2/train/per_question.jsonl": "f03bf4e8de8e89fc694fe955a1cfe55f913eb39ef36a81ed8362f019821edd9e",
+    "results/selector_diagnostics/v2/train/metrics.csv": "b853fa3aa2b4bba7070453516b2e21710009ae8c30a2425dd6f71b3e43e59d81",
+    "results/selector_diagnostics/v2/train/positive_rank_histogram.csv": "abec0b972d0347bd68ba00d75cd548f7de8a6679370f2bb4af36d4eac3a8cc6c",
+    "results/selector_diagnostics/v2/train/positive_rank_histogram.png": "20892b171aeab8e8f2d8efeb18fae7992da085e5f6aed1f2d79432a3eefa4c08",
+    "results/selector_diagnostics/v2/train/REPORT.md": "f6fb61202143e2dde5b67f93637ec41d7676bc41c3e187106990794cff447736"
+  }
+}

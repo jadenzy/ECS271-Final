@@ -1,0 +1,23 @@
+{
+  "checks": {
+    "complete": true,
+    "exact_question_coverage": true,
+    "model_hash_matches": true,
+    "memory_budget_respected": true,
+    "context_cap_respected": true,
+    "selected_messages_chronological": true,
+    "summary_matches_predictions": true
+  },
+  "questions": 589,
+  "correct": 349,
+  "accuracy": 0.5925297113752123,
+  "max_memory_tokens": 2048,
+  "max_prompt_tokens": 2755,
+  "server_restarts": 0,
+  "empty_selections": 0,
+  "evaluation_runtime": {
+    "elapsed_seconds": 2183.7443525,
+    "exit_code": 0,
+    "command": "scripts/evaluate_qwen.py --dataset v1 --mode selector --selector-model models/selector/ranker55.txt --selector-features data/ranker55/v1/comparison/features.npz --memory-tokens 2048"
+  }
+}

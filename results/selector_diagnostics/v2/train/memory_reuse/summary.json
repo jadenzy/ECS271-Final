@@ -1,0 +1,126 @@
+{
+  "dataset": "v2",
+  "split": "train",
+  "questions": 18532,
+  "personas": 800,
+  "positive_occurrences": 28546,
+  "unique_positive_memory_ids": 28532,
+  "positive_occurrences_per_memory_distribution": {
+    "1": 28518,
+    "2": 14
+  },
+  "reused_positive_memory_ids": 14,
+  "positive_occurrences_on_reused_ids": 28,
+  "duplicate_excess": 14,
+  "maximum_positive_questions_per_memory": 2,
+  "personas_with_reused_positive_memories": 7,
+  "reused_id_occurrences_by_question_type": {
+    "therapy_background": 6,
+    "stereotypical_pref": 8,
+    "health_and_medical_conditions": 2,
+    "neutral_preferences": 8,
+    "anti_stereotypical_pref": 4
+  },
+  "same_persona_exact_text_reuse": {
+    "unique_history_text_keys": 28529,
+    "keys_positive_for_multiple_distinct_questions": 13,
+    "maximum_distinct_positive_questions": 2,
+    "additional_collapsing_beyond_stable_memory_ids": 3
+  },
+  "above_50": {
+    "positive_occurrences": 4944,
+    "unique_memory_ids": 4939,
+    "duplicate_excess": 5,
+    "occurrences_on_globally_reused_memory_ids": 14
+  },
+  "candidate_exposure": {
+    "question_memory_occurrences": 2144257,
+    "unique_candidate_memory_ids": 92387,
+    "questions_per_persona": {
+      "min": 4,
+      "median": 24.0,
+      "p90": 29.0,
+      "max": 39,
+      "mean": 23.165
+    },
+    "candidate_occurrences_per_memory": {
+      "min": 4,
+      "median": 24.0,
+      "p90": 29.0,
+      "max": 39,
+      "mean": 23.20950999599511
+    },
+    "exposures_of_ever_positive_memories": {
+      "min": 4,
+      "median": 24.0,
+      "p90": 30.0,
+      "max": 39,
+      "mean": 24.209168652740782
+    },
+    "all_questions_of_each_persona_share_the_same_full_candidate_pool": true
+  },
+  "question_types": [
+    {
+      "question_type": "anti_stereotypical_pref",
+      "positive_occurrences": 5148,
+      "unique_memory_ids": 5148,
+      "duplicate_excess_within_type": 0,
+      "memories_positive_for_multiple_questions_within_type": 0,
+      "occurrences_on_globally_reused_memory_ids": 4
+    },
+    {
+      "question_type": "ask_to_forget",
+      "positive_occurrences": 7964,
+      "unique_memory_ids": 7964,
+      "duplicate_excess_within_type": 0,
+      "memories_positive_for_multiple_questions_within_type": 0,
+      "occurrences_on_globally_reused_memory_ids": 0
+    },
+    {
+      "question_type": "health_and_medical_conditions",
+      "positive_occurrences": 3443,
+      "unique_memory_ids": 3443,
+      "duplicate_excess_within_type": 0,
+      "memories_positive_for_multiple_questions_within_type": 0,
+      "occurrences_on_globally_reused_memory_ids": 2
+    },
+    {
+      "question_type": "neutral_preferences",
+      "positive_occurrences": 5063,
+      "unique_memory_ids": 5061,
+      "duplicate_excess_within_type": 2,
+      "memories_positive_for_multiple_questions_within_type": 2,
+      "occurrences_on_globally_reused_memory_ids": 8
+    },
+    {
+      "question_type": "stereotypical_pref",
+      "positive_occurrences": 3073,
+      "unique_memory_ids": 3073,
+      "duplicate_excess_within_type": 0,
+      "memories_positive_for_multiple_questions_within_type": 0,
+      "occurrences_on_globally_reused_memory_ids": 8
+    },
+    {
+      "question_type": "therapy_background",
+      "positive_occurrences": 3855,
+      "unique_memory_ids": 3853,
+      "duplicate_excess_within_type": 2,
+      "memories_positive_for_multiple_questions_within_type": 2,
+      "occurrences_on_globally_reused_memory_ids": 6
+    }
+  ],
+  "protocol": {
+    "primary_single_query_deployment": "Use the current query and visible history only; cross-question aggregates disabled.",
+    "optional_benchmark_batch_experiment": "Separate experiment only when the full unlabeled per-persona query set is declared available. Exclude the current query; use no relevance labels or answers.",
+    "online_deployment": "Use previously observed queries only if genuinely logged and available. Respect temporal availability and current memory visibility; do not invent benchmark query order as chronology.",
+    "split_isolation": "Build aggregates separately within allowed histories; never mix personas or train/validation/test partitions.",
+    "positive_frequency": "Gold reuse frequency is an audit target, never an inference feature. A learned label-based prior requires out-of-fold training by persona."
+  },
+  "source_sha256": {
+    "results/selector_diagnostics/v2/train/positive_ranks.jsonl": "4313950d02dacbbd1cadde12453cfb3904ec3a13b5fa417897d96ca7b9b96f06",
+    "data/paired/v2/questions.jsonl": "8789f2541f15201ec1599d7e80f0cd963e5650d0b4371ff2ab94a9d8a41647e0",
+    "data/paired/v2/memories.jsonl": "d334c1d7abb41ba57e54602a0dc71d23ee9e23079edf59614903c7b1238dcfce",
+    "data/splits/v2/train_ids.json": "a0a0f385a507f911cb588ccc958d4fbb30890bfa8e04354bed12e1be435651b4"
+  },
+  "script_sha256": "65b7a9538300eda324deb409c94e6bc5954bc0ee80001462cf3d41c1e485946a"
+}

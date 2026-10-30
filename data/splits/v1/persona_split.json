@@ -1,0 +1,71 @@
+{
+  "dataset": "v1",
+  "version": "32k",
+  "subset": "comparison",
+  "policy": "V1 is comparison only.",
+  "question_order": "persona_id, history_id, example_id",
+  "splits": {
+    "comparison": {
+      "dataset": "v1",
+      "questions": 589,
+      "personas": [
+        "v1:0",
+        "v1:1",
+        "v1:10",
+        "v1:11",
+        "v1:12",
+        "v1:13",
+        "v1:14",
+        "v1:15",
+        "v1:16",
+        "v1:17",
+        "v1:18",
+        "v1:19",
+        "v1:2",
+        "v1:3",
+        "v1:4",
+        "v1:5",
+        "v1:6",
+        "v1:7",
+        "v1:8",
+        "v1:9"
+      ],
+      "questions_per_persona": {
+        "v1:0": 17,
+        "v1:1": 35,
+        "v1:10": 33,
+        "v1:11": 33,
+        "v1:12": 43,
+        "v1:13": 36,
+        "v1:14": 23,
+        "v1:15": 23,
+        "v1:16": 18,
+        "v1:17": 35,
+        "v1:18": 18,
+        "v1:19": 27,
+        "v1:2": 28,
+        "v1:3": 25,
+        "v1:4": 26,
+        "v1:5": 32,
+        "v1:6": 27,
+        "v1:7": 38,
+        "v1:8": 32,
+        "v1:9": 40
+      },
+      "question_types": {
+        "generalizing_to_new_scenarios": 57,
+        "provide_preference_aligned_recommendations": 55,
+        "recall_user_shared_facts": 129,
+        "recalling_facts_mentioned_by_the_user": 17,
+        "recalling_the_reasons_behind_previous_updates": 99,
+        "suggest_new_ideas": 93,
+        "track_full_preference_evolution": 139
+      },
+      "histories": 222
+    }
+  },
+  "source_sha256": {
+    "questions": "52b3c4926407a303085b7b0298aea0a28d30abb230e473837b221fc4beb6065e",
+    "comparison_ids": "c778cd24f6e98487970af87f493224641a91f85eb8aeb0ac4e30821efa2c2e33"
+  }
+}

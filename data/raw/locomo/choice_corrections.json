@@ -1,0 +1,469 @@
+{
+  "dataset_variant": "locomo-mc10-unique-choices-v2",
+  "method": "Explicitly specified wrong distractors; preserve designated correct indices/text, questions, and histories. Detect duplicates using Unicode/case/whitespace and equivalent unambiguous calendar dates, month/year formats, and year expressions.",
+  "raw_sha256_before": "071cd03e9925ecad4c279109800539df79baf82fb715cc45222aef90637c196f",
+  "raw_sha256_after": "fa7efe206789121047c2a03ea6b0170e22908805198deac0f8998f334f5c4c27",
+  "prepared_questions_sha256_before": "a3fa8e08c6de0bcc065fc91807465b7ec5a72c3fd4e31ae2c1bc76d58dce313b",
+  "prepared_questions_sha256_after": "b56d21c395969c156b8b96ed7f7b75b3d8da809054084ddd75862db3246fc461",
+  "questions": [
+    {
+      "question_id": "conv-26_q49",
+      "question": "When did Caroline and Melanie go to a pride fesetival together?",
+      "correct_choice_index": 2,
+      "answer": "2022",
+      "original_choices": [
+        "2023, July",
+        "2024",
+        "2022",
+        "2021",
+        "2023",
+        "June 2022",
+        "2021",
+        "2020",
+        "2022, June",
+        "July 2023"
+      ],
+      "replacements": [
+        {
+          "choice_index": 0,
+          "label": "a",
+          "before": "2023, July",
+          "after": "2025"
+        },
+        {
+          "choice_index": 5,
+          "label": "f",
+          "before": "June 2022",
+          "after": "2019"
+        },
+        {
+          "choice_index": 6,
+          "label": "g",
+          "before": "2021",
+          "after": "2018"
+        },
+        {
+          "choice_index": 8,
+          "label": "i",
+          "before": "2022, June",
+          "after": "2017"
+        },
+        {
+          "choice_index": 9,
+          "label": "j",
+          "before": "July 2023",
+          "after": "2016"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-42_q8",
+      "question": "When did Nate get his first two turtles?",
+      "correct_choice_index": 0,
+      "answer": "2019",
+      "original_choices": [
+        "2019",
+        "2022",
+        "2016",
+        "2018",
+        "2019",
+        "2021",
+        "2020",
+        "2023",
+        "2017",
+        "2019"
+      ],
+      "replacements": [
+        {
+          "choice_index": 4,
+          "label": "e",
+          "before": "2019",
+          "after": "2015"
+        },
+        {
+          "choice_index": 9,
+          "label": "j",
+          "before": "2019",
+          "after": "2014"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-42_q136",
+      "question": "How many video game tournaments has Nate won by July 10, 2022?",
+      "correct_choice_index": 5,
+      "answer": "Four",
+      "original_choices": [
+        "One",
+        "Six",
+        "Five",
+        "Eight",
+        "Seven",
+        "Four",
+        "Two",
+        "Three",
+        "Nine",
+        "Five"
+      ],
+      "replacements": [
+        {
+          "choice_index": 9,
+          "label": "j",
+          "before": "Five",
+          "after": "Ten"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-43_q36",
+      "question": "Who is Tim and John's favorite basketball player?",
+      "correct_choice_index": 6,
+      "answer": "LeBron James",
+      "original_choices": [
+        "Stephen Curry",
+        "Kareem Abdul-Jabbar",
+        "Larry Bird",
+        "Magic Johnson",
+        "Michael Jordan",
+        "Kevin Durant",
+        "LeBron James",
+        "LeBron James",
+        "Shaquille O'Neal",
+        "Nikola Jokic"
+      ],
+      "replacements": [
+        {
+          "choice_index": 7,
+          "label": "h",
+          "before": "LeBron James",
+          "after": "Kobe Bryant"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-43_q39",
+      "question": "What year did Tim go to the Smoky Mountains?",
+      "correct_choice_index": 1,
+      "answer": "2022",
+      "original_choices": [
+        "2021",
+        "2022",
+        "2022",
+        "2025",
+        "2019",
+        "2020",
+        "2022",
+        "2023",
+        "2024",
+        "2023"
+      ],
+      "replacements": [
+        {
+          "choice_index": 2,
+          "label": "c",
+          "before": "2022",
+          "after": "2018"
+        },
+        {
+          "choice_index": 6,
+          "label": "g",
+          "before": "2022",
+          "after": "2017"
+        },
+        {
+          "choice_index": 9,
+          "label": "j",
+          "before": "2023",
+          "after": "2016"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-43_q227",
+      "question": "What kind of game did Tim have a career-high in assists in?",
+      "correct_choice_index": 2,
+      "answer": "Not answerable",
+      "original_choices": [
+        "basketball",
+        "Lacrosse",
+        "Not answerable",
+        "Baseball",
+        "Hockey",
+        "Football",
+        "Soccer",
+        "Volleyball",
+        "Rugby",
+        "Basketball"
+      ],
+      "replacements": [
+        {
+          "choice_index": 9,
+          "label": "j",
+          "before": "Basketball",
+          "after": "Tennis"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-47_q39",
+      "question": "When did John start his job in IT?",
+      "correct_choice_index": 4,
+      "answer": "2019",
+      "original_choices": [
+        "2021",
+        "2017",
+        "2015",
+        "2020",
+        "2019",
+        "2022",
+        "2016",
+        "2023",
+        "2019",
+        "2018"
+      ],
+      "replacements": [
+        {
+          "choice_index": 8,
+          "label": "i",
+          "before": "2019",
+          "after": "2014"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-47_q87",
+      "question": "What type of pizza is John's favorite?",
+      "correct_choice_index": 0,
+      "answer": "Hawaiian",
+      "original_choices": [
+        "Hawaiian",
+        "Veggie Supreme",
+        "Pepperoni",
+        "Four Cheese",
+        "Buffalo Chicken",
+        "Mushroom and Olive",
+        "Hawaiian",
+        "BBQ Chicken",
+        "Meat Lovers",
+        "Margherita"
+      ],
+      "replacements": [
+        {
+          "choice_index": 6,
+          "label": "g",
+          "before": "Hawaiian",
+          "after": "Spicy Italian"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-48_q28",
+      "question": "In what country was Jolene during summer 2022?",
+      "correct_choice_index": 3,
+      "answer": "Colombia",
+      "original_choices": [
+        "Venezuela",
+        "Mexico",
+        "Brazil",
+        "Colombia",
+        "Chile",
+        "Colombia",
+        "Argentina",
+        "Peru",
+        "Ecuador",
+        "Guatemala"
+      ],
+      "replacements": [
+        {
+          "choice_index": 5,
+          "label": "f",
+          "before": "Colombia",
+          "after": "Costa Rica"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-48_q53",
+      "question": "When did Jolene adopt her snake Susie?",
+      "correct_choice_index": 3,
+      "answer": "in 2021",
+      "original_choices": [
+        "Early 2021",
+        "In 2020",
+        "In 2024",
+        "in 2021",
+        "In 2022",
+        "In 2018",
+        "In 2021",
+        "In 2023",
+        "In 2019",
+        "Late 2021"
+      ],
+      "replacements": [
+        {
+          "choice_index": 0,
+          "label": "a",
+          "before": "Early 2021",
+          "after": "In 2016"
+        },
+        {
+          "choice_index": 6,
+          "label": "g",
+          "before": "In 2021",
+          "after": "In 2017"
+        },
+        {
+          "choice_index": 9,
+          "label": "j",
+          "before": "Late 2021",
+          "after": "In 2015"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-49_q25",
+      "question": "Which year did Evan start taking care of his health seriously?",
+      "correct_choice_index": 3,
+      "answer": "2021",
+      "original_choices": [
+        "2025",
+        "2019",
+        "2024",
+        "2021",
+        "2020",
+        "2021",
+        "2022",
+        "2018",
+        "2023",
+        "2017"
+      ],
+      "replacements": [
+        {
+          "choice_index": 5,
+          "label": "f",
+          "before": "2021",
+          "after": "2016"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-26_q80",
+      "question": "When did Melanie buy the figurines?",
+      "correct_choice_index": 3,
+      "answer": "21 October 2023",
+      "original_choices": [
+        "23 October 2023",
+        "21 September 2023",
+        "22 October 2023",
+        "21 October 2023",
+        "October 15, 2023",
+        "20 October 2023",
+        "19 October 2023",
+        "November 5, 2023",
+        "October 21st, 2023",
+        "September 28, 2023"
+      ],
+      "replacements": [
+        {
+          "choice_index": 8,
+          "label": "i",
+          "before": "October 21st, 2023",
+          "after": "October 18th, 2023"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-30_q19",
+      "question": "When did Gina interview for a design internship?",
+      "correct_choice_index": 0,
+      "answer": "10 May, 2023",
+      "original_choices": [
+        "10 May, 2023",
+        "20 April, 2023",
+        "October 20, 2023",
+        "12 May, 2023",
+        "11 May, 2023",
+        "May 5th, 2023",
+        "10 June, 2023",
+        "May 10th, 2023",
+        "9 May, 2023",
+        "15 May, 2023"
+      ],
+      "replacements": [
+        {
+          "choice_index": 7,
+          "label": "h",
+          "before": "May 10th, 2023",
+          "after": "May 8th, 2023"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-42_q72",
+      "question": "When did Joanna plan on going to Nate's to watch him play with his turtles?",
+      "correct_choice_index": 0,
+      "answer": "10 November, 2022",
+      "original_choices": [
+        "10 November, 2022",
+        "10 December, 2022",
+        "October 28, 2022",
+        "10 January, 2023",
+        "9 November, 2022",
+        "November 10th, 2022",
+        "November 10, 2021",
+        "11 November, 2022",
+        "20 November, 2022",
+        "12 November, 2022"
+      ],
+      "replacements": [
+        {
+          "choice_index": 5,
+          "label": "f",
+          "before": "November 10th, 2022",
+          "after": "November 8th, 2022"
+        }
+      ]
+    },
+    {
+      "question_id": "conv-48_q66",
+      "question": "When did Jolene and her partner return home from Rio de Janeiro?",
+      "correct_choice_index": 5,
+      "answer": "29 August, 2023",
+      "original_choices": [
+        "September 1st, 2023",
+        "29 July, 2023",
+        "25 August, 2023",
+        "15 September, 2023",
+        "August 15th, 2023",
+        "29 August, 2023",
+        "29 August 2022",
+        "August 29th, 2023",
+        "July 29th, 2023",
+        "28 August, 2023"
+      ],
+      "replacements": [
+        {
+          "choice_index": 7,
+          "label": "h",
+          "before": "August 29th, 2023",
+          "after": "August 27th, 2023"
+        },
+        {
+          "choice_index": 8,
+          "label": "i",
+          "before": "July 29th, 2023",
+          "after": "July 30th, 2023"
+        }
+      ]
+    }
+  ],
+  "revision_history": [
+    {
+      "dataset_variant": "locomo-mc10-unique-choices-v1",
+      "raw_sha256_after": "ccfa4e4d33815aeb23058a8ce9323d7fd0f85a43c51e132e3863f41114a39c6b",
+      "prepared_questions_sha256_after": "9c2dd28417de2c82309fade2e9d254da7a15a26e36b00738bf87390311840c08",
+      "corrected_questions": 11,
+      "replaced_options": 20
+    }
+  ]
+}

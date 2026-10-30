@@ -1,0 +1,40 @@
+{
+  "model_path": "models/Qwen3.5-4B-GGUF/Qwen3.5-4B-Q4_K_M.gguf",
+  "v2_context_tokens": 41216,
+  "v1_context_tokens": 33280,
+  "locomo_context_tokens": 32256,
+  "selector_context_overhead_tokens": 1000,
+  "no_memory_context_tokens": 4096,
+  "host": "127.0.0.1",
+  "port": 8080,
+  "startup_timeout_seconds": 600,
+  "request_timeout_seconds": 7200,
+  "generation": {
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": 40,
+    "min_p": 0.0,
+    "presence_penalty": 2.0,
+    "repetition_penalty": 1.0
+  },
+  "context_audit": {
+    "report": "data/qwen_prompt_lengths/summary.json",
+    "answer_reserve_tokens": 1,
+    "rounding_multiple": 256,
+    "gpu_runtime_verified": false,
+    "native_pilot_report": ".cache/qwen4b_restore/verification.json"
+  },
+  "model": "Qwen3.5-4B-Q4_K_M",
+  "backend": "llama_cpp",
+  "dtype": "Q4_K_M",
+  "server_path": "models/llama.cpp/llama-server.exe",
+  "gpu_layers": -1,
+  "flash_attention": true,
+  "parallel": 1,
+  "cache_prompt": true,
+  "context_shift": false,
+  "fit": false,
+  "chat_template_source": "gguf_metadata",
+  "quantization": "Q4_K_M",
+  "model_revision": "e87f176479d0855a907a41277aca2f8ee7a09523"
+}

@@ -1,0 +1,198 @@
+{
+  "status": "complete",
+  "started_utc": "2026-10-30T23:16:11.903859+00:00",
+  "purpose": "Verify identical packing outputs; no accuracy evaluation or tuning",
+  "http_comparisons": [
+    {
+      "dataset": "v2",
+      "example_id": "v2:test:01432",
+      "candidates": 161,
+      "old_packing_seconds": 1.8121925999876112,
+      "new_packing_seconds": 0.20676949992775917,
+      "old_http_requests": 324,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v2",
+      "example_id": "v2:test:01369",
+      "candidates": 191,
+      "old_packing_seconds": 2.055410400032997,
+      "new_packing_seconds": 0.15963339991867542,
+      "old_http_requests": 384,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v2",
+      "example_id": "v2:test:02926",
+      "candidates": 237,
+      "old_packing_seconds": 2.5625979001633823,
+      "new_packing_seconds": 0.17326890002004802,
+      "old_http_requests": 476,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v2",
+      "example_id": "v2:test:00331",
+      "candidates": 251,
+      "old_packing_seconds": 2.5742794999387115,
+      "new_packing_seconds": 0.2825815000105649,
+      "old_http_requests": 504,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v2",
+      "example_id": "v2:test:03267",
+      "candidates": 249,
+      "old_packing_seconds": 2.670977500034496,
+      "new_packing_seconds": 0.20297019998542964,
+      "old_http_requests": 500,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v2",
+      "example_id": "v2:test:02999",
+      "candidates": 233,
+      "old_packing_seconds": 2.6791789999697357,
+      "new_packing_seconds": 0.19227870018221438,
+      "old_http_requests": 468,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v1",
+      "example_id": "v1:comparison:217481b7-ad97-45d8-988f-abb3f9cf9b34",
+      "candidates": 177,
+      "old_packing_seconds": 1.9842584000434726,
+      "new_packing_seconds": 0.2412511999718845,
+      "old_http_requests": 356,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v1",
+      "example_id": "v1:comparison:194ce23e-d6d7-46f9-99b0-a0eba223a0ee",
+      "candidates": 175,
+      "old_packing_seconds": 2.146999599877745,
+      "new_packing_seconds": 0.2549410001374781,
+      "old_http_requests": 352,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v1",
+      "example_id": "v1:comparison:2435e723-0b26-487b-927c-9fabc070b2b0",
+      "candidates": 154,
+      "old_packing_seconds": 2.982754700118676,
+      "new_packing_seconds": 0.32994620013050735,
+      "old_http_requests": 310,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v1",
+      "example_id": "v1:comparison:bd3c34d6-052b-497e-a126-a84e5276af9f",
+      "candidates": 120,
+      "old_packing_seconds": 1.7138191999401897,
+      "new_packing_seconds": 0.08101570000872016,
+      "old_http_requests": 242,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v1",
+      "example_id": "v1:comparison:2886f3ad-970c-42b5-a08a-4b0ebabd0415",
+      "candidates": 205,
+      "old_packing_seconds": 2.174913699971512,
+      "new_packing_seconds": 0.17435400001704693,
+      "old_http_requests": 412,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "v1",
+      "example_id": "v1:comparison:f740d2d7-3cec-4568-824c-95164aff05f3",
+      "candidates": 145,
+      "old_packing_seconds": 1.870698899962008,
+      "new_packing_seconds": 0.11015830002725124,
+      "old_http_requests": 292,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "locomo",
+      "example_id": "locomo:conv-26_q0",
+      "candidates": 419,
+      "old_packing_seconds": 3.5177595000714064,
+      "new_packing_seconds": 0.2146757000591606,
+      "old_http_requests": 840,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "locomo",
+      "example_id": "locomo:conv-43_q94",
+      "candidates": 680,
+      "old_packing_seconds": 6.088079200126231,
+      "new_packing_seconds": 0.41698879981413484,
+      "old_http_requests": 1362,
+      "new_http_requests": 2,
+      "identical": true
+    },
+    {
+      "dataset": "locomo",
+      "example_id": "locomo:conv-50_q99",
+      "candidates": 568,
+      "old_packing_seconds": 5.324783399933949,
+      "new_packing_seconds": 0.28912990004755557,
+      "old_http_requests": 1138,
+      "new_http_requests": 2,
+      "identical": true
+    }
+  ],
+  "saved_run_equivalence": {
+    "v2": {
+      "questions": 1242,
+      "identical_message_ids": true,
+      "identical_prompt_sha256": true,
+      "identical_prompt_token_counts": true,
+      "identical_memory_token_counts": true,
+      "mean_packing_seconds": 0.19719686715293003,
+      "median_packing_seconds": 0.19139469997026026
+    },
+    "v1": {
+      "questions": 589,
+      "identical_message_ids": true,
+      "identical_prompt_sha256": true,
+      "identical_prompt_token_counts": true,
+      "identical_memory_token_counts": true,
+      "mean_packing_seconds": 0.16805091595944455,
+      "median_packing_seconds": 0.1529310999903828
+    }
+  },
+  "chat_template_sha256": "7f0e529032c25183bcd66c7f238da2d377f43be754a94e2725a58c4e16d2ed67",
+  "elapsed_seconds": 417.10570980003104,
+  "finished_utc": "2026-10-30T23:23:09.009597+00:00",
+  "http_sample_means": {
+    "old_packing_seconds": 2.810580233344808,
+    "new_packing_seconds": 0.22199753335056205,
+    "old_http_requests": 530.6666666666666,
+    "new_http_requests": 2
+  },
+  "cpu_ranker_verification": {
+    "training_device_type": "cpu",
+    "prediction_device_type": "cpu",
+    "threads": 4,
+    "prediction_rows_compared": 1000,
+    "predictions_bitwise_identical": true
+  },
+  "tests": {
+    "run": 131,
+    "passed": 131,
+    "log": "tests.log"
+  }
+}

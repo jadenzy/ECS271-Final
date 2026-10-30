@@ -1,0 +1,49 @@
+{
+  "dataset": "locomo",
+  "version": "full",
+  "subset": "comparison",
+  "policy": "LoCoMo-MC10 is comparison only; persona_id identifies a shared conversation, not a single speaker.",
+  "question_order": "persona_id, history_id, example_id",
+  "splits": {
+    "comparison": {
+      "dataset": "locomo",
+      "questions": 1986,
+      "personas": [
+        "locomo:conv-26",
+        "locomo:conv-30",
+        "locomo:conv-41",
+        "locomo:conv-42",
+        "locomo:conv-43",
+        "locomo:conv-44",
+        "locomo:conv-47",
+        "locomo:conv-48",
+        "locomo:conv-49",
+        "locomo:conv-50"
+      ],
+      "questions_per_persona": {
+        "locomo:conv-26": 199,
+        "locomo:conv-30": 105,
+        "locomo:conv-41": 193,
+        "locomo:conv-42": 260,
+        "locomo:conv-43": 242,
+        "locomo:conv-44": 158,
+        "locomo:conv-47": 190,
+        "locomo:conv-48": 239,
+        "locomo:conv-49": 196,
+        "locomo:conv-50": 204
+      },
+      "question_types": {
+        "adversarial": 446,
+        "multi_hop": 321,
+        "open_domain": 841,
+        "single_hop": 282,
+        "temporal_reasoning": 96
+      },
+      "histories": 10
+    }
+  },
+  "source_sha256": {
+    "questions": "b56d21c395969c156b8b96ed7f7b75b3d8da809054084ddd75862db3246fc461",
+    "comparison_ids": "b6c45498fb1ea065d7f293ab44d07556067b78b158f5e5dac46826d0bd5c60c1"
+  }
+}

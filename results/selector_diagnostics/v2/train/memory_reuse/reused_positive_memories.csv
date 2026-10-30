@@ -1,0 +1,15 @@
+message_id,persona_id,positive_questions,candidate_exposures,question_types,distinct_question_texts,question_ids,cosine_ranks,above_50_occurrences
+v2:32k:persona11:pair:142:143,v2:11,2,30,therapy_background,2,v2:train:01043|v2:train:15687,6|6,0
+v2:32k:persona11:pair:39:40,v2:11,2,30,therapy_background,2,v2:train:01043|v2:train:15687,5|5,0
+v2:32k:persona231:pair:119:120,v2:231,2,22,stereotypical_pref|therapy_background,2,v2:train:14466|v2:train:15174,59|52,2
+v2:32k:persona231:pair:95:96,v2:231,2,22,stereotypical_pref|therapy_background,2,v2:train:14466|v2:train:15174,99|56,2
+v2:32k:persona529:pair:103:104,v2:529,2,25,health_and_medical_conditions|stereotypical_pref,2,v2:test:03374|v2:test:03376,2|12,0
+v2:32k:persona529:pair:21:22,v2:529,2,25,health_and_medical_conditions|stereotypical_pref,2,v2:test:03374|v2:test:03376,64|44,1
+v2:32k:persona586:pair:107:108,v2:586,2,28,neutral_preferences,2,v2:train:00784|v2:val:00845,42|75,1
+v2:32k:persona586:pair:145:146,v2:586,2,28,neutral_preferences,2,v2:train:00784|v2:val:00845,75|47,1
+v2:32k:persona626:pair:131:132,v2:626,2,27,anti_stereotypical_pref|stereotypical_pref,2,v2:test:00164|v2:test:00165,104|74,2
+v2:32k:persona626:pair:75:76,v2:626,2,27,anti_stereotypical_pref|stereotypical_pref,2,v2:test:00164|v2:test:00165,68|48,1
+v2:32k:persona669:pair:110:111,v2:669,2,29,anti_stereotypical_pref|neutral_preferences,2,v2:train:05437|v2:train:06575,12|47,0
+v2:32k:persona669:pair:136:137,v2:669,2,29,anti_stereotypical_pref|neutral_preferences,2,v2:train:05437|v2:train:06575,16|34,0
+v2:32k:persona790:pair:43:44,v2:790,2,26,neutral_preferences|stereotypical_pref,2,v2:train:01100|v2:train:10008,109|99,2
+v2:32k:persona790:pair:9:10,v2:790,2,26,neutral_preferences|stereotypical_pref,2,v2:train:01100|v2:train:10008,119|104,2

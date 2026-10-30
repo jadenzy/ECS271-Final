@@ -1,0 +1,5 @@
+{
+  "elapsed_seconds": 131.5516907,
+  "command": "scripts/ranker55.py --features data/ranker55/v2/train/features.npz --output models/selector/ranker55.txt",
+  "exit_code": 0
+}

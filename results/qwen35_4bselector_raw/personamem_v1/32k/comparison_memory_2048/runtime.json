@@ -1,0 +1,5 @@
+{
+  "elapsed_seconds": 2183.7443525,
+  "exit_code": 0,
+  "command": "scripts/evaluate_qwen.py --dataset v1 --mode selector --selector-model models/selector/ranker55.txt --selector-features data/ranker55/v1/comparison/features.npz --memory-tokens 2048"
+}

@@ -1,0 +1,26 @@
+{
+  "baseline": "full_history",
+  "dataset": "v2",
+  "dataset_version": "32k",
+  "memory_tokens": null,
+  "bootstrap_seed": 271,
+  "initial_top_logprobs": 32,
+  "maximum_top_logprobs": 248320,
+  "answer_labels": [
+    "a",
+    "b",
+    "c",
+    "d"
+  ],
+  "system_prompt": "Use the conversation memories to choose the most appropriate personalized response. Reply with exactly one lowercase answer letter: a, b, c, or d.",
+  "user_template": "Memories:\n\n\nQuestion: {question}\nOptions:\n{options}\nAnswer:",
+  "grading": "argmax of raw pre-sampling answer-label log-probabilities, matched to the dataset correct label",
+  "primary_nll": "negative log-probability normalized over the four permitted labels",
+  "bootstrap_persona_replicates": 5000,
+  "model": "Qwen3.5-4B-Q4_K_M",
+  "model_revision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+  "model_dtype": "Q4_K_M",
+  "backend": "llama_cpp",
+  "api_client": "requests",
+  "model_format": "gguf"
+}

@@ -1,0 +1,7 @@
+question_type,positive_occurrences,unique_memory_ids,duplicate_excess_within_type,memories_positive_for_multiple_questions_within_type,occurrences_on_globally_reused_memory_ids
+anti_stereotypical_pref,5148,5148,0,0,4
+ask_to_forget,7964,7964,0,0,0
+health_and_medical_conditions,3443,3443,0,0,2
+neutral_preferences,5063,5061,2,2,8
+stereotypical_pref,3073,3073,0,0,8
+therapy_background,3855,3853,2,2,6

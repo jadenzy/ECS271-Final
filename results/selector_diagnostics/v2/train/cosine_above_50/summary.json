@@ -1,0 +1,412 @@
+{
+  "dataset": "v2",
+  "split": "train",
+  "threshold": 50,
+  "unit": "positive question-memory occurrence; pairs/standalone retrieval units",
+  "all_positive_occurrences": 28546,
+  "within_50": 23602,
+  "above_50": 4944,
+  "above_50_rate": 0.1731941427870805,
+  "affected_questions": 4153,
+  "all_training_questions": 18532,
+  "affected_question_rate": 0.2240988560328081,
+  "affected_personas": 785,
+  "unique_tail_memories": 4939,
+  "length_definition": "Stored role-tagged memory text, Qwen tokenizer with add_special_tokens=False; no wrappers or question/options",
+  "tokenizer": {
+    "path": "models/Qwen3.5-4B-tokenizer",
+    "class": "Qwen3_5Tokenizer"
+  },
+  "packages": {
+    "numpy": "2.5.4",
+    "transformers": "5.20.2",
+    "tokenizers": "0.23.3"
+  },
+  "length_summary": {
+    "all": {
+      "qwen_tokens": {
+        "count": 28546,
+        "mean": 244.39136831780286,
+        "median": 220.0,
+        "p25": 105.0,
+        "p75": 346.0,
+        "p90": 467.0,
+        "min": 7,
+        "max": 1031
+      },
+      "characters": {
+        "count": 28546,
+        "mean": 1183.19337210117,
+        "median": 1050.0,
+        "p25": 516.0,
+        "p75": 1670.0,
+        "p90": 2286.0,
+        "min": 24,
+        "max": 4582
+      }
+    },
+    "within_50": {
+      "qwen_tokens": {
+        "count": 23602,
+        "mean": 241.07050249978815,
+        "median": 216.0,
+        "p25": 103.0,
+        "p75": 340.0,
+        "p90": 461.0,
+        "min": 7,
+        "max": 1031
+      },
+      "characters": {
+        "count": 23602,
+        "mean": 1165.1472332853148,
+        "median": 1023.0,
+        "p25": 509.0,
+        "p75": 1633.0,
+        "p90": 2238.0,
+        "min": 24,
+        "max": 4582
+      }
+    },
+    "above_50": {
+      "qwen_tokens": {
+        "count": 4944,
+        "mean": 260.2447411003236,
+        "median": 246.0,
+        "p25": 126.0,
+        "p75": 375.0,
+        "p90": 491.6999999999998,
+        "min": 24,
+        "max": 797
+      },
+      "characters": {
+        "count": 4944,
+        "mean": 1269.3432443365696,
+        "median": 1204.0,
+        "p25": 584.0,
+        "p75": 1836.0,
+        "p90": 2477.3999999999996,
+        "min": 104,
+        "max": 4167
+      }
+    },
+    "excluding_forget_within_50": {
+      "qwen_tokens": {
+        "count": 15656,
+        "mean": 287.0910194174757,
+        "median": 267.0,
+        "p25": 182.0,
+        "p75": 372.0,
+        "p90": 490.0,
+        "min": 7,
+        "max": 913
+      },
+      "characters": {
+        "count": 15656,
+        "mean": 1396.295286152274,
+        "median": 1290.5,
+        "p25": 843.0,
+        "p75": 1808.0,
+        "p90": 2456.5,
+        "min": 24,
+        "max": 4582
+      }
+    },
+    "excluding_forget_above_50": {
+      "qwen_tokens": {
+        "count": 4926,
+        "mean": 260.5923670320747,
+        "median": 247.0,
+        "p25": 126.0,
+        "p75": 375.0,
+        "p90": 492.0,
+        "min": 24,
+        "max": 797
+      },
+      "characters": {
+        "count": 4926,
+        "mean": 1271.262078765733,
+        "median": 1205.5,
+        "p25": 585.0,
+        "p75": 1838.0,
+        "p90": 2479.0,
+        "min": 104,
+        "max": 4167
+      }
+    }
+  },
+  "length_stratification_note": "The pooled length pattern is affected by question-type composition. Compare the question-type/length cross-table and the separate length table excluding ask_to_forget. These remain descriptive associations, not causal estimates.",
+  "by_memory_role": [
+    {
+      "group": "assistant",
+      "all_positives": 2,
+      "within_50": 2,
+      "above_50": 0,
+      "above_50_rate": 0.0,
+      "share_of_tail": 0.0,
+      "affected_questions": 0,
+      "median_tokens_above_50": null,
+      "median_tokens_within_50": 488.0
+    },
+    {
+      "group": "user",
+      "all_positives": 3,
+      "within_50": 2,
+      "above_50": 1,
+      "above_50_rate": 0.3333333333333333,
+      "share_of_tail": 0.0002022653721682848,
+      "affected_questions": 1,
+      "median_tokens_above_50": 120.0,
+      "median_tokens_within_50": 144.0
+    },
+    {
+      "group": "user_assistant",
+      "all_positives": 28541,
+      "within_50": 23598,
+      "above_50": 4943,
+      "above_50_rate": 0.17318944676080025,
+      "share_of_tail": 0.9997977346278317,
+      "affected_questions": 4152,
+      "median_tokens_above_50": 246.0,
+      "median_tokens_within_50": 216.0
+    }
+  ],
+  "by_reference_roles": [
+    {
+      "group": "assistant",
+      "all_positives": 14,
+      "within_50": 5,
+      "above_50": 9,
+      "above_50_rate": 0.6428571428571429,
+      "share_of_tail": 0.0018203883495145632,
+      "affected_questions": 9,
+      "median_tokens_above_50": 39.0,
+      "median_tokens_within_50": 49.0
+    },
+    {
+      "group": "user",
+      "all_positives": 9,
+      "within_50": 5,
+      "above_50": 4,
+      "above_50_rate": 0.4444444444444444,
+      "share_of_tail": 0.0008090614886731392,
+      "affected_questions": 4,
+      "median_tokens_above_50": 198.5,
+      "median_tokens_within_50": 185.0
+    },
+    {
+      "group": "user+assistant",
+      "all_positives": 28523,
+      "within_50": 23592,
+      "above_50": 4931,
+      "above_50_rate": 0.17287802825789714,
+      "share_of_tail": 0.9973705501618123,
+      "affected_questions": 4146,
+      "median_tokens_above_50": 246.0,
+      "median_tokens_within_50": 216.0
+    }
+  ],
+  "by_length": [
+    {
+      "group": "1-128",
+      "all_positives": 9252,
+      "within_50": 7965,
+      "above_50": 1287,
+      "above_50_rate": 0.13910505836575876,
+      "share_of_tail": 0.26031553398058255,
+      "affected_questions": 1213,
+      "median_tokens_above_50": 54.0,
+      "median_tokens_within_50": 91.0
+    },
+    {
+      "group": "129-256",
+      "all_positives": 7216,
+      "within_50": 5915,
+      "above_50": 1301,
+      "above_50_rate": 0.18029379157427938,
+      "share_of_tail": 0.2631472491909385,
+      "affected_questions": 1247,
+      "median_tokens_above_50": 191.0,
+      "median_tokens_within_50": 199.0
+    },
+    {
+      "group": "257-512",
+      "all_positives": 10255,
+      "within_50": 8294,
+      "above_50": 1961,
+      "above_50_rate": 0.19122379327157485,
+      "share_of_tail": 0.39664239482200647,
+      "affected_questions": 1913,
+      "median_tokens_above_50": 360.0,
+      "median_tokens_within_50": 349.0
+    },
+    {
+      "group": "513-1024",
+      "all_positives": 1822,
+      "within_50": 1427,
+      "above_50": 395,
+      "above_50_rate": 0.216794731064764,
+      "share_of_tail": 0.0798948220064725,
+      "affected_questions": 395,
+      "median_tokens_above_50": 566.0,
+      "median_tokens_within_50": 574.0
+    },
+    {
+      "group": "1025+",
+      "all_positives": 1,
+      "within_50": 1,
+      "above_50": 0,
+      "above_50_rate": 0.0,
+      "share_of_tail": 0.0,
+      "affected_questions": 0,
+      "median_tokens_above_50": null,
+      "median_tokens_within_50": 1031.0
+    }
+  ],
+  "by_question_type": [
+    {
+      "group": "anti_stereotypical_pref",
+      "all_positives": 5148,
+      "within_50": 4122,
+      "above_50": 1026,
+      "above_50_rate": 0.1993006993006993,
+      "share_of_tail": 0.20752427184466019,
+      "affected_questions": 868,
+      "median_tokens_above_50": 248.0,
+      "median_tokens_within_50": 276.5,
+      "all_questions_of_type": 3696,
+      "affected_question_rate": 0.23484848484848486
+    },
+    {
+      "group": "ask_to_forget",
+      "all_positives": 7964,
+      "within_50": 7946,
+      "above_50": 18,
+      "above_50_rate": 0.0022601707684580612,
+      "share_of_tail": 0.0036407766990291263,
+      "affected_questions": 18,
+      "median_tokens_above_50": 110.5,
+      "median_tokens_within_50": 96.0,
+      "all_questions_of_type": 3982,
+      "affected_question_rate": 0.0045203415369161224
+    },
+    {
+      "group": "health_and_medical_conditions",
+      "all_positives": 3443,
+      "within_50": 2573,
+      "above_50": 870,
+      "above_50_rate": 0.25268661051408653,
+      "share_of_tail": 0.17597087378640777,
+      "affected_questions": 730,
+      "median_tokens_above_50": 242.0,
+      "median_tokens_within_50": 280.0,
+      "all_questions_of_type": 2435,
+      "affected_question_rate": 0.2997946611909651
+    },
+    {
+      "group": "neutral_preferences",
+      "all_positives": 5063,
+      "within_50": 3648,
+      "above_50": 1415,
+      "above_50_rate": 0.27947857001777604,
+      "share_of_tail": 0.28620550161812297,
+      "affected_questions": 1183,
+      "median_tokens_above_50": 256.0,
+      "median_tokens_within_50": 255.5,
+      "all_questions_of_type": 3528,
+      "affected_question_rate": 0.3353174603174603
+    },
+    {
+      "group": "stereotypical_pref",
+      "all_positives": 3073,
+      "within_50": 2389,
+      "above_50": 684,
+      "above_50_rate": 0.22258379433778067,
+      "share_of_tail": 0.1383495145631068,
+      "affected_questions": 576,
+      "median_tokens_above_50": 260.5,
+      "median_tokens_within_50": 273.0,
+      "all_questions_of_type": 2164,
+      "affected_question_rate": 0.266173752310536
+    },
+    {
+      "group": "therapy_background",
+      "all_positives": 3855,
+      "within_50": 2924,
+      "above_50": 931,
+      "above_50_rate": 0.24150453955901427,
+      "share_of_tail": 0.18830906148867313,
+      "affected_questions": 778,
+      "median_tokens_above_50": 223.0,
+      "median_tokens_within_50": 253.0,
+      "all_questions_of_type": 2727,
+      "affected_question_rate": 0.2852951961862853
+    }
+  ],
+  "by_length_excluding_forget": [
+    {
+      "group": "1-128",
+      "all_positives": 3116,
+      "within_50": 1841,
+      "above_50": 1275,
+      "above_50_rate": 0.40917843388960207,
+      "share_of_tail": 0.25883069427527405,
+      "affected_questions": 1201,
+      "median_tokens_above_50": 53.0,
+      "median_tokens_within_50": 102.0
+    },
+    {
+      "group": "129-256",
+      "all_positives": 6860,
+      "within_50": 5562,
+      "above_50": 1298,
+      "above_50_rate": 0.1892128279883382,
+      "share_of_tail": 0.2634997969955339,
+      "affected_questions": 1244,
+      "median_tokens_above_50": 191.5,
+      "median_tokens_within_50": 198.0
+    },
+    {
+      "group": "257-512",
+      "all_positives": 8943,
+      "within_50": 6984,
+      "above_50": 1959,
+      "above_50_rate": 0.2190540087219054,
+      "share_of_tail": 0.3976857490864799,
+      "affected_questions": 1911,
+      "median_tokens_above_50": 360.0,
+      "median_tokens_within_50": 344.0
+    },
+    {
+      "group": "513-1024",
+      "all_positives": 1663,
+      "within_50": 1269,
+      "above_50": 394,
+      "above_50_rate": 0.23692122669873722,
+      "share_of_tail": 0.07998375964271214,
+      "affected_questions": 394,
+      "median_tokens_above_50": 566.0,
+      "median_tokens_within_50": 576.0
+    },
+    {
+      "group": "1025+",
+      "all_positives": 0,
+      "within_50": 0,
+      "above_50": 0,
+      "above_50_rate": null,
+      "share_of_tail": 0.0,
+      "affected_questions": 0,
+      "median_tokens_above_50": null,
+      "median_tokens_within_50": null
+    }
+  ],
+  "source_sha256": {
+    "results/selector_diagnostics/v2/train/positive_ranks.jsonl": "4313950d02dacbbd1cadde12453cfb3904ec3a13b5fa417897d96ca7b9b96f06",
+    "data/paired/v2/questions.jsonl": "8789f2541f15201ec1599d7e80f0cd963e5650d0b4371ff2ab94a9d8a41647e0",
+    "data/paired/v2/memories.jsonl": "d334c1d7abb41ba57e54602a0dc71d23ee9e23079edf59614903c7b1238dcfce",
+    "data/reference_labels/v2/train.jsonl": "78d51bb5ce8246e9e8a2472c7981bbe3be8bb32b7d9528afdd61473c0133407f",
+    "data/splits/v2/train_ids.json": "a0a0f385a507f911cb588ccc958d4fbb30890bfa8e04354bed12e1be435651b4",
+    "models/Qwen3.5-4B-tokenizer/tokenizer.json": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+    "models/Qwen3.5-4B-tokenizer/tokenizer_config.json": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8"
+  },
+  "script_sha256": "4ee095c9b7403d41f25b4be294bd9d2270a25d3ee51f4058c0832d201f0babf4"
+}

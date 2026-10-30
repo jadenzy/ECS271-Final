@@ -1,0 +1,258 @@
+{
+  "config": {
+    "baseline": "lr",
+    "dataset": "v1",
+    "dataset_version": "32k",
+    "memory_tokens": 1024,
+    "bootstrap_seed": 271,
+    "initial_top_logprobs": 64,
+    "maximum_top_logprobs": 248320,
+    "answer_labels": [
+      "a",
+      "b",
+      "c",
+      "d"
+    ],
+    "system_prompt": "Use the conversation memories to choose the most appropriate personalized response. Reply with exactly one lowercase answer letter: a, b, c, or d.",
+    "user_template": "Memories:\n\n\nQuestion: {question}\nOptions:\n{options}\nAnswer:",
+    "grading": "argmax of raw pre-sampling answer-label log-probabilities, matched to the dataset correct label",
+    "primary_nll": "negative log-probability normalized over the four permitted labels",
+    "bootstrap_persona_replicates": 5000,
+    "server_settings": {
+      "RequestTimeoutSeconds": 7200,
+      "ModelPath": "C:\\Users\\jaden\\Code\\ECS271\\models\\Qwen3.5-4B-GGUF\\Qwen3.5-4B-Q4_K_M.gguf",
+      "StartupTimeoutSeconds": 1800,
+      "ContextTokens": 4096,
+      "Host": "127.0.0.1",
+      "Command": [
+        "C:\\Users\\jaden\\Code\\ECS271\\models\\llama.cpp\\llama-server.exe",
+        "--model",
+        "C:\\Users\\jaden\\Code\\ECS271\\models\\Qwen3.5-4B-GGUF\\Qwen3.5-4B-Q4_K_M.gguf",
+        "--ctx-size",
+        "4096",
+        "--fit-ctx",
+        "4096",
+        "--no-context-shift",
+        "--n-gpu-layers",
+        "-1",
+        "--flash-attn",
+        "on",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8080",
+        "--parallel",
+        "1",
+        "--cache-prompt",
+        "--reasoning",
+        "off",
+        "--jinja",
+        "--chat-template-kwargs",
+        "{\"enable_thinking\":false}",
+        "--ignore-eos",
+        "--cache-ram",
+        "0",
+        "-lv",
+        "4",
+        "--temp",
+        "1.0",
+        "--top-p",
+        "0.95",
+        "--top-k",
+        "20",
+        "--min-p",
+        "0.0",
+        "--presence-penalty",
+        "1.5",
+        "--repeat-penalty",
+        "1.0"
+      ],
+      "Environment": {
+        "GGML_CUDA_DISABLE_GRAPHS": "1"
+      },
+      "BaseUrl": "http://127.0.0.1:8080",
+      "Port": 8080
+    },
+    "model": "Qwen3.5-4B-Q4_K_M",
+    "dataset_name": "PersonaMem-v1",
+    "subset": "full",
+    "context_tokens": 4096
+  },
+  "split": "comparison",
+  "limit": null,
+  "questions": 589,
+  "personas": [
+    "v1:0",
+    "v1:1",
+    "v1:10",
+    "v1:11",
+    "v1:12",
+    "v1:13",
+    "v1:14",
+    "v1:15",
+    "v1:16",
+    "v1:17",
+    "v1:18",
+    "v1:19",
+    "v1:2",
+    "v1:3",
+    "v1:4",
+    "v1:5",
+    "v1:6",
+    "v1:7",
+    "v1:8",
+    "v1:9"
+  ],
+  "example_ids_sha256": "4276f95c25851e722a36cb9c89c00250901c0711c8dabf94006373e866c746f6",
+  "questions_sha256": "52b3c4926407a303085b7b0298aea0a28d30abb230e473837b221fc4beb6065e",
+  "targets_sha256": "4b8bde3d01ada68682007298b979cfc889a22bb9bded6096d1e5fbd80731d523",
+  "splits_sha256": "c778cd24f6e98487970af87f493224641a91f85eb8aeb0ac4e30821efa2c2e33",
+  "persona_split_sha256": "cc02ef4773a54d6b2be804b38988f83c76d11bb6c16f83449f5fd0f3d8a541bb",
+  "training": false,
+  "memories_used": true,
+  "selection": {
+    "subset": "full",
+    "question_order": "persona_id, history_id, example_id",
+    "persona_split_sha256": "cc02ef4773a54d6b2be804b38988f83c76d11bb6c16f83449f5fd0f3d8a541bb"
+  },
+  "lr_selection": {
+    "model": {
+      "path": "C:\\Users\\jaden\\Code\\ECS271\\models\\lr_selector\\selector.joblib",
+      "sha256": "b10261b4d96729b5317d71165d7fe01cf14e054f08d4c8f8695a953bba779155",
+      "training_report_sha256": "9bec11e61570def57a65807e7aac51ca9cc16dca11921297fe35552b627c08a3"
+    },
+    "features": {
+      "bm25": {
+        "directory": "C:\\Users\\jaden\\Code\\ECS271\\data\\features\\v1\\bm25",
+        "scores_sha256": "78c001c9b4335dbbefadab3fe077bd054b4a3e5c90f54ca0c7758d356a1c8744",
+        "report_sha256": "e996c5b1903957a99e14c3ff79572220b3c7a3b94ba3f860ea72a4efa676697f"
+      },
+      "minilm": {
+        "directory": "C:\\Users\\jaden\\Code\\ECS271\\data\\features\\v1\\minilm",
+        "scores_sha256": "566501c067506ab253aaff157bfdcda038d2339ca5990a364a453195ff8f968e",
+        "report_sha256": "cf5b23e4febee0a7f8e1abb265484f068e8b4ba3d8c1ddb118a295a6800ae55d"
+      }
+    },
+    "source_sha256": {
+      "questions_and_choices.jsonl": "52b3c4926407a303085b7b0298aea0a28d30abb230e473837b221fc4beb6065e",
+      "allowed_conversation_ranges.jsonl": "1b78cbdd71aeea3702f8d0f3dbbba41936e08c869991a61193e94e272390c3e6",
+      "memory_chunk_sources.jsonl": "f5949e20f2ef3e6d4df6fe7e90ce31d15784c294e5278a1cad089b2262619a3c",
+      "unique_memory_snippets.jsonl": "4b96a157936bb7303b19fc7ea2e0bfc67543da139efe7dee73a041a48e32d863",
+      "persona_split.json": "cc02ef4773a54d6b2be804b38988f83c76d11bb6c16f83449f5fd0f3d8a541bb",
+      "comparison_ids.json": "c778cd24f6e98487970af87f493224641a91f85eb8aeb0ac4e30821efa2c2e33"
+    },
+    "feature_order": [
+      "bm25_score",
+      "minilm_cosine"
+    ],
+    "feature_definitions": {
+      "bm25": {
+        "k1": 1.2,
+        "b": 0.75,
+        "formula": "sum(query_tf * log(1 + (N - df + 0.5)/(df + 0.5)) * tf * (k1 + 1)/(tf + k1 * (1 - b + b * length/avg_length)))",
+        "tokenization": "NFKC, casefold, Unicode words/numbers; generated role labels removed using source spans; no stemming or stopword removal."
+      },
+      "minilm": {
+        "model": {
+          "repo": "sentence-transformers/all-MiniLM-L6-v2",
+          "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+          "files_sha256": {
+            "models/all-MiniLM-L6-v2/1_Pooling/config.json": "4be450dde3b0273bb9787637cfbd28fe04a7ba6ab9d36ac48e92b11e350ffc23",
+            "models/all-MiniLM-L6-v2/README.md": "dcd602d2fd35c203a247304a06fec6654a12f7941b739f9221a064fe8dc3b7f0",
+            "models/all-MiniLM-L6-v2/config.json": "953f9c0d463486b10a6871cc2fd59f223b2c70184f49815e7efbcab5d8908b41",
+            "models/all-MiniLM-L6-v2/config_sentence_transformers.json": "061ca9d39661d6c6d6de5ba27f79a1cd5770ea247f8d46412a68a498dc5ac9f3",
+            "models/all-MiniLM-L6-v2/data_config.json": "32edcb108fc2516b920734a862ae0692bcae1c5d45d5f8d972cb0d53434a4c54",
+            "models/all-MiniLM-L6-v2/model.safetensors": "53aa51172d142c89d9012cce15ae4d6cc0ca6895895114379cacb4fab128d9db",
+            "models/all-MiniLM-L6-v2/modules.json": "84e40c8e006c9b1d6c122e02cba9b02458120b5fb0c87b746c41e0207cf642cf",
+            "models/all-MiniLM-L6-v2/sentence_bert_config.json": "fc1993fde0a95c24ec6c022539d41cf6e2f7c9721e5415d6fb6897472a9cd4b7",
+            "models/all-MiniLM-L6-v2/special_tokens_map.json": "303df45a03609e4ead04bc3dc1536d0ab19b5358db685b6f3da123d05ec200e3",
+            "models/all-MiniLM-L6-v2/tokenizer.json": "be50c3628f2bf5bb5e3a7f17b1f74611b2561a3a27eeab05e5aa30f411572037",
+            "models/all-MiniLM-L6-v2/tokenizer_config.json": "acb92769e8195aabd29b7b2137a9e6d6e25c476a4f15aa4355c233426c61576b",
+            "models/all-MiniLM-L6-v2/vocab.txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
+          }
+        },
+        "dimensions": 384,
+        "max_tokens": 256,
+        "normalized": true,
+        "dtype": "float32",
+        "text_policy": "question_only; memory generated role labels removed using source spans",
+        "overlength_policy": "memories:error; questions:nonoverlapping_source_text_windows_at_most_256_tokens; token_count_weighted_mean_of_normalized_window_vectors_then_L2_normalize"
+      }
+    },
+    "selection_code_sha256": "32c63ad73295d854369a8d5caae3fdaf18ef3d3d834498779a5300d0d9fefabc",
+    "score_validation_code_sha256": "45b0ad03a5c10dda8a6b18fbd4fd0aceabc3ccd66b59c40be476cf3e8682948d",
+    "ranking": "descending LR class-1 probability, then embedding_index; no threshold",
+    "packing": "greedy cached native chunk-count estimates; exact final Qwen budget/context check; drop lowest-priority snippets on overflow; chronological output",
+    "deduplication": "embedding_index within allowed history; earliest occurrence for chronology",
+    "uses_labels_or_references": false,
+    "uses_answer_options_for_retrieval": false,
+    "embedding_model_loaded": false,
+    "fitting": false,
+    "memory_budget_qwen_tokens": 1024,
+    "context_tokens": 4096,
+    "prompt_preflight": false,
+    "evaluator_sha256": "c4c5b0389904059ae104de5ef93dae25d2f9fa848c836c44df5728aaed885a0c",
+    "token_budget_definition": "added tokens in full native prompt relative to question/options only; includes memory headers and wrappers",
+    "initial_system_persona_included": false
+  },
+  "server_runs": [
+    {
+      "first_prediction": 0,
+      "server_settings": {
+        "RequestTimeoutSeconds": 7200,
+        "ModelPath": "C:\\Users\\jaden\\Code\\ECS271\\models\\Qwen3.5-4B-GGUF\\Qwen3.5-4B-Q4_K_M.gguf",
+        "StartupTimeoutSeconds": 1800,
+        "ContextTokens": 4096,
+        "Host": "127.0.0.1",
+        "Command": [
+          "C:\\Users\\jaden\\Code\\ECS271\\models\\llama.cpp\\llama-server.exe",
+          "--model",
+          "C:\\Users\\jaden\\Code\\ECS271\\models\\Qwen3.5-4B-GGUF\\Qwen3.5-4B-Q4_K_M.gguf",
+          "--ctx-size",
+          "4096",
+          "--fit-ctx",
+          "4096",
+          "--no-context-shift",
+          "--n-gpu-layers",
+          "-1",
+          "--flash-attn",
+          "on",
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "8080",
+          "--parallel",
+          "1",
+          "--cache-prompt",
+          "--reasoning",
+          "off",
+          "--jinja",
+          "--chat-template-kwargs",
+          "{\"enable_thinking\":false}",
+          "--ignore-eos",
+          "--cache-ram",
+          "0",
+          "-lv",
+          "4",
+          "--temp",
+          "1.0",
+          "--top-p",
+          "0.95",
+          "--top-k",
+          "20",
+          "--min-p",
+          "0.0",
+          "--presence-penalty",
+          "1.5",
+          "--repeat-penalty",
+          "1.0"
+        ],
+        "Environment": {
+          "GGML_CUDA_DISABLE_GRAPHS": "1"
+        },
+        "BaseUrl": "http://127.0.0.1:8080",
+        "Port": 8080
+      }
+    }
+  ]
+}

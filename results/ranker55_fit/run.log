@@ -1,0 +1,8 @@
+{
+  "features": 55,
+  "trees": 300,
+  "questions": 18532,
+  "candidate_rows": 4273942,
+  "positive_rows": 57069,
+  "output_model": "C:\\Users\\jaden\\Code\\ECS271\\models\\selector\\ranker55.txt"
+}

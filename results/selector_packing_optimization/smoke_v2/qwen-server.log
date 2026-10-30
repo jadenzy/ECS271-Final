@@ -1,0 +1,18 @@
+Command: C:\Users\jaden\Code\ECS271\models\llama.cpp\llama-server.exe --model C:\Users\jaden\Code\ECS271\models\Qwen3.5-4B-GGUF\Qwen3.5-4B-Q4_K_M.gguf --alias Qwen3.5-4B-Q4_K_M --ctx-size 3048 --n-gpu-layers -1 --flash-attn on --host 127.0.0.1 --port 8080 --parallel 1 --cache-prompt --reasoning off --jinja --chat-template-kwargs {\"enable_thinking\":false} --no-context-shift --fit off --temp 1.0 --top-p 1.0 --top-k 40 --min-p 0.0 --presence-penalty 2.0 --repeat-penalty 1.0
+0.00.174.395 W Setting 'enable_thinking' via --chat-template-kwargs is deprecated. Use --reasoning on / --reasoning off instead.
+0.00.174.693 I srv  llama_server: initializing ...
+0.00.174.700 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.175.127 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.191.158 I srv    load_model: loading model 'C:\Users\jaden\Code\ECS271\models\Qwen3.5-4B-GGUF\Qwen3.5-4B-Q4_K_M.gguf'
+0.03.624.036 I cmn          init: llama threadpool init, n_threads = 8
+0.03.925.203 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 3072, kv_unified = 'false'
+0.03.948.410 I srv  llama_server: model loaded
+0.03.948.420 I srv  llama_server: listening on http://127.0.0.1:8080
+0.06.325.130 I slot get_availabl: id  0 | task -1 | selected slot by LRU, n_tokens = 0, t_last = -1
+0.06.325.920 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+0.07.423.121 I slot print_timing: id  0 | task 0 | prompt eval time =    1093.54 ms /  2419 tokens (    0.45 ms per token,  2212.08 tokens per second)
+0.07.423.134 I slot print_timing: id  0 | task 0 |        eval time =       0.00 ms /     1 tokens (    0.00 ms per token,     0.00 tokens per second)
+0.07.423.136 I slot print_timing: id  0 | task 0 |       total time =    1093.54 ms /  2420 tokens
+0.07.423.141 I slot print_timing: id  0 | task 0 |    graphs reused =          1
+0.07.423.142 I slot print_timing: id  0 | task 0 |   graph reallocs =          0    /     0        (same size) / (changed size)
+0.07.423.615 I slot      release: id  0 | task 0 | stop processing: n_tokens = 2419, truncated = 0

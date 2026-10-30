@@ -1,0 +1,4 @@
+group,all_positives,within_50,above_50,above_50_rate,share_of_tail,affected_questions,median_tokens_above_50,median_tokens_within_50
+assistant,2,2,0,0.0,0.0,0,,488.0
+user,3,2,1,0.3333333333333333,0.0002022653721682848,1,120.0,144.0
+user_assistant,28541,23598,4943,0.17318944676080025,0.9997977346278317,4152,246.0,216.0
