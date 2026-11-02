@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "model_sha256": "3c522ec2c62cf479b2637fd6d3233ba16f760c3604a79656e2d325d157e3af49",
+  "feature_recipe": {
+    "alpha": 0.5,
+    "beta": 0.5,
+    "chunk_idf": "visible parent-message DF",
+    "epsilon": 1e-09,
+    "local_unit": "complete visible source-message token occurrences; no chunks",
+    "minimum_weight": 0.1,
+    "name": "subtlex_mix_v1",
+    "normalization": {
+      "duplicate_policy": "Sum all normalized token occurrences across source rows",
+      "oov_policy": "Absent words have probability zero; smoothing belongs to the downstream mixture",
+      "probability_denominator": "Sum of transformed token counts; not original corpus size",
+      "split_entry_policy": "Each token occurrence receives the full entry FREQcount",
+      "token_pattern": "\\w+",
+      "unicode": "NFKC then casefold"
+    },
+    "oov": "beta per distinct visible OOV token; renormalize external counts on union support",
+    "processed_sha256": "eb76ba63ac58314bd91c4da0e7a9929c8873aaac3743aec2386195ef18a6b0bb",
+    "raw_sha256": "23789b32069fb9083b5d35e210b0f3695b8127ac72aa9437f7b9383308b3291d",
+    "tokenization": "nfkc_casefold_word_v1",
+    "weight": "clip(-ln(max(p_mix,epsilon))/ln(1/epsilon),0.1,1)"
+  }
+}

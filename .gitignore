@@ -2,7 +2,9 @@
 .cache/
 __pycache__/
 *.pyc
-models/
+models/embeddinggemma-2/
+models/llama.cpp/
+models/Qwen3.5-4B-GGUF/
 !models/README.md
 .vscode/
 # Generated ranker features and embeddings.
