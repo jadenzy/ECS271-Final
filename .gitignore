@@ -7,3 +7,7 @@ models/
 .vscode/
 # Generated ranker features and embeddings.
 data/ranker55/
+data/label_candidates/
+# Over GitHub's 100 MB file limit; kept locally only.
+data/raw/longbench_v2/data.json
+data/qwen_labels/v2/train.jsonl

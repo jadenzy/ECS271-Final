@@ -3,15 +3,18 @@
 python scripts/build_ranker_features.py
 python scripts/build_ranker_features.py --splits val test
 
-Default: active V2 training questions, data/ranker55/v2/train/features.npz.
+Default: active V2 training questions, SUBTLEX mixture alpha=0.5,
+data/ranker55/v2/train/features.npz.
 Embeddings resume from checked caches. Completed exports overwrite existing files.
 This builds features and reference targets; it never trains LightGBM or calls Qwen.
 """
 import argparse
-from collections import Counter
+from collections import deque
+from concurrent.futures import ProcessPoolExecutor
 from contextlib import ExitStack
 import hashlib
 import json
+import multiprocessing
 import os
 from pathlib import Path
 import time
@@ -24,10 +27,10 @@ from message_dataset import SPLIT_ROOT, load_message_dataset, write_json, write_
 from raw_datasets import ROOT, SPLITS, sha256
 
 import ranker55 as recipe
+import subtlex_mixture as subtlex
 FEATURE_NAMES = recipe.FEATURE_NAMES
 DIMENSIONS, MAX_TOKENS = 768, 1200
 PREFIXES = recipe.PREFIXES
-STATISTICS_RECIPE = 'ranker55_nfkc_casefold_word_df_v1'
 
 
 def fingerprint(value):
@@ -217,74 +220,10 @@ def select_ids(questions, ids_path):
     return [q for q in questions if q['example_id'] in wanted]
 
 
-def fit_statistics(questions, memories, sources):
-    """One DF vote per unique source-message ID; one QDF vote per question ID."""
-    if not questions or any(q['dataset'] != 'v2' or q['split'] != 'train' for q in questions):
-        raise ValueError('Statistics may only be fitted on active V2 training questions')
-    qids = [q['example_id'] for q in questions]
-    if len(set(qids)) != len(qids):
-        raise ValueError('Duplicate fitting question IDs')
-    mids = sorted({mid for q in questions for mid in q['memory_ids']})
-    df, qdf = Counter(), Counter()
-    for mid in mids:
-        df.update(set(recipe.tokenize(memories[mid]['text'])))
-    for q in questions:
-        qdf.update(set(recipe.tokenize(q['question'])))
-    result = {'schema_version': 1, 'recipe': STATISTICS_RECIPE, 'fit_dataset': 'v2', 'fit_split': 'train',
-              'n': len(mids), 'df': dict(sorted(df.items())), 'nq': len(questions), 'qdf': dict(sorted(qdf.items())),
-              'fit_question_ids': sorted(qids), 'fit_persona_ids': sorted({q['persona_id'] for q in questions}),
-              'fit_message_ids_sha256': fingerprint(mids), 'source_sha256': sources,
-              'df_unit': 'unique source message occurrence; shared histories counted once',
-              'qdf_unit': 'question presence, not term count',
-              'whole_message_idf': 'question-visible pool; k1=2, b=0',
-              'chunk_idf': 'global training parent-message DF; k1=1.5, b=0'}
-    validate_statistics(result)
-    return result
-
-
-def validate_statistics(statistics):
-    if (statistics.get('schema_version') != 1 or statistics.get('recipe') != STATISTICS_RECIPE
-            or statistics.get('fit_dataset') != 'v2' or statistics.get('fit_split') != 'train'):
-        raise ValueError('Expected frozen training-only ranker55 corpus statistics')
-    for key, frequency in (('n', 'df'), ('nq', 'qdf')):
-        count, values = statistics.get(key), statistics.get(frequency)
-        if type(count) is not int or count <= 0 or not isinstance(values, dict):
-            raise ValueError(f'Invalid statistics: {key}/{frequency}')
-        if any(not isinstance(t, str) or not t or type(v) is not int or not 0 < v <= count for t, v in values.items()):
-            raise ValueError(f'Invalid document frequencies: {frequency}')
-    qids, personas = statistics.get('fit_question_ids'), statistics.get('fit_persona_ids')
-    if (not isinstance(qids, list) or len(qids) != statistics['nq'] or len(set(qids)) != len(qids)
-            or any(not isinstance(q, str) or not q.startswith('v2:') for q in qids)
-            or not isinstance(personas, list) or not personas
-            or any(not isinstance(p, str) or not p.startswith('v2:') for p in personas)):
-        raise ValueError('Statistics must record fitting question/persona IDs')
-
-
-def resolve_statistics(*, root=ROOT, output_root=None, statistics=None,
-                       fit_question_ids=None, refit_statistics=False):
-    """Prefer an explicit file, then frozen output/project training statistics."""
-    if statistics is not None and (fit_question_ids is not None or refit_statistics):
-        raise ValueError('--statistics cannot be combined with --fit-question-ids or --refit-statistics')
-    if statistics is not None:
-        return Path(statistics)
-    if fit_question_ids is not None or refit_statistics:
-        return None
-    default = Path(root).resolve() / 'data/ranker55'
-    directories = [Path(output_root).resolve(), default] if output_root is not None else [default]
-    for directory in dict.fromkeys(directories):
-        for candidate in (directory / 'statistics.json', directory / 'v2/train/statistics.json'):
-            if candidate.is_file():
-                return candidate
-    return None
-
-
 def prepare_inputs(*, root=ROOT, datasets=('v2',), splits=None, split_root=None,
-                   statistics=None, fit_question_ids=None, question_ids=None, limit_questions=0,
-                   output_root=None, refit_statistics=False):
-    """Validate sources/statistics/references before loading the encoder or writing."""
+                   question_ids=None, limit_questions=0):
+    """Validate visible source pools and training references before writing."""
     root = Path(root).resolve()
-    statistics = resolve_statistics(root=root, output_root=output_root, statistics=statistics,
-                                    fit_question_ids=fit_question_ids, refit_statistics=refit_statistics)
     loaded = []
     for dataset in dict.fromkeys(datasets):
         selected_splits = list(dict.fromkeys(splits or (['train'] if dataset == 'v2' else ['comparison'])))
@@ -292,19 +231,6 @@ def prepare_inputs(*, root=ROOT, datasets=('v2',), splits=None, split_root=None,
         questions, memories, sources = load_message_dataset(dataset, selected_splits, root=root, split_root=split_root)
         print(f'{dataset}: {len(questions):,} questions, {len(memories):,} visible source messages', flush=True)
         loaded.append((dataset, selected_splits, questions, memories, sources))
-    if statistics is not None:
-        print(f'Using corpus statistics: {statistics}', flush=True)
-        fitted = json.loads(Path(statistics).read_text(encoding='utf-8'))
-        validate_statistics(fitted)
-    else:
-        training = next((item for item in loaded if item[0] == 'v2' and 'train' in item[1]), None)
-        if training is None:
-            raise ValueError('No fitted statistics.json found; held-out/comparison builds need training statistics. '
-                             'Run the V2 training build first or provide --statistics PATH')
-        _, _, all_questions, memories, sources = training
-        train_questions = select_ids([q for q in all_questions if q['split'] == 'train'], fit_question_ids)
-        print(f'Fitting corpus statistics on {len(train_questions):,} training questions', flush=True)
-        fitted = fit_statistics(train_questions, memories, sources)
     tasks = []
     exported = [q for _, _, qs, _, _ in loaded for q in qs]
     wanted = {q['example_id'] for q in select_ids(exported, question_ids)}
@@ -315,8 +241,6 @@ def prepare_inputs(*, root=ROOT, datasets=('v2',), splits=None, split_root=None,
                 selected = selected[:limit_questions]
             if not selected:
                 continue
-            if dataset == 'v2' and split != 'train' and set(fitted['fit_persona_ids']) & {q['persona_id'] for q in selected}:
-                raise ValueError('Held-out personas overlap the statistics fitting corpus')
             labels = None
             if dataset == 'v2' and split == 'train':
                 print(f'{dataset}/{split}: checking original reference labels', flush=True)
@@ -329,14 +253,97 @@ def prepare_inputs(*, root=ROOT, datasets=('v2',), splits=None, split_root=None,
             tasks.append((dataset, split, selected, memories, sources, labels))
     if not tasks:
         raise ValueError('No questions selected for feature export')
-    return fitted, tasks
+    return tasks
+
+
+def _init_feature_worker(state, embedding_root):
+    global _feature_worker_state
+    vectors = {kind: np.load(Path(embedding_root) / f'{kind}_embeddings.npy',
+                             mmap_mode='r', allow_pickle=False)
+               for kind in ('memory', 'question', 'chunk')}
+    _feature_worker_state = (*state, vectors)
+
+
+def _calculate_feature_group(question, source_memories, content_lengths, text_index,
+                             question_index, chunk_index, mixture, vectors):
+    def embed(values, kind):
+        if kind == 'question':
+            return vectors['question'][[question_index[t] for t in values]]
+        result = np.empty((len(values), DIMENSIONS), dtype=np.float32)
+        for i, text in enumerate(values):
+            source, index = ('memory', text_index[text]) if text in text_index else ('chunk', chunk_index[text])
+            result[i] = vectors[source][index]
+        return result
+
+    messages = [source_memories[mid] for mid in question['memory_ids']]
+    lengths = [int(content_lengths[text_index[m['text']]]) for m in messages]
+    lexical = (mixture.history(question, messages), mixture.config['alpha'])
+    return recipe.feature_matrix(question['question'], messages, lengths, lexical, embed)
+
+
+def _worker_feature_group(question):
+    return _calculate_feature_group(question, *_feature_worker_state)
+
+
+def feature_groups(questions, state, vectors, embedding_root, workers):
+    """Bound pending matrices and yield in source order; only the parent writes."""
+    if workers == 1:
+        for question in questions:
+            yield _calculate_feature_group(question, *state, vectors)
+        return
+    with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context('spawn'),
+                             initializer=_init_feature_worker,
+                             initargs=(state, embedding_root)) as pool:
+        iterator = iter(questions)
+        pending = deque()
+        for _ in range(workers * 2):
+            question = next(iterator, None)
+            if question is None:
+                break
+            pending.append(pool.submit(_worker_feature_group, question))
+        while pending:
+            yield pending.popleft().result()
+            question = next(iterator, None)
+            if question is not None:
+                pending.append(pool.submit(_worker_feature_group, question))
+
+
+def readonly_cache_metadata(embedding_root, inputs, model_info, sources):
+    """Require a completed, matching export; never repair or mutate its caches."""
+    embedding_root = Path(embedding_root)
+    report = json.loads((embedding_root.parent / 'report.json').read_text(encoding='utf-8'))
+    if report.get('source_sha256') != sources:
+        raise ValueError('Embedding cache source hashes differ from active raw data/splits')
+    common = None
+    lengths = {}
+    for kind, values in inputs.items():
+        metadata = json.loads((embedding_root / f'{kind}_embedding_metadata.json').read_text(encoding='utf-8'))
+        fields = ('model', 'dimensions', 'memory_unit', 'pooling', 'dtype', 'encoder_schema')
+        identity = {key: metadata[key] for key in fields}
+        if common is None:
+            common = identity
+        expected = {**common, 'max_input_tokens': MAX_TOKENS, 'kind': kind,
+                    'prefix': PREFIXES['question' if kind == 'question' else 'memory'],
+                    'count': len(values), 'inputs_sha256': fingerprint(list(enumerate(values)))}
+        required_identity = {'model': {k: model_info[k] for k in ('repo', 'revision')},
+                             'dimensions': DIMENSIONS, 'memory_unit': 'single_message',
+                             'pooling': 'attention_mask_mean_including_prompt_then_L2', 'encoder_schema': 1}
+        if metadata != expected or any(common[k] != v for k, v in required_identity.items()):
+            raise ValueError(f'Incompatible or stale {kind} embedding cache identity/inputs')
+        done = np.load(embedding_root / f'{kind}_done.npy', allow_pickle=False)
+        if done.dtype != np.bool_ or done.shape != (len(values),) or not done.all():
+            raise ValueError(f'Incomplete {kind} embedding cache; finish the baseline build first')
+        lengths[kind] = np.load(embedding_root / f'{kind}_input_token_lengths.npy', allow_pickle=False)
+    content = np.load(embedding_root / 'memory_content_token_lengths.npy', allow_pickle=False)
+    return common, lengths, content
 
 
 def build_bundle(task, statistics, encoder, model_info, output, *, batch_size=16,
-                 batch_tokens=4800, rebuild_cache=False):
+                 batch_tokens=4800, rebuild_cache=False, feature_workers=1,
+                 mixture, embedding_source=None):
     dataset, split, questions, source_memories, sources, labels = task
     output = Path(output)
-    embedding_root = output / 'embeddings'
+    embedding_root = Path(embedding_source) if embedding_source is not None else output / 'embeddings'
     mids = list(dict.fromkeys(mid for q in questions for mid in q['memory_ids']))
     members = [source_memories[mid] for mid in mids]
     texts = list(dict.fromkeys(m['text'] for m in members))
@@ -349,10 +356,17 @@ def build_bundle(task, statistics, encoder, model_info, output, *, batch_size=16
     question_index = {text: i for i, text in enumerate(question_texts)}
     inputs = {'memory': texts, 'question': question_texts, 'chunk': chunk_texts}
     print(f'{dataset}/{split}: {len(texts):,} unique messages, {len(question_texts):,} queries, '
-          f'{len(chunk_texts):,} chunks; counting tokens', flush=True)
-    lengths = {kind: encoder.lengths(values, 'question' if kind == 'question' else 'memory')
-               for kind, values in inputs.items()}
-    content_lengths = encoder.lengths(texts, 'content')
+          f'{len(chunk_texts):,} chunks', flush=True)
+    if embedding_source is not None:
+        embedding_recipe, lengths, content_lengths = readonly_cache_metadata(embedding_root, inputs, model_info, sources)
+    else:
+        lengths = {kind: encoder.lengths(values, 'question' if kind == 'question' else 'memory')
+                   for kind, values in inputs.items()}
+        content_lengths = encoder.lengths(texts, 'content')
+        embedding_recipe = {'model': {k: model_info[k] for k in ('repo', 'revision')},
+                            'dimensions': DIMENSIONS, 'memory_unit': 'single_message',
+                            'pooling': 'attention_mask_mean_including_prompt_then_L2',
+                            'dtype': str(encoder.dtype), 'encoder_schema': 1}
     if content_lengths.shape != (len(texts),) or content_lengths.dtype.kind not in 'iu' or np.any(content_lengths < 0):
         raise ValueError('Invalid bare content token lengths')
     for kind, values in lengths.items():
@@ -360,12 +374,9 @@ def build_bundle(task, statistics, encoder, model_info, output, *, batch_size=16
             raise ValueError('Invalid input token lengths')
         if np.any(values > MAX_TOKENS):
             raise ValueError(f'{kind} inputs exceed {MAX_TOKENS} tokens. No splitting or truncation was performed.')
-    embedding_recipe = {'model': {k: model_info[k] for k in ('repo', 'revision')},
-                        'dimensions': DIMENSIONS, 'memory_unit': 'single_message',
-                        'pooling': 'attention_mask_mean_including_prompt_then_L2',
-                        'dtype': str(encoder.dtype), 'encoder_schema': 1}
     output.mkdir(parents=True, exist_ok=True)
-    embedding_root.mkdir(exist_ok=True)
+    if embedding_source is None:
+        embedding_root.mkdir(exist_ok=True)
     vectors = {}
     staging = {}
     X = None
@@ -378,33 +389,31 @@ def build_bundle(task, statistics, encoder, model_info, output, *, batch_size=16
 
     try:
         for kind, values in inputs.items():
-            vectors[kind], _ = cached_embeddings(embedding_root, kind, values, list(range(len(values))),
-                encoder, embedding_recipe, batch_size, batch_tokens, rebuild_cache, lengths=lengths[kind])
-        save_array(embedding_root / 'memory_content_token_lengths.npy', content_lengths.astype(np.int32))
-        write_rows(embedding_root / 'messages.jsonl', ({**m, 'embedding_index': text_index[m['text']],
-                   'content_tokens': int(content_lengths[text_index[m['text']]])} for m in members))
-        write_rows(embedding_root / 'unique_texts.jsonl',
-                   ({'embedding_index': i, 'text': t} for i, t in enumerate(texts)))
-        write_rows(embedding_root / 'chunk_texts.jsonl',
-                   ({'embedding_index': i, 'text': t} for i, t in enumerate(chunk_texts)))
-        write_rows(embedding_root / 'questions.jsonl',
-                   ({**q, 'embedding_index': question_index[q['question']]} for q in questions))
-        chunk_offsets, chunk_indices = [0], []
-        for pieces in spans:
-            chunk_indices.extend(chunk_index[p] for p in pieces if len(pieces) > 1)
-            chunk_offsets.append(len(chunk_indices))
-        save_array(embedding_root / 'message_chunk_offsets.npy', np.array(chunk_offsets, dtype=np.int64))
-        save_array(embedding_root / 'message_chunk_indices.npy', np.array(chunk_indices, dtype=np.int64))
-
-        def embed(values, kind):
-            if kind == 'question':
-                return vectors['question'][[question_index[t] for t in values]]
-            result = np.empty((len(values), DIMENSIONS), dtype=np.float32)
-            for i, text in enumerate(values):
-                # An identical whole/chunk string has the same prefix and vector.
-                source, index = ('memory', text_index[text]) if text in text_index else ('chunk', chunk_index[text])
-                result[i] = vectors[source][index]
-            return result
+            if embedding_source is None:
+                vectors[kind], _ = cached_embeddings(embedding_root, kind, values, list(range(len(values))),
+                    encoder, embedding_recipe, batch_size, batch_tokens, rebuild_cache, lengths=lengths[kind])
+            else:
+                vectors[kind] = np.load(embedding_root / f'{kind}_embeddings.npy', mmap_mode='r', allow_pickle=False)
+                for start in range(0, max(len(values), 1), 4096):
+                    validate_vectors(vectors[kind][start:start + 4096], min(4096, max(len(values) - start, 0)))
+                if vectors[kind].shape != (len(values), DIMENSIONS):
+                    raise ValueError(f'Invalid {kind} embedding cache shape')
+        if embedding_source is None:
+            save_array(embedding_root / 'memory_content_token_lengths.npy', content_lengths.astype(np.int32))
+            write_rows(embedding_root / 'messages.jsonl', ({**m, 'embedding_index': text_index[m['text']],
+                       'content_tokens': int(content_lengths[text_index[m['text']]])} for m in members))
+            write_rows(embedding_root / 'unique_texts.jsonl',
+                       ({'embedding_index': i, 'text': t} for i, t in enumerate(texts)))
+            write_rows(embedding_root / 'chunk_texts.jsonl',
+                       ({'embedding_index': i, 'text': t} for i, t in enumerate(chunk_texts)))
+            write_rows(embedding_root / 'questions.jsonl',
+                       ({**q, 'embedding_index': question_index[q['question']]} for q in questions))
+            chunk_offsets, chunk_indices = [0], []
+            for pieces in spans:
+                chunk_indices.extend(chunk_index[p] for p in pieces if len(pieces) > 1)
+                chunk_offsets.append(len(chunk_indices))
+            save_array(embedding_root / 'message_chunk_offsets.npy', np.array(chunk_offsets, dtype=np.int64))
+            save_array(embedding_root / 'message_chunk_indices.npy', np.array(chunk_indices, dtype=np.int64))
 
         offsets = np.concatenate(([0], np.cumsum([len(q['memory_ids']) for q in questions]))).astype(np.int64)
         row_ids = [mid for q in questions for mid in q['memory_ids']]
@@ -417,10 +426,12 @@ def build_bundle(task, statistics, encoder, model_info, output, *, batch_size=16
                              'w', encoding='utf-8', newline='\n')) for name in ('bm25', 'cosine')}
             label_stream = (stack.enter_context(target(output / 'reference_labels' / f'{split}.jsonl').open(
                             'w', encoding='utf-8', newline='\n')) if labels is not None else None)
-            for i, q in enumerate(questions):
+            state = (source_memories, content_lengths, text_index, question_index, chunk_index, mixture)
+            print(f'{dataset}/{split}: calculating feature groups with {feature_workers} worker(s)', flush=True)
+            matrices = feature_groups(questions, state, vectors, embedding_root, feature_workers)
+            stack.callback(matrices.close)
+            for i, (q, matrix) in enumerate(zip(questions, matrices)):
                 messages = [source_memories[mid] for mid in q['memory_ids']]
-                token_lengths = [int(content_lengths[text_index[m['text']]]) for m in messages]
-                matrix = recipe.feature_matrix(q['question'], messages, token_lengths, statistics, embed)
                 start, end = int(offsets[i]), int(offsets[i + 1])
                 X[start:end] = matrix
                 if labels is not None:
@@ -442,6 +453,8 @@ def build_bundle(task, statistics, encoder, model_info, output, *, batch_size=16
         stats_fingerprint = fingerprint(statistics)
         metadata = {'schema_version': 1, 'dataset': dataset, 'split': split, 'memory_unit': 'single_message',
                     'source_sha256': sources, 'statistics_fingerprint': stats_fingerprint,
+                    'feature_recipe': mixture.config,
+                    'embedding_cache_path': str(embedding_root.resolve()),
                     'feature_recipe_sha256': sha256(Path(recipe.__file__)),
                     'embedding_recipe': embedding_recipe, 'row_count': len(X), 'questions': len(questions),
                     'y_policy': 'binary exact-reference membership for baseline training; not semantic judgments',
@@ -469,7 +482,7 @@ def build_bundle(task, statistics, encoder, model_info, output, *, batch_size=16
                       'files_sha256': {f'{split}.jsonl': sha256(staging[output / name /
                                       (f'{split}.jsonl' if name == 'reference_labels' else f'scores/{split}.jsonl')])}}
             target(output / name / 'report.json').write_text(json.dumps(parent, indent=2) + '\n', encoding='utf-8')
-        report = {**metadata, 'feature_names': FEATURE_NAMES, 'embedding_root': 'embeddings',
+        report = {**metadata, 'feature_names': FEATURE_NAMES, 'embedding_root': str(embedding_root.resolve()),
                   'unique_message_texts': len(texts), 'unique_chunk_texts': len(chunk_texts),
                   'unique_question_texts': len(question_texts), 'reference_count': int((y == 1).sum()),
                   'training': False, 'qwen_called': False, 'builder_sha256': sha256(Path(__file__)),
@@ -488,39 +501,52 @@ def build_bundle(task, statistics, encoder, model_info, output, *, batch_size=16
 
 
 def run(*, root=ROOT, datasets=('v2',), splits=None, split_root=None, output_root=None,
-        statistics=None, fit_question_ids=None, question_ids=None, limit_questions=0,
-        device='auto', batch_size=16, batch_tokens=4800, rebuild_cache=False,
-        encoder=None, model_info=None, refit_statistics=False):
+        question_ids=None, limit_questions=0, device='auto', batch_size=16, batch_tokens=4800,
+        rebuild_cache=False, encoder=None, model_info=None, feature_workers=1,
+        alpha=.5, subtlex_prior=None, subtlex_manifest=None, embedding_cache_root=None):
     root = Path(root).resolve()
+    counts, total, lock = subtlex.load_prior(
+        subtlex_prior or root / 'data/external/subtlex_us/word_frequencies.json',
+        subtlex_manifest or root / 'configs/subtlex_us.lock.json')
+    config = subtlex.configuration(alpha, lock)
+    mixture = subtlex.Mixture(counts, total, config)
+    statistics = {'schema_version': 2, 'feature_recipe': config}
     output = (Path(output_root) if output_root is not None else root / 'data/ranker55').resolve()
     split_root = Path(split_root).resolve() if split_root is not None else root / 'data/splits'
     if (not output.is_relative_to((root / 'data/ranker55').resolve())
             or output.is_relative_to(split_root) or split_root.is_relative_to(output)):
         raise ValueError('Outputs must stay under data/ranker55/, separate from split ID inputs')
+    if embedding_cache_root is not None:
+        embedding_cache_root = Path(embedding_cache_root).resolve()
+        if embedding_cache_root != output and embedding_cache_root.is_relative_to(output):
+            raise ValueError('Read-only embedding cache root cannot be nested inside the output root')
+        if rebuild_cache:
+            raise ValueError('--rebuild-cache cannot be used with read-only embedding caches')
     if (type(limit_questions) is not int or limit_questions < 0
-            or any(type(v) is not int or v < 1 for v in (batch_size, batch_tokens))):
+            or any(type(v) is not int or v < 1 for v in (batch_size, batch_tokens, feature_workers))):
         raise ValueError('Batch sizes must be positive; limit_questions must be nonnegative')
-    statistics = resolve_statistics(root=root, output_root=output, statistics=statistics,
-                                    fit_question_ids=fit_question_ids, refit_statistics=refit_statistics)
-    fitted, tasks = prepare_inputs(root=root, datasets=datasets, splits=splits, split_root=split_root,
-        statistics=statistics, fit_question_ids=fit_question_ids, question_ids=question_ids,
-        limit_questions=limit_questions, output_root=output, refit_statistics=refit_statistics)
-    if encoder is None:
+    tasks = prepare_inputs(root=root, datasets=datasets, splits=splits, split_root=split_root,
+                           question_ids=question_ids, limit_questions=limit_questions)
+    if encoder is None and embedding_cache_root is None:
         path, model_info = verified_model(root)
         encoder = Encoder(path, device)
+    elif model_info is None and embedding_cache_root is not None:
+        model_info = recipe.EMBEDDING_RECIPE
     if model_info is None or any(model_info.get(k) != recipe.EMBEDDING_RECIPE[k] for k in ('repo', 'revision')):
         raise ValueError('Encoder identity must match the ranker embedding recipe')
     output.mkdir(parents=True, exist_ok=True)
     reports = {}
     for task in tasks:
         dataset, split = task[:2]
-        reports[f'{dataset}/{split}'] = build_bundle(task, fitted, encoder, model_info, output / dataset / split,
-            batch_size=batch_size, batch_tokens=batch_tokens, rebuild_cache=rebuild_cache)
-    # Bundle-local copies keep older exports tied to their original statistics.
-    # Frozen inputs are never rewritten; the top-level file is a convenience for
-    # future held-out builds and is only published after a fresh fitting build.
-    if statistics is None:
-        write_json(output / 'statistics.json', fitted)
+        destination = output / dataset / split
+        source = None if embedding_cache_root is None else embedding_cache_root / dataset / split / 'embeddings'
+        if source is not None and ((source.is_relative_to(destination) and source != destination / 'embeddings')
+                                   or destination.is_relative_to(source)):
+            raise ValueError('Read-only embedding caches must be separate from output files')
+        reports[f'{dataset}/{split}'] = build_bundle(task, statistics, encoder, model_info, destination,
+            batch_size=batch_size, batch_tokens=batch_tokens, rebuild_cache=rebuild_cache,
+            feature_workers=feature_workers, mixture=mixture, embedding_source=source)
+    write_json(output / 'statistics.json', statistics)
     return reports
 
 
@@ -528,16 +554,21 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--datasets', nargs='+', choices=tuple(SPLITS), default=['v2'])
     parser.add_argument('--splits', nargs='+', choices=('train', 'val', 'test', 'comparison'))
-    parser.add_argument('--statistics', type=Path, help='Override automatically detected statistics.json (output folder, then data/ranker55; shared file before v2/train copy)')
-    parser.add_argument('--refit-statistics', action='store_true', help='Refit V2 training statistics instead of reusing an existing file')
-    parser.add_argument('--fit-question-ids', type=Path, help='Optional JSON list restricting the TRAINING statistics corpus, e.g. an OOF fold')
+    parser.add_argument('--alpha', type=float, default=.5, help='SUBTLEX mixture weight in [0,1] (default: 0.5)')
+    parser.add_argument('--subtlex-prior', type=Path, help='Processed word_frequencies.json')
+    parser.add_argument('--subtlex-manifest', type=Path, help='Pinned source/hash manifest')
+    parser.add_argument('--embedding-cache-root', type=Path,
+                        help='Read-only bundle root containing {dataset}/{split}/embeddings; must match complete inputs')
     parser.add_argument('--question-ids', type=Path, help='Optional JSON list selecting output questions; does not change fitting corpus')
     parser.add_argument('--limit-questions', type=int, default=0, help='Limit exported questions per split; 0 means all; fitting corpus is unchanged')
     parser.add_argument('--split-root', type=Path, default=SPLIT_ROOT)
-    parser.add_argument('--output-root', type=Path, default=ROOT / 'data/ranker55')
+    parser.add_argument('--output-root', type=Path,
+                        help='Defaults to data/ranker55')
     parser.add_argument('--device', choices=('auto', 'cuda', 'cpu'), default='auto')
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--batch-tokens', type=int, default=4800)
+    parser.add_argument('--feature-workers', type=int, default=4,
+                        help='Concurrent CPU feature processes; 2 is a conservative starting point. Embedding caches are shared read-only.')
     parser.add_argument('--rebuild-cache', action='store_true', help='Overwrite stale/interrupted embedding arrays; otherwise resume matching caches')
     args = parser.parse_args(argv)
     for dataset in args.datasets:

@@ -1,0 +1,204 @@
+{
+  "experiment": "SUBTLEX/history mixture alpha sweep for the 55-feature ranker",
+  "split": "v2/val (selection only; test not loaded)",
+  "alphas": [
+    0.0,
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    0.9,
+    1.0
+  ],
+  "changed_features": [
+    "qweight_bm25",
+    "qweight_bm25_rank_fraction",
+    "qweight_bm25_zscore",
+    "qweight_bm25_gap",
+    "qweight_fusion",
+    "qweight_chunk_max",
+    "qweight_chunk_rank_fraction",
+    "qweight_chunk_zscore",
+    "qweight_chunk_gap",
+    "qweight_chunk_top2mean",
+    "neighbor_minus2_weighted_bm25",
+    "neighbor_minus2_weighted_bm25_rank",
+    "neighbor_minus1_weighted_bm25",
+    "neighbor_minus1_weighted_bm25_rank",
+    "neighbor_plus1_weighted_bm25",
+    "neighbor_plus1_weighted_bm25_rank",
+    "neighbor_plus2_weighted_bm25",
+    "neighbor_plus2_weighted_bm25_rank"
+  ],
+  "method": "The 18 alpha-dependent columns were recomputed with ranker55 _Index/score_features/fusion code for every alpha and swapped into the saved v2 train/val bundles; all other columns are unchanged. Alpha 0.5 reproduced the saved columns exactly (0 of 76,930,956 train and 0 of 4,196,646 val values differ). Each alpha was fit with the production recipe: LGBMRanker, 100 / 63 / 6 / 10, 300 rounds, learning rate 0.05, forget weight 0.5. The alpha 0.5 refit reproduced the saved model scores exactly (max abs diff 0).",
+  "metric": "non-forget type-macro Hit@10; paired persona bootstrap (5000 draws) of the change versus alpha 0.5",
+  "model_sha256_alpha_0.5": "509f3cacb6ef8d5a5a3199f250c20729ce08b1fae9e6ade5f4a5feab35e94888",
+  "summary": [
+    {
+      "alpha": 0.0,
+      "hit_at_10": 0.5469199902635457,
+      "ndcg_at_10": 0.3134909675297759,
+      "hit_at_20": 0.6470390820860781,
+      "forget_hit_at_10": 0.9319371727748691,
+      "all_question_hit_at_10": 0.6497005988023952,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7365269461077845,
+        "ask_to_forget": 0.9319371727748691,
+        "health_and_medical_conditions": 0.5934959349593496,
+        "neutral_preferences": 0.6385542168674698,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.6896551724137931,
+        "therapy_background": 0.6232876712328768
+      },
+      "change": -0.013074068425794061,
+      "bootstrap_95": [
+        -0.02531885679130642,
+        -0.0013760795032819937
+      ],
+      "rule": "fail"
+    },
+    {
+      "alpha": 0.1,
+      "hit_at_10": 0.5469437469084418,
+      "ndcg_at_10": 0.31062291273015324,
+      "hit_at_20": 0.6565947007740834,
+      "forget_hit_at_10": 0.93717277486911,
+      "all_question_hit_at_10": 0.6506986027944112,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7425149700598802,
+        "ask_to_forget": 0.93717277486911,
+        "health_and_medical_conditions": 0.6178861788617886,
+        "neutral_preferences": 0.6204819277108434,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.6637931034482759,
+        "therapy_background": 0.636986301369863
+      },
+      "change": -0.013050311780897883,
+      "bootstrap_95": [
+        -0.022864820151772693,
+        -0.003144285067649405
+      ],
+      "rule": "fail"
+    },
+    {
+      "alpha": 0.25,
+      "hit_at_10": 0.5482600797599803,
+      "ndcg_at_10": 0.30969854599914876,
+      "hit_at_20": 0.646222358784837,
+      "forget_hit_at_10": 0.9319371727748691,
+      "all_question_hit_at_10": 0.6497005988023952,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7245508982035929,
+        "ask_to_forget": 0.9319371727748691,
+        "health_and_medical_conditions": 0.6178861788617886,
+        "neutral_preferences": 0.6204819277108434,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.6896551724137931,
+        "therapy_background": 0.636986301369863
+      },
+      "change": -0.011733978929359457,
+      "bootstrap_95": [
+        -0.022810996938041873,
+        -0.0010298318855142636
+      ],
+      "rule": "fail"
+    },
+    {
+      "alpha": 0.5,
+      "hit_at_10": 0.5599940586893397,
+      "ndcg_at_10": 0.3166642446445513,
+      "hit_at_20": 0.6607481328735273,
+      "forget_hit_at_10": 0.9319371727748691,
+      "all_question_hit_at_10": 0.6606786427145709,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7425149700598802,
+        "ask_to_forget": 0.9319371727748691,
+        "health_and_medical_conditions": 0.6178861788617886,
+        "neutral_preferences": 0.6506024096385542,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.6982758620689655,
+        "therapy_background": 0.6506849315068494
+      }
+    },
+    {
+      "alpha": 0.75,
+      "hit_at_10": 0.5484245644053217,
+      "ndcg_at_10": 0.31264656398398255,
+      "hit_at_20": 0.6516046808140036,
+      "forget_hit_at_10": 0.9424083769633508,
+      "all_question_hit_at_10": 0.6526946107784432,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7245508982035929,
+        "ask_to_forget": 0.9424083769633508,
+        "health_and_medical_conditions": 0.6016260162601627,
+        "neutral_preferences": 0.6445783132530121,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.6896551724137931,
+        "therapy_background": 0.6301369863013698
+      },
+      "change": -0.01156949428401799,
+      "bootstrap_95": [
+        -0.022642900234089287,
+        -0.0003092022974053436
+      ],
+      "rule": "fail"
+    },
+    {
+      "alpha": 0.9,
+      "hit_at_10": 0.5553101311904967,
+      "ndcg_at_10": 0.31546777157850364,
+      "hit_at_20": 0.6503699474167826,
+      "forget_hit_at_10": 0.9214659685863874,
+      "all_question_hit_at_10": 0.654690618762475,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7544910179640718,
+        "ask_to_forget": 0.9214659685863874,
+        "health_and_medical_conditions": 0.5853658536585366,
+        "neutral_preferences": 0.6445783132530121,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.7241379310344828,
+        "therapy_background": 0.6232876712328768
+      },
+      "change": -0.004683927498843055,
+      "bootstrap_95": [
+        -0.01755303628924954,
+        0.009256811838429763
+      ],
+      "rule": "fail"
+    },
+    {
+      "alpha": 1.0,
+      "hit_at_10": 0.5514096643999097,
+      "ndcg_at_10": 0.31235656256368427,
+      "hit_at_20": 0.6475915164661944,
+      "forget_hit_at_10": 0.9214659685863874,
+      "all_question_hit_at_10": 0.6506986027944112,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7245508982035929,
+        "ask_to_forget": 0.9214659685863874,
+        "health_and_medical_conditions": 0.6178861788617886,
+        "neutral_preferences": 0.6325301204819277,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.6896551724137931,
+        "therapy_background": 0.6438356164383562
+      },
+      "change": -0.00858439428943003,
+      "bootstrap_95": [
+        -0.02038175089663867,
+        0.0030358636891226346
+      ],
+      "rule": "fail"
+    }
+  ],
+  "alpha_feature_gain_share": {
+    "0.0": 0.10165196096978238,
+    "0.1": 0.10230174721530114,
+    "0.25": 0.10402117870344639,
+    "0.5": 0.10359310220508007,
+    "0.75": 0.10361611809890309,
+    "0.9": 0.1078183543628222,
+    "1.0": 0.10698215123737491
+  },
+  "decision": "Keep alpha 0.5: no other alpha improves Hit@10; four are significantly lower.",
+  "selection_note": "Tree settings and forget weight were tuned at alpha 0.5, which favors 0.5 slightly. Development result, not final test performance."
+}

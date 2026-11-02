@@ -12,6 +12,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import statistics
@@ -19,6 +20,7 @@ import sys
 import time
 ROOT = Path(__file__).resolve().parents[1]
 import numpy as np
+from feature_contract import bundle_recipe
 from raw_datasets import sha256 as digest, load_dataset, visible_messages, memories_for_question
 import qwen_llamacpp_server as qwen_server
 EVALUATION_MODES = ('full_history', 'no_memory', 'reference_only', 'selector')
@@ -87,6 +89,8 @@ def evaluation_config(dataset='v2', mode='full_history', *, root=None):
     config.update(dataset=dataset, baseline=mode)
     if dataset == 'locomo':
         config.update(answer_labels=list('abcdefghij'), system_prompt='Use the conversation history to answer the question about its speakers. Select exactly one option, including the unanswerable option when appropriate. Reply with exactly one lowercase answer letter: a, b, c, d, e, f, g, h, i, or j.', primary_nll='negative log-probability normalized over the ten permitted labels')
+    elif dataset == 'longbench':
+        config.update(system_prompt='Use the provided context passages to answer the question. Select exactly one option. Reply with exactly one lowercase answer letter: a, b, c, or d.')
     return config
 
 class NoMemoryInputs:
@@ -100,7 +104,7 @@ class VisibleHistories:
 
     def __init__(self, questions, contexts=None):
         datasets = {q['dataset'] for q in questions}
-        if len(datasets) != 1 or not datasets <= {'v1', 'v2', 'locomo'}:
+        if len(datasets) != 1 or not datasets <= {'v1', 'v2', 'locomo', 'longbench'}:
             raise ValueError('VisibleHistories requires one dataset')
         self.questions = {q['example_id']: dict(q) for q in questions}
         if contexts is None:
@@ -151,7 +155,8 @@ class ReferenceHistories:
 class SelectorHistories:
     """Score the complete visible pool with the saved ranker; never read labels."""
 
-    def __init__(self, questions, contexts, sources, features, model, top_k=None, *, memory_tokens=None, selected_ids=None):
+    def __init__(self, questions, contexts, sources, features, model, top_k=None, *, memory_tokens=None, selected_ids=None,
+                 score_cutoff=None, floor_tokens=0):
         from select_label_candidates import load_features, SavedModels
         if top_k is not None and (type(top_k) is not int or top_k < 1):
             raise ValueError('top_k must be positive')
@@ -162,6 +167,13 @@ class SelectorHistories:
         self.visible = VisibleHistories(questions, contexts)
         self.top_k = top_k
         self.memory_tokens = (memory_tokens or DEFAULT_SELECTOR_MEMORY_TOKENS) if top_k is None else None
+        if score_cutoff is not None and (top_k is not None or isinstance(score_cutoff, bool)
+                                         or not isinstance(score_cutoff, (int, float)) or not math.isfinite(score_cutoff) or score_cutoff < 0):
+            raise ValueError('score_cutoff must be a finite nonnegative distance below the top score, with a token budget')
+        if (type(floor_tokens) is not int or floor_tokens < 0 or (floor_tokens and score_cutoff is None)
+                or (self.memory_tokens is not None and floor_tokens > self.memory_tokens)):
+            raise ValueError('floor_tokens must be between 0 and the memory budget and requires score_cutoff')
+        self.score_cutoff, self.floor_tokens = score_cutoff, floor_tokens
         self.pools, self.questions, self.blocks = {}, {}, {}
         # Share pools for identical history boundaries; options/answers are never
         # passed to the feature reader or ranker.
@@ -184,7 +196,7 @@ class SelectorHistories:
         required = set(self.questions) if selected_ids is None else set(selected_ids)
         if not required <= self.groups.keys():
             raise ValueError('Selector features do not cover every requested evaluation question')
-        self.models = SavedModels(model, None, names)
+        self.models = SavedModels(model, None, names, feature_recipe=bundle_recipe(features))
         self.provenance = {
             'model_path': str(Path(model).resolve()), 'model_sha256': self.models.records[0]['sha256'],
             'features_path': str(Path(features).resolve()), 'features_sha256': digest(Path(features)),
@@ -200,6 +212,9 @@ class SelectorHistories:
                 packing_policy='greedy rank order; skip messages that do not fit; never truncate',
                 token_cost='native Qwen full prompt minus instruction/question/options-only prompt, including history formatting and session headers',
                 context_policy='reserve one answer token within the actual server context')
+            if score_cutoff is not None:
+                self.provenance.update(score_cutoff=float(score_cutoff), floor_tokens=floor_tokens,
+                    cutoff_policy='once packed memory reaches floor_tokens, stop at the first message scoring more than score_cutoff below the top score')
 
     def _rank(self, question):
         _, source = self.visible.get(question)
@@ -232,7 +247,8 @@ class SelectorHistories:
                 raise ValueError('Token-budget selection requires the active Qwen server and prompt configuration')
             key = (question['history_id'], question['source_end_index'])
             chosen, packing = pack_selector_messages(server, question, config, members, ranked,
-                                                    self.memory_tokens, blocks=self.blocks[key])
+                                                    self.memory_tokens, blocks=self.blocks[key], scores=scores,
+                                                    score_cutoff=self.score_cutoff, floor_tokens=self.floor_tokens)
         else:
             chosen = ranked[:self.top_k]
         chosen = sorted(chosen, key=lambda i: members[i]['message_index'])
@@ -284,8 +300,13 @@ class SelectorMessageBlocks:
         return [bare_messages[0], {'role': 'user', 'content': history}, bare_messages[-1]]
 
 
-def pack_selector_messages(server, question, config, members, ranked, memory_tokens, *, blocks=None):
-    """Greedily accept whole messages using exact native, templated token costs."""
+def pack_selector_messages(server, question, config, members, ranked, memory_tokens, *, blocks=None,
+                           scores=None, score_cutoff=None, floor_tokens=0):
+    """Greedily accept whole messages using exact native, templated token costs.
+
+    With score_cutoff, packing stops at the first message scoring more than score_cutoff
+    below the top score once accepted memory has reached floor_tokens.
+    """
     started = time.perf_counter()
     if config.get('baseline') != 'selector':
         raise ValueError('Selector packing requires selector prompt configuration')
@@ -299,7 +320,12 @@ def pack_selector_messages(server, question, config, members, ranked, memory_tok
     effective_budget = min(memory_tokens, context - bare_tokens - 1)
     chosen, used, skipped = [], 0, 0
     final_messages, final_rendered = bare_messages, bare_rendered
+    lowest = scores[ranked[0]] - score_cutoff if score_cutoff is not None and ranked else None
+    stopped = False
     for index in ranked:
+        if lowest is not None and used >= floor_tokens and scores[index] < lowest:
+            stopped = True
+            break
         trial = chosen + [index]
         messages = blocks.messages(trial, bare_messages)
         rendered = server.render_prompt(messages)
@@ -316,8 +342,9 @@ def pack_selector_messages(server, question, config, members, ranked, memory_tok
     verify = getattr(server, 'verify_selector_prompt', None)
     if verify is not None:
         verify(final_messages, final_rendered, bare_messages, bare_rendered)
+    cutoff = {'score_cutoff_stop': stopped} if score_cutoff is not None else {}
     return chosen, {'memory_token_budget': memory_tokens, 'effective_memory_token_budget': effective_budget,
-                    'packed_memory_tokens': used, 'budget_skipped_messages': skipped,
+                    'packed_memory_tokens': used, 'budget_skipped_messages': skipped, **cutoff,
                     'token_packing_performed': True, 'packing_seconds': time.perf_counter() - started}
 
 
@@ -395,15 +422,19 @@ def save_summary(out, rows, config, protocol, hardware=None, status='complete', 
     elif mode == 'reference_only':
         limitations += ['Oracle baseline: only original dataset reference conversation snippets (label 2) are supplied in dataset snippet order. Qwen-generated label 1 messages are never loaded.', 'Annotated reference messages absent from visible history are retained verbatim and counted separately; this is not a deployable retrieval result.']
     elif mode == 'selector':
-        limitations += ['The saved LightGBM model scores every visible nonempty user/assistant message using cached features. Whole messages are passed in chronological order; ties favor earlier messages. Reference labels and correct answers are not used for selection.', 'Model and feature hashes, feature order, and selection settings are recorded in the protocol. The feature bundle must use the fitted training corpus statistics.']
+        limitations += ['The saved LightGBM model scores every visible nonempty user/assistant message using cached features. Whole messages are passed in chronological order; ties favor earlier messages. Reference labels and correct answers are not used for selection.', 'Model and feature hashes, feature order, and selection settings are recorded in the protocol. The feature bundle and model must use the same pinned SUBTLEX recipe and alpha.']
         if 'memory_tokens' in protocol['selector']:
             limitations += ['Messages are considered in descending ranker-score order and skipped if they do not fit. The token budget counts the exact native Qwen prompt increment, including history formatting and session headers. Question/options tokens are outside the memory budget; the complete prompt plus one answer token must also fit the server context.']
+        if 'score_cutoff' in protocol['selector']:
+            limitations += [f"Score cutoff: once {protocol['selector']['floor_tokens']:,} memory tokens are packed, packing stops at the first message scoring more than {protocol['selector']['score_cutoff']:g} below the question's top score."]
     elif config['dataset'] == 'v2':
         limitations += ['Each question follows its entire official 32K source history, quoted as a chronological role-labelled transcript. Source system messages are preserved. CSV persona profiles, preferences, and reference snippets are not added.', 'Use training personas for selector fitting, validation personas for tuning, and test personas for final reporting.']
     elif config['dataset'] == 'v1':
         limitations += ['The entire source history before the question cutoff is used, including all repeated system persona descriptions, quoted as a chronological role-labelled transcript in a preceding user message.', 'Source cutoffs of -1 retain official Python slicing semantics and exclude the last source message.']
     if config['dataset'] == 'locomo':
         limitations += ['LoCoMo-MC10 uses ten answer options. Conversation IDs are the bootstrap unit; the ten shared conversations are correlated groups, not independent questions.', 'Both speakers and session timestamps are retained. Session summaries and answer metadata are excluded from memory inputs. Source question-type labels are preserved.', 'Evaluation preserves designated correct indices and answer text; local distractor edits, when present, are recorded in the choice-correction audit.', 'This is evaluation of the multiple-choice adaptation; its accuracy is not original LoCoMo answer F1.']
+    elif config['dataset'] == 'longbench':
+        limitations += ['LongBench v2 subset: the questions whose raw context is at most 32,768 Qwen tokens (data/splits/longbench). Each context is cut into passages of whole lines (at most 150 words and 1,200 characters) presented as user messages in the shared transcript format; most contexts are documents, not conversations.', 'Each question has its own context, so the question is the bootstrap unit. Question types are LongBench domains.']
     elif not no_memory:
         limitations += ['32K is measured by the source tokenizer; the actual Qwen context may need to be larger.']
     limitations += [f"The text-only model uses {config.get('model_dtype', 'Q4_K_M')} weights on CUDA without CPU offload. Runtime settings are recorded in the protocol. The configured context cap has not been benchmarked for VRAM fit."]
@@ -458,6 +489,8 @@ def save_summary(out, rows, config, protocol, hardware=None, status='complete', 
         selector = protocol['selector']
         limit = (f"{selector['memory_tokens']:,} Qwen memory tokens" if 'memory_tokens' in selector
                  else f"top {selector['top_k']} messages")
+        if 'score_cutoff' in selector:
+            limit += f", stopping {selector['score_cutoff']:g} below the top score after {selector['floor_tokens']:,} tokens"
         title = f'LightGBM selector ({limit})'
 
     def memory_text(resource):
@@ -513,13 +546,17 @@ def parse_args(argv=None, *, fixed_mode=None):
         parser.add_argument('--mode', '-m', choices=EVALUATION_MODES, default='full_history')
     else:
         parser.set_defaults(mode=fixed_mode)
-    parser.add_argument('--dataset', '-d', choices=['v2'] if fixed_mode == 'no_memory' else ['v2', 'v1', 'locomo'], default='v2')
-    parser.add_argument('--selector-model', type=Path, help='Selector mode: saved LightGBM model (default: models/ranker55.txt)')
+    parser.add_argument('--dataset', '-d', choices=['v2'] if fixed_mode == 'no_memory' else ['v2', 'v1', 'locomo', 'longbench'], default='v2')
+    parser.add_argument('--selector-model', type=Path, help='Selector mode: saved LightGBM model (default: models/subtlex_mix/alpha_0.5/ranker55.txt)')
     parser.add_argument('--selector-features', type=Path, help='Selector mode: matching dataset/split NPZ (default: data/ranker55/{dataset}/{split}/features.npz)')
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument('--memory-tokens', '--token-budget', type=int,
                            help=f'Selector mode: Qwen memory-token budget including formatting (default: {DEFAULT_SELECTOR_MEMORY_TOKENS})')
     selection.add_argument('--top-k', type=int, help='Selector mode: explicitly use a message count instead of a token budget')
+    parser.add_argument('--score-cutoff', type=float,
+                        help='Selector token budget: stop at the first message scoring more than this below the top score')
+    parser.add_argument('--floor-tokens', type=int,
+                        help='With --score-cutoff: always pack at least this many memory tokens first (default: 0)')
     parser.add_argument('--limit', '-l', type=int)
     parser.add_argument('--output', '-o', type=Path)
     parser.add_argument('--dry-run', '-n', action='store_true')
@@ -532,14 +569,21 @@ def parse_args(argv=None, *, fixed_mode=None):
         parser.error('--top-k must be positive')
     if args.memory_tokens is not None and args.memory_tokens < 1:
         parser.error('--memory-tokens must be positive')
-    if args.mode != 'selector' and any(value is not None for value in (args.selector_model, args.selector_features, args.top_k, args.memory_tokens)):
-        parser.error('Selector model/features, --top-k and --memory-tokens require --mode selector')
+    if args.mode != 'selector' and any(value is not None for value in (args.selector_model, args.selector_features, args.top_k, args.memory_tokens, args.score_cutoff, args.floor_tokens)):
+        parser.error('Selector model/features, --top-k, --memory-tokens, --score-cutoff and --floor-tokens require --mode selector')
+    if args.score_cutoff is not None and (args.top_k is not None or not math.isfinite(args.score_cutoff) or args.score_cutoff < 0):
+        parser.error('--score-cutoff must be a nonnegative number and works with the token budget, not --top-k')
+    if args.floor_tokens is not None and (args.score_cutoff is None or args.floor_tokens < 0):
+        parser.error('--floor-tokens must be nonnegative and requires --score-cutoff')
+    args.floor_tokens = args.floor_tokens or 0
     args.split = 'test' if args.dataset == 'v2' else 'comparison'
     if args.mode == 'selector':
-        args.selector_model = args.selector_model or ROOT / 'models/ranker55.txt'
+        args.selector_model = args.selector_model or ROOT / 'models/subtlex_mix/alpha_0.5/ranker55.txt'
         args.selector_features = args.selector_features or ROOT / f'data/ranker55/{args.dataset}/{args.split}/features.npz'
         if args.top_k is None and args.memory_tokens is None:
             args.memory_tokens = DEFAULT_SELECTOR_MEMORY_TOKENS
+        if args.floor_tokens > (args.memory_tokens or 0):
+            parser.error('--floor-tokens cannot exceed the memory budget')
     return args
 
 def supported_test_selection(protocol):
@@ -549,7 +593,7 @@ def supported_test_selection(protocol):
     subset = config.get('subset', protocol.get('selection', {}).get('subset', 'full'))
     if dataset == 'v2':
         return protocol.get('split') == 'test'
-    return dataset in ('v1', 'locomo') and protocol.get('split') == 'comparison' and subset == 'full'
+    return dataset in ('v1', 'locomo', 'longbench') and protocol.get('split') == 'comparison' and subset == 'full'
 
 def latest_unfinished_run(baseline=None):
     """Find saved work using prediction records, never stale summary status."""
@@ -564,7 +608,7 @@ def latest_unfinished_run(baseline=None):
             continue
         if config.get('input_policy') != 'raw_complete_messages_v1':
             continue
-        if config.get('baseline') not in EVALUATION_MODES or config.get('dataset') not in ('v1', 'v2', 'locomo'):
+        if config.get('baseline') not in EVALUATION_MODES or config.get('dataset') not in ('v1', 'v2', 'locomo', 'longbench'):
             continue
         if not supported_test_selection(protocol):
             continue
@@ -611,6 +655,8 @@ def resume_arguments(path, protocol, *, include_mode=True):
             argv += ['--memory-tokens', str(selector['memory_tokens'])]
         else:
             argv += ['--top-k', str(selector['top_k'])]
+        if 'score_cutoff' in selector:
+            argv += ['--score-cutoff', repr(selector['score_cutoff']), '--floor-tokens', str(selector['floor_tokens'])]
     if protocol.get('limit') is not None:
         argv += ['--limit', str(protocol['limit'])]
     return argv
@@ -641,7 +687,8 @@ def run_evaluation(args):
     no_memory = args.mode == 'no_memory'
     locomo = args.dataset == 'locomo'
     version = 'full' if locomo else '32k'
-    config.update(input_policy='raw_complete_messages_v1', server_settings=settings, model=settings['Model'], baseline=args.mode, dataset=args.dataset, dataset_name='LoCoMo-MC10' if locomo else 'PersonaMem-' + args.dataset, dataset_version=version, subset=subset, context_tokens=settings['ContextTokens'])
+    dataset_name = {'locomo': 'LoCoMo-MC10', 'longbench': 'LongBench-v2'}.get(args.dataset, 'PersonaMem-' + args.dataset)
+    config.update(input_policy='raw_complete_messages_v1', server_settings=settings, model=settings['Model'], baseline=args.mode, dataset=args.dataset, dataset_name=dataset_name, dataset_version=version, subset=subset, context_tokens=settings['ContextTokens'])
     split_dir = ROOT / 'data/splits' / args.dataset
     selection_path = split_dir / f'{args.split}_ids.json'
     selected_ids = json.loads(selection_path.read_text(encoding='utf-8'))
@@ -662,7 +709,8 @@ def run_evaluation(args):
     elif args.mode == 'selector':
         histories = SelectorHistories(all_questions, raw_contexts, raw_sources,
                                      args.selector_features, args.selector_model, args.top_k,
-                                     memory_tokens=args.memory_tokens,
+                                     memory_tokens=args.memory_tokens, score_cutoff=args.score_cutoff,
+                                     floor_tokens=args.floor_tokens,
                                      selected_ids=[q['example_id'] for q in questions])
         if args.memory_tokens is not None:
             histories.provenance['configured_context_tokens'] = settings['ContextTokens']
@@ -684,8 +732,11 @@ def run_evaluation(args):
     name = args.split + (f'_limit_{args.limit}' if args.limit else '')
     if args.mode == 'selector':
         name += f'_memory_{args.memory_tokens}' if args.memory_tokens is not None else f'_top_{args.top_k}'
+        if args.score_cutoff is not None:
+            name += f'_cutoff_{args.score_cutoff:g}_floor_{args.floor_tokens}'
     family = f'qwen35_4b{args.mode}_raw'
-    output_base = ROOT / f'results/{family}/locomo_mc10/full' if locomo else ROOT / f'results/{family}/personamem_{args.dataset}/32k'
+    output_base = ROOT / {'locomo': f'results/{family}/locomo_mc10/full',
+                          'longbench': f'results/{family}/longbench_v2/32k'}.get(args.dataset, f'results/{family}/personamem_{args.dataset}/32k')
     if subset == 'compact':
         output_base /= 'compact'
     out = (args.output or output_base / name).resolve()

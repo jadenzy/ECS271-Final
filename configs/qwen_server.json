@@ -3,6 +3,7 @@
   "v2_context_tokens": 41216,
   "v1_context_tokens": 33280,
   "locomo_context_tokens": 32256,
+  "longbench_context_tokens": 34560,
   "selector_context_overhead_tokens": 1000,
   "no_memory_context_tokens": 4096,
   "host": "127.0.0.1",

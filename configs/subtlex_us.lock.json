@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "processed_path": "data/external/subtlex_us/word_frequencies.json",
+  "processed_sha256": "eb76ba63ac58314bd91c4da0e7a9929c8873aaac3743aec2386195ef18a6b0bb",
+  "raw_sha256": "23789b32069fb9083b5d35e210b0f3695b8127ac72aa9437f7b9383308b3291d",
+  "raw_filename": "SUBTLEXusrawdata.dat",
+  "source_url": "https://www.ugent.be/plone_portal/pp/experimentele-psychologie/en/research/documents/subtlexus/overview.htm",
+  "citation": "Brysbaert, M., & New, B. (2009). Behavior Research Methods, 41, 977-990. doi:10.3758/BRM.41.4.977",
+  "normalization": {
+    "unicode": "NFKC then casefold",
+    "token_pattern": "\\w+",
+    "split_entry_policy": "Each token occurrence receives the full entry FREQcount",
+    "duplicate_policy": "Sum all normalized token occurrences across source rows",
+    "probability_denominator": "Sum of transformed token counts; not original corpus size",
+    "oov_policy": "Absent words have probability zero; smoothing belongs to the downstream mixture"
+  },
+  "release": "282170 raw strings; normalized by prepare_subtlex_us.py",
+  "reuse_reference": "https://www.ugent.be/plone_portal/pp/experimentele-psychologie/en/research/documents/subtlexus/overview.htm"
+}

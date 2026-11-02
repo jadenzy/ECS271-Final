@@ -1,0 +1,122 @@
+{
+  "experiment": "Graded Qwen-label training on all rows: references 2, Qwen useful 1, every other row 0 (including unjudged)",
+  "split": "v2/val (selection only; test not loaded)",
+  "train_features": "data/ranker55/v2/train_graded_all/features.npz (python scripts/build_graded_training.py --all-rows)",
+  "grade_counts": {
+    "0": 4199807,
+    "1": 17066,
+    "2": 57069
+  },
+  "unjudged_rows": 3846233,
+  "runs": {
+    "same_setting": {
+      "parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 10.0
+      },
+      "tuning": "results/ranker55_tuning_graded_all_current_setting/v2/val",
+      "model": "models/qwen_graded_all_current_setting/ranker55.txt",
+      "note": "Only the labels differ from the current model (same rows, setting, forget weight 0.5)"
+    },
+    "grid_27": {
+      "tuning": "results/ranker55_tuning_graded_all/v2/val",
+      "model": "models/qwen_graded_all/ranker55.txt",
+      "selected_trial": 15,
+      "selected_parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 1.0
+      },
+      "hit_at_10_range": [
+        0.49399989903045244,
+        0.5349020264584092
+      ]
+    }
+  },
+  "reference_model": "models/subtlex_mix/alpha_0.5/ranker55.txt (all rows, references only)",
+  "metric": "non-forget type-macro Hit@10; paired persona bootstrap (5000 draws) of the change versus the current model",
+  "summary": [
+    {
+      "model": "current model (references only)",
+      "path": "C:\\Users\\jaden\\ECS271-Final\\models\\subtlex_mix\\alpha_0.5\\ranker55.txt",
+      "hit_at_5": 0.4357625108741308,
+      "hit_at_10": 0.5599940586893397,
+      "ndcg_at_10": 0.3166642446445513,
+      "hit_at_20": 0.6607481328735273,
+      "hit_at_30": 0.7019076341885633,
+      "forget_hit_at_10": 0.9319371727748691,
+      "all_question_hit_at_10": 0.6606786427145709,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7425149700598802,
+        "ask_to_forget": 0.9319371727748691,
+        "health_and_medical_conditions": 0.6178861788617886,
+        "neutral_preferences": 0.6506024096385542,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.6982758620689655,
+        "therapy_background": 0.6506849315068494
+      }
+    },
+    {
+      "model": "all rows + Qwen grades, same setting",
+      "path": "C:\\Users\\jaden\\ECS271-Final\\models\\qwen_graded_all_current_setting\\ranker55.txt",
+      "hit_at_5": 0.4010700441450314,
+      "hit_at_10": 0.527982630265853,
+      "ndcg_at_10": 0.28745522575009447,
+      "hit_at_20": 0.64375196099899,
+      "hit_at_30": 0.6844167477040051,
+      "forget_hit_at_10": 0.9476439790575916,
+      "all_question_hit_at_10": 0.6347305389221557,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7005988023952096,
+        "ask_to_forget": 0.9476439790575916,
+        "health_and_medical_conditions": 0.5853658536585366,
+        "neutral_preferences": 0.5963855421686747,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.6896551724137931,
+        "therapy_background": 0.5958904109589042
+      },
+      "change": -0.0320114284234867,
+      "bootstrap_95": [
+        -0.050823761257467355,
+        -0.014361867432417295
+      ],
+      "rule": "fail"
+    },
+    {
+      "model": "all rows + Qwen grades, 27-setting adopted (trial 15, {'min_child_samples': 100, 'num_leaves': 63, 'max_depth': 6, 'reg_lambda': 1.0})",
+      "path": "C:\\Users\\jaden\\ECS271-Final\\models\\qwen_graded_all\\ranker55_trials\\trial_15.txt",
+      "hit_at_5": 0.39293840299926003,
+      "hit_at_10": 0.5349020264584092,
+      "ndcg_at_10": 0.2874205090253428,
+      "hit_at_20": 0.6331037661929474,
+      "hit_at_30": 0.6935367009378534,
+      "forget_hit_at_10": 0.9528795811518325,
+      "all_question_hit_at_10": 0.6417165668662674,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7005988023952096,
+        "ask_to_forget": 0.9528795811518325,
+        "health_and_medical_conditions": 0.6097560975609756,
+        "neutral_preferences": 0.608433734939759,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.6810344827586207,
+        "therapy_background": 0.6095890410958904
+      },
+      "change": -0.025092032230930483,
+      "bootstrap_95": [
+        -0.042678284933955174,
+        -0.008100746998116514
+      ],
+      "rule": "fail"
+    }
+  ],
+  "findings": [
+    "Upgrading the 17,066 Qwen-useful messages to positives lowers reference retrieval: -3.20 points Hit@10 at the same setting (95% -5.08 to -1.44), -2.51 for the best of 27 settings (95% -4.27 to -0.81).",
+    "Qwen-useful messages already rank above references on every channel (mean cosine rank fraction 0.09 vs 0.21), so rewarding them pulls the ranker toward plain similarity.",
+    "Only ask_to_forget Hit@10 rises (95.29% vs 93.19%).",
+    "This measures reference retrieval only; whether Qwen-useful messages help Qwen answer is not tested here."
+  ],
+  "decision": "Do not adopt. Keep the current reference-only model."
+}

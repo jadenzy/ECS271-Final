@@ -1,0 +1,311 @@
+{
+ "model": "C:\\Users\\jaden\\ECS271-Final\\models\\subtlex_mix\\alpha_0.5\\ranker55.txt",
+ "sample_per_dataset": 50,
+ "cap": 20,
+ "datasets": {
+  "v2": "val",
+  "v1": "comparison",
+  "locomo": "comparison",
+  "longbench": "comparison"
+ },
+ "summary": {
+  "v2": {
+   "budget 2,048 tokens (current)": {
+    "questions": 50,
+    "accuracy": 0.4,
+    "mean_nll": 1.7364737832909234,
+    "mean_messages": 15.44,
+    "mean_memory_tokens": 2042.56,
+    "reference_hit": 0.7
+   },
+   "top 3": {
+    "questions": 50,
+    "accuracy": 0.44,
+    "mean_nll": 1.6512271786534467,
+    "mean_messages": 3.0,
+    "mean_memory_tokens": 464.94,
+    "reference_hit": 0.46
+   },
+   "top 5": {
+    "questions": 50,
+    "accuracy": 0.42,
+    "mean_nll": 1.7212042015930091,
+    "mean_messages": 5.0,
+    "mean_memory_tokens": 788.24,
+    "reference_hit": 0.54
+   },
+   "top 10": {
+    "questions": 50,
+    "accuracy": 0.38,
+    "mean_nll": 1.7281680142394253,
+    "mean_messages": 10.0,
+    "mean_memory_tokens": 1580.42,
+    "reference_hit": 0.68
+   },
+   "top 20": {
+    "questions": 50,
+    "accuracy": 0.36,
+    "mean_nll": 1.8902780814458333,
+    "mean_messages": 20.0,
+    "mean_memory_tokens": 3109.54,
+    "reference_hit": 0.72
+   },
+   "score \u2265 1": {
+    "questions": 50,
+    "accuracy": 0.46,
+    "mean_nll": 1.6040388181253018,
+    "mean_messages": 2.98,
+    "mean_memory_tokens": 467.16,
+    "reference_hit": 0.44
+   },
+   "score \u2265 0.5": {
+    "questions": 50,
+    "accuracy": 0.42,
+    "mean_nll": 1.777720074010727,
+    "mean_messages": 5.68,
+    "mean_memory_tokens": 884.64,
+    "reference_hit": 0.56
+   },
+   "score \u2265 0": {
+    "questions": 50,
+    "accuracy": 0.38,
+    "mean_nll": 1.9289922814562876,
+    "mean_messages": 10.54,
+    "mean_memory_tokens": 1595.48,
+    "reference_hit": 0.62
+   },
+   "within 1 of top": {
+    "questions": 50,
+    "accuracy": 0.46,
+    "mean_nll": 1.736068625965341,
+    "mean_messages": 5.62,
+    "mean_memory_tokens": 869.78,
+    "reference_hit": 0.52
+   },
+   "within 1.5 of top": {
+    "questions": 50,
+    "accuracy": 0.48,
+    "mean_nll": 1.6075419551301942,
+    "mean_messages": 9.28,
+    "mean_memory_tokens": 1483.28,
+    "reference_hit": 0.66
+   }
+  },
+  "v1": {
+   "budget 2,048 tokens (current)": {
+    "questions": 50,
+    "accuracy": 0.72,
+    "mean_nll": 0.8397054867297643,
+    "mean_messages": 13.06,
+    "mean_memory_tokens": 2017.64
+   },
+   "top 3": {
+    "questions": 50,
+    "accuracy": 0.66,
+    "mean_nll": 0.8748260381415139,
+    "mean_messages": 3.0,
+    "mean_memory_tokens": 507.98
+   },
+   "top 5": {
+    "questions": 50,
+    "accuracy": 0.68,
+    "mean_nll": 0.8718527066519549,
+    "mean_messages": 5.0,
+    "mean_memory_tokens": 821.0
+   },
+   "top 10": {
+    "questions": 50,
+    "accuracy": 0.68,
+    "mean_nll": 0.9340909286608757,
+    "mean_messages": 10.0,
+    "mean_memory_tokens": 1641.6
+   },
+   "top 20": {
+    "questions": 50,
+    "accuracy": 0.64,
+    "mean_nll": 0.9623317604300766,
+    "mean_messages": 20.0,
+    "mean_memory_tokens": 3224.92
+   },
+   "score \u2265 1": {
+    "questions": 50,
+    "accuracy": 0.66,
+    "mean_nll": 0.9129007735265321,
+    "mean_messages": 6.8,
+    "mean_memory_tokens": 1121.02
+   },
+   "score \u2265 0.5": {
+    "questions": 50,
+    "accuracy": 0.66,
+    "mean_nll": 0.8530298219315408,
+    "mean_messages": 14.3,
+    "mean_memory_tokens": 2320.16
+   },
+   "score \u2265 0": {
+    "questions": 50,
+    "accuracy": 0.64,
+    "mean_nll": 0.9667934162986691,
+    "mean_messages": 19.32,
+    "mean_memory_tokens": 3112.9
+   },
+   "within 1 of top": {
+    "questions": 50,
+    "accuracy": 0.6,
+    "mean_nll": 1.0302498530130533,
+    "mean_messages": 4.56,
+    "mean_memory_tokens": 752.98
+   },
+   "within 1.5 of top": {
+    "questions": 50,
+    "accuracy": 0.66,
+    "mean_nll": 0.9839196923659027,
+    "mean_messages": 8.84,
+    "mean_memory_tokens": 1448.04
+   }
+  },
+  "locomo": {
+   "budget 2,048 tokens (current)": {
+    "questions": 50,
+    "accuracy": 0.66,
+    "mean_nll": 1.335121113647454,
+    "mean_messages": 31.8,
+    "mean_memory_tokens": 2040.94
+   },
+   "top 3": {
+    "questions": 50,
+    "accuracy": 0.44,
+    "mean_nll": 2.1025035621945243,
+    "mean_messages": 3.0,
+    "mean_memory_tokens": 236.66
+   },
+   "top 5": {
+    "questions": 50,
+    "accuracy": 0.54,
+    "mean_nll": 1.8556067444369149,
+    "mean_messages": 5.0,
+    "mean_memory_tokens": 377.98
+   },
+   "top 10": {
+    "questions": 50,
+    "accuracy": 0.62,
+    "mean_nll": 1.4701147961958396,
+    "mean_messages": 10.0,
+    "mean_memory_tokens": 714.94
+   },
+   "top 20": {
+    "questions": 50,
+    "accuracy": 0.6,
+    "mean_nll": 1.5392404339499273,
+    "mean_messages": 20.0,
+    "mean_memory_tokens": 1345.48
+   },
+   "score \u2265 1": {
+    "questions": 50,
+    "accuracy": 0.4,
+    "mean_nll": 2.1745051784041673,
+    "mean_messages": 3.98,
+    "mean_memory_tokens": 293.04
+   },
+   "score \u2265 0.5": {
+    "questions": 50,
+    "accuracy": 0.48,
+    "mean_nll": 2.0736385071141012,
+    "mean_messages": 9.58,
+    "mean_memory_tokens": 657.78
+   },
+   "score \u2265 0": {
+    "questions": 50,
+    "accuracy": 0.58,
+    "mean_nll": 1.658485406466775,
+    "mean_messages": 17.46,
+    "mean_memory_tokens": 1192.3
+   },
+   "within 1 of top": {
+    "questions": 50,
+    "accuracy": 0.56,
+    "mean_nll": 1.6866868717567636,
+    "mean_messages": 11.26,
+    "mean_memory_tokens": 791.8
+   },
+   "within 1.5 of top": {
+    "questions": 50,
+    "accuracy": 0.6,
+    "mean_nll": 1.5696685882221117,
+    "mean_messages": 16.04,
+    "mean_memory_tokens": 1094.74
+   }
+  },
+  "longbench": {
+   "budget 2,048 tokens (current)": {
+    "questions": 50,
+    "accuracy": 0.34,
+    "mean_nll": 2.296623928242563,
+    "mean_messages": 8.76,
+    "mean_memory_tokens": 1991.72
+   },
+   "top 3": {
+    "questions": 50,
+    "accuracy": 0.42,
+    "mean_nll": 2.090432150250029,
+    "mean_messages": 3.0,
+    "mean_memory_tokens": 768.84
+   },
+   "top 5": {
+    "questions": 50,
+    "accuracy": 0.38,
+    "mean_nll": 2.381610958575193,
+    "mean_messages": 5.0,
+    "mean_memory_tokens": 1241.94
+   },
+   "top 10": {
+    "questions": 50,
+    "accuracy": 0.3,
+    "mean_nll": 2.3426229570192714,
+    "mean_messages": 10.0,
+    "mean_memory_tokens": 2406.44
+   },
+   "top 20": {
+    "questions": 50,
+    "accuracy": 0.34,
+    "mean_nll": 2.2284942264136673,
+    "mean_messages": 20.0,
+    "mean_memory_tokens": 4788.6
+   },
+   "score \u2265 1": {
+    "questions": 50,
+    "accuracy": 0.4,
+    "mean_nll": 2.0589767732017625,
+    "mean_messages": 2.56,
+    "mean_memory_tokens": 620.68
+   },
+   "score \u2265 0.5": {
+    "questions": 50,
+    "accuracy": 0.32,
+    "mean_nll": 2.349029501792425,
+    "mean_messages": 6.94,
+    "mean_memory_tokens": 1619.68
+   },
+   "score \u2265 0": {
+    "questions": 50,
+    "accuracy": 0.3,
+    "mean_nll": 2.356729525412575,
+    "mean_messages": 16.7,
+    "mean_memory_tokens": 3962.08
+   },
+   "within 1 of top": {
+    "questions": 50,
+    "accuracy": 0.36,
+    "mean_nll": 2.3588738351146548,
+    "mean_messages": 8.54,
+    "mean_memory_tokens": 2157.06
+   },
+   "within 1.5 of top": {
+    "questions": 50,
+    "accuracy": 0.38,
+    "mean_nll": 2.223509612860141,
+    "mean_messages": 13.92,
+    "mean_memory_tokens": 3407.8
+   }
+  }
+ }
+}

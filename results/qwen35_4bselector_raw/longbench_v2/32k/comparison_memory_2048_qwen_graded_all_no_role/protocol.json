@@ -1,0 +1,718 @@
+{
+  "config": {
+    "baseline": "selector",
+    "dataset": "longbench",
+    "dataset_version": "32k",
+    "memory_tokens": 2048,
+    "bootstrap_seed": 271,
+    "initial_top_logprobs": 32,
+    "maximum_top_logprobs": 248320,
+    "answer_labels": [
+      "a",
+      "b",
+      "c",
+      "d"
+    ],
+    "system_prompt": "Use the provided context passages to answer the question. Select exactly one option. Reply with exactly one lowercase answer letter: a, b, c, or d.",
+    "user_template": "Memories:\n\n\nQuestion: {question}\nOptions:\n{options}\nAnswer:",
+    "grading": "argmax of raw pre-sampling answer-label log-probabilities, matched to the dataset correct label",
+    "primary_nll": "negative log-probability normalized over the four permitted labels",
+    "bootstrap_persona_replicates": 5000,
+    "model": "Qwen3.5-4B-Q4_K_M",
+    "model_revision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+    "model_dtype": "Q4_K_M",
+    "backend": "llama_cpp",
+    "api_client": "requests",
+    "model_format": "gguf",
+    "input_policy": "raw_complete_messages_v1",
+    "server_settings": {
+      "Command": [
+        "C:\\Users\\jaden\\ECS271-Final\\models\\llama.cpp\\llama-server.exe",
+        "--model",
+        "C:\\Users\\jaden\\ECS271-Final\\models\\Qwen3.5-4B-GGUF\\Qwen3.5-4B-Q4_K_M.gguf",
+        "--alias",
+        "Qwen3.5-4B-Q4_K_M",
+        "--ctx-size",
+        "3048",
+        "--n-gpu-layers",
+        "-1",
+        "--flash-attn",
+        "on",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8080",
+        "--parallel",
+        "1",
+        "--cache-prompt",
+        "--reasoning",
+        "off",
+        "--jinja",
+        "--chat-template-kwargs",
+        "{\"enable_thinking\":false}",
+        "--no-context-shift",
+        "--fit",
+        "off",
+        "--temp",
+        "1.0",
+        "--top-p",
+        "1.0",
+        "--top-k",
+        "40",
+        "--min-p",
+        "0.0",
+        "--presence-penalty",
+        "2.0",
+        "--repeat-penalty",
+        "1.0"
+      ],
+      "Environment": {
+        "GGML_CUDA_DISABLE_GRAPHS": "1"
+      },
+      "ServerPath": "C:\\Users\\jaden\\ECS271-Final\\models\\llama.cpp\\llama-server.exe",
+      "ModelPath": "C:\\Users\\jaden\\ECS271-Final\\models\\Qwen3.5-4B-GGUF\\Qwen3.5-4B-Q4_K_M.gguf",
+      "Model": "Qwen3.5-4B-Q4_K_M",
+      "Backend": "llama_cpp",
+      "Dtype": "Q4_K_M",
+      "Format": "gguf",
+      "CpuOffload": false,
+      "GpuLayers": -1,
+      "FlashAttention": true,
+      "Thinking": false,
+      "Generation": {
+        "do_sample": true,
+        "temperature": 1.0,
+        "top_p": 1.0,
+        "top_k": 40,
+        "min_p": 0.0,
+        "presence_penalty": 2.0,
+        "repetition_penalty": 1.0
+      },
+      "CachePrompt": true,
+      "ContextShift": false,
+      "Fit": false,
+      "ContextTokens": 3048,
+      "Host": "127.0.0.1",
+      "Port": 8080,
+      "Dataset": "longbench",
+      "ChatTemplateSource": "gguf_metadata",
+      "BaseUrl": "http://127.0.0.1:8080",
+      "Client": "requests",
+      "ScoringEndpoint": "/completion",
+      "RawLogprobs": true,
+      "ModelRevision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+      "StartupTimeoutSeconds": 600,
+      "RequestTimeoutSeconds": 7200
+    },
+    "dataset_name": "LongBench-v2",
+    "subset": "full",
+    "context_tokens": 3048
+  },
+  "split": "comparison",
+  "limit": null,
+  "questions": 111,
+  "personas": [
+    "longbench:66eae4de5a08c7b9b35dd12d",
+    "longbench:66ebb0e55a08c7b9b35ddd6a",
+    "longbench:66ebbe4f5a08c7b9b35de533",
+    "longbench:66ebc0c95a08c7b9b35de7f3",
+    "longbench:66ebc4af5a08c7b9b35dede0",
+    "longbench:66ebc7445a08c7b9b35df155",
+    "longbench:66ebc95f5a08c7b9b35df497",
+    "longbench:66ebca1e5a08c7b9b35df5e8",
+    "longbench:66ebcc1e5a08c7b9b35df87d",
+    "longbench:66ebce825a08c7b9b35dfc75",
+    "longbench:66ebd0825a08c7b9b35dfe9d",
+    "longbench:66ebd22e5a08c7b9b35e0126",
+    "longbench:66ebd3075a08c7b9b35e02bd",
+    "longbench:66ebd49a5a08c7b9b35e0550",
+    "longbench:66ebd5125a08c7b9b35e0616",
+    "longbench:66ebd5675a08c7b9b35e06bf",
+    "longbench:66ebd92d5a08c7b9b35e0bf0",
+    "longbench:66ebda775a08c7b9b35e0dcb",
+    "longbench:66ebde0f5a08c7b9b35e1256",
+    "longbench:66ebe0fb5a08c7b9b35e14f5",
+    "longbench:66ebe30a5a08c7b9b35e1693",
+    "longbench:66ebe68d5a08c7b9b35e190b",
+    "longbench:66ebed525a08c7b9b35e1cb4",
+    "longbench:66ebee0a5a08c7b9b35e1d05",
+    "longbench:66ec09ec821e116aacb19620",
+    "longbench:66ec0d4b821e116aacb19af8",
+    "longbench:66ec0d51821e116aacb19b0f",
+    "longbench:66ec0f3c821e116aacb19d70",
+    "longbench:66ec1db2821e116aacb1ad69",
+    "longbench:66ec1de5821e116aacb1adca",
+    "longbench:66ec1e3f821e116aacb1ae7d",
+    "longbench:66ec21e6821e116aacb1b2d2",
+    "longbench:66ec25a5821e116aacb1b5d1",
+    "longbench:66ec2e2a821e116aacb1bb9f",
+    "longbench:66ec2fde821e116aacb1bd18",
+    "longbench:66ec356a821e116aacb1c22b",
+    "longbench:66ec3a46821e116aacb1c49f",
+    "longbench:66ec3d1d821e116aacb1c622",
+    "longbench:66ec41d3821e116aacb1c874",
+    "longbench:66ece358821e116aacb1dc08",
+    "longbench:66ece958821e116aacb1df04",
+    "longbench:66ed1556821e116aacb1ea14",
+    "longbench:66ed2c87821e116aacb1f149",
+    "longbench:66ed910a821e116aacb2033b",
+    "longbench:66ee490e821e116aacb2149c",
+    "longbench:66ee8bab821e116aacb21e44",
+    "longbench:66eefa2f821e116aacb2284f",
+    "longbench:66eefe85821e116aacb228dc",
+    "longbench:66f0ed5a821e116aacb265ab",
+    "longbench:66f10d67821e116aacb268d0",
+    "longbench:66f120a9821e116aacb26d02",
+    "longbench:66f14c70821e116aacb271ee",
+    "longbench:66f245cc821e116aacb28698",
+    "longbench:66f284ff821e116aacb29763",
+    "longbench:66f2aac2821e116aacb2a9de",
+    "longbench:66f2b676821e116aacb2b27a",
+    "longbench:66f2e0bc821e116aacb2bf37",
+    "longbench:66f37635821e116aacb2d017",
+    "longbench:66f37eb9821e116aacb2d295",
+    "longbench:66f3918f821e116aacb2d8b7",
+    "longbench:66f39aa7821e116aacb2da76",
+    "longbench:66f3abe6821e116aacb2e1d2",
+    "longbench:66f41348821e116aacb30c89",
+    "longbench:66f41e45821e116aacb30ec3",
+    "longbench:66f52567821e116aacb329bc",
+    "longbench:66f52c6d821e116aacb32cb0",
+    "longbench:66f53b9b821e116aacb332fc",
+    "longbench:66f55729821e116aacb3358b",
+    "longbench:66f55d66821e116aacb33734",
+    "longbench:66f56c9c821e116aacb33a45",
+    "longbench:66f578fa821e116aacb33c58",
+    "longbench:66f58d6c821e116aacb33e76",
+    "longbench:66f618f1bb02136c067c16f9",
+    "longbench:66f67c18bb02136c067c21b8",
+    "longbench:66f68b33bb02136c067c2303",
+    "longbench:66f6bcf3bb02136c067c2703",
+    "longbench:66f78ecfbb02136c067c2f12",
+    "longbench:66f8c6b4bb02136c067c4480",
+    "longbench:66f8d84cbb02136c067c465f",
+    "longbench:66f91f2cbb02136c067c4b1e",
+    "longbench:66f95126bb02136c067c5070",
+    "longbench:66f958b3bb02136c067c5219",
+    "longbench:66f96115bb02136c067c541c",
+    "longbench:66f9625fbb02136c067c5456",
+    "longbench:66fa6867bb02136c067c6b3b",
+    "longbench:66fa7f1dbb02136c067c6e6b",
+    "longbench:66fab4bfbb02136c067c754c",
+    "longbench:66fb5f73bb02136c067c7ae7",
+    "longbench:66fb6d71bb02136c067c7c34",
+    "longbench:66fbab85bb02136c067c81dc",
+    "longbench:66fc0152bb02136c067c8826",
+    "longbench:66fcf2f2bb02136c067c9169",
+    "longbench:66fcfb5fbb02136c067c93ae",
+    "longbench:66fe8eb3bb02136c067ca35f",
+    "longbench:6701cda0bb02136c067cb6eb",
+    "longbench:6703933bbb02136c067ccd78",
+    "longbench:6703fc69bb02136c067cd7c2",
+    "longbench:67040276bb02136c067cd8ae",
+    "longbench:6704a442bb02136c067cdd91",
+    "longbench:6704a83dbb02136c067cde1b",
+    "longbench:67062fbfbb02136c067cf66a",
+    "longbench:6708a096bb02136c067d1789",
+    "longbench:6709d44abb02136c067d1d5d",
+    "longbench:6713066fbb02136c067d3214",
+    "longbench:6719b9f1bb02136c067d4389",
+    "longbench:6719bc01bb02136c067d43fa",
+    "longbench:6719bce5bb02136c067d4447",
+    "longbench:671b08c8bb02136c067d4e19",
+    "longbench:671b1335bb02136c067d4e88",
+    "longbench:671b13f5bb02136c067d4ee3",
+    "longbench:671b1480bb02136c067d4f14"
+  ],
+  "example_ids_sha256": "373f880adbf50e30146577e05eeff0f4f61fba8ec60fff625ba3785fda2f1e2e",
+  "questions_sha256": "a299c58ecaf7a07f18e49f821eb2f902febcfa8925dcf800c20c9811e97afa9f",
+  "targets_sha256": "dd050dc015556d3c031f0dbb42f949314e7a041e28883c18969d344934965d38",
+  "raw_sources_sha256": {
+    "data/raw/longbench_v2/data.json": "15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2",
+    "data/splits/longbench/comparison_ids.json": "554367bd00d29224646898242cf28850eb1921c9bdd481bb46a430271b3237b8"
+  },
+  "splits_sha256": "554367bd00d29224646898242cf28850eb1921c9bdd481bb46a430271b3237b8",
+  "persona_split_sha256": "0d70cc06035ce5d48381fe38611711f5d489e588af58712e99376f31a8b9c248",
+  "training": false,
+  "memories_used": true,
+  "model_assets": {
+    "answer": {
+      "repo": "unsloth/Qwen3.5-4B-GGUF",
+      "revision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+      "license": "apache-2.0",
+      "dtype": "Q4_K_M",
+      "quantization": "Q4_K_M",
+      "format": "gguf",
+      "text_only_runtime": true,
+      "files": [
+        {
+          "path": "models/Qwen3.5-4B-GGUF/Qwen3.5-4B-Q4_K_M.gguf",
+          "bytes": 2740937888,
+          "sha256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4"
+        }
+      ]
+    },
+    "llama_cpp": {
+      "repo": "ggml-org/llama.cpp",
+      "revision": "b11669",
+      "git_revision": "620d2225cc436ab0b001e3200e590e3b286ef9ab",
+      "platform": "windows-x64-cuda-12.4",
+      "archives": [
+        {
+          "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11669/cudart-llama-bin-win-cuda-12.4-x64.zip",
+          "bytes": 391443627,
+          "sha256": "8c79a9b226de4b3cacfd1f83d24f962d0773be79f1e7b75c6af4ded7e32ae1d6"
+        },
+        {
+          "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11669/llama-b11669-bin-win-cuda-12.4-x64.zip",
+          "bytes": 266582698,
+          "sha256": "c2da1f73ed176ae093ac5aceb978a7b167a16113f6d74c6789eeaee2135cb8dc"
+        }
+      ],
+      "files": [
+        {
+          "path": "models/llama.cpp/cublas64_12.dll",
+          "bytes": 100033536,
+          "sha256": "e40202fe4223c1cd2d2dce7beec59e1ed61c7801bd827309183be9b50e358f4c"
+        },
+        {
+          "path": "models/llama.cpp/cublasLt64_12.dll",
+          "bytes": 473551360,
+          "sha256": "2a896460bef60ed57ef32b0875812f355a6984e671d638bb632f5e8c1d7a831f"
+        },
+        {
+          "path": "models/llama.cpp/cudart64_12.dll",
+          "bytes": 553984,
+          "sha256": "d28e42265da7462162a54da6b7a99ea4fa2caf8139d862bb500db875d0b32dfc"
+        },
+        {
+          "path": "models/llama.cpp/ggml-base.dll",
+          "bytes": 803840,
+          "sha256": "0a259689ea3c105a8122159eb97fb53733f2531fadd3e9739689961cdab27600"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-alderlake.dll",
+          "bytes": 1420288,
+          "sha256": "98b3bd12a84e848f57686f6d5f0969654ec79cda0c7636498933ea1063d14aa6"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-cannonlake.dll",
+          "bytes": 1598976,
+          "sha256": "fef636daea23b26f935cf5983be9a29b79f0541cd148b9d64a32bc9ea0cec704"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-cascadelake.dll",
+          "bytes": 1583616,
+          "sha256": "b32ee94fa0a366886cd03be48f80f1d8c1bbb338d71fc734a263753ec46aa8fd"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-cooperlake.dll",
+          "bytes": 1593344,
+          "sha256": "e67357a558e71b834360b6f6d62abc6b9fe19930f6f7dd21ee0339e7b144306e"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-haswell.dll",
+          "bytes": 1425408,
+          "sha256": "d33deb9bf3dd25427404f0f94a13c6b3da92b9b57b794199a9f354c3a327efb6"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-icelake.dll",
+          "bytes": 1590272,
+          "sha256": "41abb00a64bbf099c137cdb3b9547c7eb90bcd9c1d7b83238cbf10a74f97addd"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-ivybridge.dll",
+          "bytes": 1301504,
+          "sha256": "d674c12b3f40d657b0989801699560e68247dbe9509823651b055ac3816ba37c"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-piledriver.dll",
+          "bytes": 1294336,
+          "sha256": "bb5215c806397adf56e986f52aa0c75b04b3b5b33203a722f647254eae2b94b2"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-sandybridge.dll",
+          "bytes": 1291264,
+          "sha256": "55d5659b45afcbe7a1d7611ab1914d2888476fc3024933e4b82122cdc58d6fd5"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-sapphirerapids.dll",
+          "bytes": 1869824,
+          "sha256": "83af3cacf3bf32b98626791358f950da4b45a22af85bde63afe537fe51e60848"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-skylakex.dll",
+          "bytes": 1592320,
+          "sha256": "20722299dc5e4703056ff95b7ef329c223390ab87469c822721c1e67e4cc2a24"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-sse42.dll",
+          "bytes": 916992,
+          "sha256": "1c0fc615b6d97a79e58f33e8a7fb4e8de1834ad0f3f0e00e8943a4d416ddd242"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-x64.dll",
+          "bytes": 909824,
+          "sha256": "7c9df996db7fe98510571524e3e62dd267a4034350185014814418dbad3c25ea"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cpu-zen4.dll",
+          "bytes": 1600000,
+          "sha256": "83ae254f6204670e9011e11db84786122567bde2fab07354e7c4827c18589ee1"
+        },
+        {
+          "path": "models/llama.cpp/ggml-cuda.dll",
+          "bytes": 575425024,
+          "sha256": "152681bf91cf4bca0fe5939108645a8f83cbcc61982758e6974004cb89c4c8d5"
+        },
+        {
+          "path": "models/llama.cpp/ggml-rpc-server.exe",
+          "bytes": 117248,
+          "sha256": "e852937ded50b18b1c22f67d2368dde42decd58ad7be8544cd771608aa6e2bda"
+        },
+        {
+          "path": "models/llama.cpp/ggml-rpc.dll",
+          "bytes": 231424,
+          "sha256": "b52bd8eddb79ebd1dc0b832b34483bef23d44a34c6d5639301d92cb971f874a4"
+        },
+        {
+          "path": "models/llama.cpp/ggml.dll",
+          "bytes": 78848,
+          "sha256": "2649a5d914934188cccbe2c58e4642d2d4408bcda0f7068d58390686bd7ea62f"
+        },
+        {
+          "path": "models/llama.cpp/libomp.dll",
+          "bytes": 768000,
+          "sha256": "a12116ba72d1d6820407cf30be23da04ce79d6bb8a71a5ee71759c5a1faa6f1c"
+        },
+        {
+          "path": "models/llama.cpp/LICENSE-LLVM-OpenMP",
+          "bytes": 19741,
+          "sha256": "fdad1758a9e1f9d5a81e18879b3406772115edc92c24bfa36b70c654f325e8e4"
+        },
+        {
+          "path": "models/llama.cpp/llama-batched-bench-impl.dll",
+          "bytes": 61952,
+          "sha256": "86dd3cc19af625bd826f7919767883a7e78481e012fb141e5393677235518190"
+        },
+        {
+          "path": "models/llama.cpp/llama-batched-bench.exe",
+          "bytes": 9216,
+          "sha256": "0ef5c88a7acf32f4aee060980745909f268d77645091fcdfb16493ac36597a88"
+        },
+        {
+          "path": "models/llama.cpp/llama-bench-impl.dll",
+          "bytes": 404480,
+          "sha256": "e4ff088cb9f50568366c281684b3ad4c69e9ddea3be6deb4a0a4fb63a6bf0650"
+        },
+        {
+          "path": "models/llama.cpp/llama-bench.exe",
+          "bytes": 9216,
+          "sha256": "24473241d5af8781563c2878a0b581b7888467d13ee602df9b68b398b371a911"
+        },
+        {
+          "path": "models/llama.cpp/llama-cli-impl.dll",
+          "bytes": 3319296,
+          "sha256": "8a50d8db8599970726f824f50d5d0a4570d2ff602a39940e09362d23f2c7fca5"
+        },
+        {
+          "path": "models/llama.cpp/llama-cli.exe",
+          "bytes": 9216,
+          "sha256": "4eaabb9f97a843540b2c78802b31777d0952eff13d536dbeed8e9a4b12ff4c30"
+        },
+        {
+          "path": "models/llama.cpp/llama-common.dll",
+          "bytes": 8037376,
+          "sha256": "9adf40bc08e99005699d6397bcacb72c3aced68c9db01f13b5bd31c6abc7b2b5"
+        },
+        {
+          "path": "models/llama.cpp/llama-completion-impl.dll",
+          "bytes": 140800,
+          "sha256": "e10c6bba8275b289e3121aa3ab2820b8583d744109dfc5d546e7220328a4ee1d"
+        },
+        {
+          "path": "models/llama.cpp/llama-completion.exe",
+          "bytes": 9216,
+          "sha256": "a36efb43ffa55f3a861043d4bf63b28b99d40560542c07a0ea51ea2fe30eef6f"
+        },
+        {
+          "path": "models/llama.cpp/llama-fit-params-impl.dll",
+          "bytes": 43008,
+          "sha256": "a08d9a6fc98cd0a340bb80703e7a43a1bca4b362eb6f5bc3d235993b38b69d89"
+        },
+        {
+          "path": "models/llama.cpp/llama-fit-params.exe",
+          "bytes": 9216,
+          "sha256": "d38927b1072ab91f92ecb13a7e778934f8fff5b0db77da2fb87b189a68efca40"
+        },
+        {
+          "path": "models/llama.cpp/llama-gemma3-cli.exe",
+          "bytes": 27136,
+          "sha256": "39397a2f304ca9414de394303ca0751717afc484330b9a03f7d80091c298cbc3"
+        },
+        {
+          "path": "models/llama.cpp/llama-gguf-split.exe",
+          "bytes": 60416,
+          "sha256": "259db5e609e1e079374eb93cdf24bd8bc9371a1b15bc1c953ddfdc5a933afcfa"
+        },
+        {
+          "path": "models/llama.cpp/llama-imatrix.exe",
+          "bytes": 252416,
+          "sha256": "e7521d4b6e0a48bf337e0b632fb51f76c3918c15c2bb8b0ed683c4e636a55de7"
+        },
+        {
+          "path": "models/llama.cpp/llama-llava-cli.exe",
+          "bytes": 27136,
+          "sha256": "91bdde129470b0201988336f682b84832b16bca4a85e78e69f8b4d6cc28224cf"
+        },
+        {
+          "path": "models/llama.cpp/llama-minicpmv-cli.exe",
+          "bytes": 27136,
+          "sha256": "39397a2f304ca9414de394303ca0751717afc484330b9a03f7d80091c298cbc3"
+        },
+        {
+          "path": "models/llama.cpp/llama-mtmd-cli.exe",
+          "bytes": 92672,
+          "sha256": "81634bc89b0d698712c9706cf1716239f827558111cf520b21f8b40b99e88293"
+        },
+        {
+          "path": "models/llama.cpp/llama-mtmd-debug.exe",
+          "bytes": 55808,
+          "sha256": "b44ad219a3365b961fc1c10d23daa42be15b7ef94953222a9a2650942d36f4eb"
+        },
+        {
+          "path": "models/llama.cpp/llama-perplexity-impl.dll",
+          "bytes": 197632,
+          "sha256": "4ade93257c26e936770f5ad9e65de400efb73dbe3abcba9244c9756378b4de07"
+        },
+        {
+          "path": "models/llama.cpp/llama-perplexity.exe",
+          "bytes": 9216,
+          "sha256": "de71c077b65743dbafffbfb66e87cd291bb89bf428ad6f31518336208c4750ea"
+        },
+        {
+          "path": "models/llama.cpp/llama-quantize-impl.dll",
+          "bytes": 137216,
+          "sha256": "c792c25b55fada62323f50d9e68da797dc92e52b4f79601708fa203533586f86"
+        },
+        {
+          "path": "models/llama.cpp/llama-quantize.exe",
+          "bytes": 9216,
+          "sha256": "7ec08d1251763e1842d8bf5e195ea71e7c08ea4f2da3f5c3517d70ff152d1abf"
+        },
+        {
+          "path": "models/llama.cpp/llama-qwen2vl-cli.exe",
+          "bytes": 27136,
+          "sha256": "39397a2f304ca9414de394303ca0751717afc484330b9a03f7d80091c298cbc3"
+        },
+        {
+          "path": "models/llama.cpp/llama-results.exe",
+          "bytes": 46592,
+          "sha256": "f0267a77191b2d0f94b8965c5359d82832f65145ef4fddbc7111bd7919e4e0f6"
+        },
+        {
+          "path": "models/llama.cpp/llama-server-impl.dll",
+          "bytes": 9259520,
+          "sha256": "24b1249ddd19e3ba3551804707dbe2f3c154c007542899ea8b16d69a94ab6597"
+        },
+        {
+          "path": "models/llama.cpp/llama-server.exe",
+          "bytes": 9216,
+          "sha256": "6a4635aeb35656153d4bfeeddf761d24ed84aada9c9108d580737cbed465141b"
+        },
+        {
+          "path": "models/llama.cpp/llama-tokenize.exe",
+          "bytes": 58880,
+          "sha256": "962b97b132cb29e763a46c84f1943b2874ed7879037ac37fbe986400ac165ecf"
+        },
+        {
+          "path": "models/llama.cpp/llama-tts.exe",
+          "bytes": 41984,
+          "sha256": "6d73d057bcc00fd3bd246e459bf2e31790e1a590a24493331c3301e799de81a8"
+        },
+        {
+          "path": "models/llama.cpp/llama.dll",
+          "bytes": 3541504,
+          "sha256": "aacb073c9c0d30090dd3e56f49772545452ccc4fd311efbfdb7d1bba7bbb0bda"
+        },
+        {
+          "path": "models/llama.cpp/llama.exe",
+          "bytes": 104448,
+          "sha256": "6db3725ca76e195ef16129ae16d7d49f809523e77cb3a1fde290f86dcf545bca"
+        },
+        {
+          "path": "models/llama.cpp/mtmd.dll",
+          "bytes": 1847808,
+          "sha256": "bd4a9dac32ba8b14cf95da3361495380ac556b34f48434ebe477ffef23f40bd1"
+        }
+      ]
+    }
+  },
+  "runtime_sources_sha256": {
+    "configs/qwen_server.json": "ebbd0d01dc662d80895d9fd0b7f74851add2e6a0eac01f316b43a58330dc5345",
+    "scripts/qwen_llamacpp_server.py": "9ad7e2d22907a0bcd9f33299d6a87064c070317e7dcd5675a0583c289ca2229a",
+    "scripts/evaluate_qwen.py": "d09e8d0b93c3b53ed5af9ed952005198f1df425e2883efa10f6b1109c0fd355b"
+  },
+  "selection": {
+    "subset": "full",
+    "question_order": "persona_id, history_id, example_id",
+    "persona_split_sha256": "0d70cc06035ce5d48381fe38611711f5d489e588af58712e99376f31a8b9c248"
+  },
+  "selector": {
+    "model_path": "C:\\Users\\jaden\\ECS271-Final\\models\\no_role\\qwen_graded_all\\ranker55.txt",
+    "model_sha256": "bb61aae6d207387a2d1bb99138da8913c42647ae0a1ba85d58564587fe2d02b6",
+    "features_path": "C:\\Users\\jaden\\ECS271-Final\\data\\ranker55\\longbench\\comparison\\features.npz",
+    "features_sha256": "24cbbc839701405937338e1964922733091686451fabb03125c9638bdbe07674",
+    "feature_names": [
+      "cosine",
+      "cosine_rank_fraction",
+      "cosine_zscore",
+      "cosine_gap",
+      "role_assistant",
+      "log_lexical_length",
+      "log_content_tokens",
+      "bm25_b0",
+      "bm25_rank_fraction",
+      "bm25_zscore",
+      "bm25_gap",
+      "winning_fusion",
+      "chunk_max",
+      "chunk_rank_fraction",
+      "chunk_zscore",
+      "chunk_gap",
+      "chunk_top2mean",
+      "log_chunk_count",
+      "qweight_bm25",
+      "qweight_bm25_rank_fraction",
+      "qweight_bm25_zscore",
+      "qweight_bm25_gap",
+      "qweight_fusion",
+      "qweight_chunk_max",
+      "qweight_chunk_rank_fraction",
+      "qweight_chunk_zscore",
+      "qweight_chunk_gap",
+      "qweight_chunk_top2mean",
+      "neighbor_minus2_cosine",
+      "neighbor_minus2_cosine_rank",
+      "neighbor_minus2_weighted_bm25",
+      "neighbor_minus2_weighted_bm25_rank",
+      "neighbor_minus2_available",
+      "neighbor_minus1_cosine",
+      "neighbor_minus1_cosine_rank",
+      "neighbor_minus1_weighted_bm25",
+      "neighbor_minus1_weighted_bm25_rank",
+      "neighbor_minus1_available",
+      "neighbor_plus1_cosine",
+      "neighbor_plus1_cosine_rank",
+      "neighbor_plus1_weighted_bm25",
+      "neighbor_plus1_weighted_bm25_rank",
+      "neighbor_plus1_available",
+      "neighbor_plus2_cosine",
+      "neighbor_plus2_cosine_rank",
+      "neighbor_plus2_weighted_bm25",
+      "neighbor_plus2_weighted_bm25_rank",
+      "neighbor_plus2_available",
+      "dense_chunk_max",
+      "dense_chunk_rank",
+      "dense_chunk_zscore",
+      "dense_chunk_gap",
+      "dense_chunk_top2mean",
+      "dense_chunk_minus_whole",
+      "relative_conversation_position"
+    ],
+    "model_feature_count": 55,
+    "tie_break": "earlier source message index",
+    "prompt_order": "chronological source order",
+    "pool": "all visible nonempty user/assistant messages",
+    "uses_reference_labels_or_answers": false,
+    "memory_tokens": 2048,
+    "packing_policy": "greedy rank order; skip messages that do not fit; never truncate",
+    "token_cost": "native Qwen full prompt minus instruction/question/options-only prompt, including history formatting and session headers",
+    "context_policy": "reserve one answer token within the actual server context",
+    "configured_context_tokens": 3048
+  },
+  "server_runs": [
+    {
+      "first_prediction": 0,
+      "server_settings": {
+        "Command": [
+          "C:\\Users\\jaden\\ECS271-Final\\models\\llama.cpp\\llama-server.exe",
+          "--model",
+          "C:\\Users\\jaden\\ECS271-Final\\models\\Qwen3.5-4B-GGUF\\Qwen3.5-4B-Q4_K_M.gguf",
+          "--alias",
+          "Qwen3.5-4B-Q4_K_M",
+          "--ctx-size",
+          "3048",
+          "--n-gpu-layers",
+          "-1",
+          "--flash-attn",
+          "on",
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "8080",
+          "--parallel",
+          "1",
+          "--cache-prompt",
+          "--reasoning",
+          "off",
+          "--jinja",
+          "--chat-template-kwargs",
+          "{\"enable_thinking\":false}",
+          "--no-context-shift",
+          "--fit",
+          "off",
+          "--temp",
+          "1.0",
+          "--top-p",
+          "1.0",
+          "--top-k",
+          "40",
+          "--min-p",
+          "0.0",
+          "--presence-penalty",
+          "2.0",
+          "--repeat-penalty",
+          "1.0"
+        ],
+        "Environment": {
+          "GGML_CUDA_DISABLE_GRAPHS": "1"
+        },
+        "ServerPath": "C:\\Users\\jaden\\ECS271-Final\\models\\llama.cpp\\llama-server.exe",
+        "ModelPath": "C:\\Users\\jaden\\ECS271-Final\\models\\Qwen3.5-4B-GGUF\\Qwen3.5-4B-Q4_K_M.gguf",
+        "Model": "Qwen3.5-4B-Q4_K_M",
+        "Backend": "llama_cpp",
+        "Dtype": "Q4_K_M",
+        "Format": "gguf",
+        "CpuOffload": false,
+        "GpuLayers": -1,
+        "FlashAttention": true,
+        "Thinking": false,
+        "Generation": {
+          "do_sample": true,
+          "temperature": 1.0,
+          "top_p": 1.0,
+          "top_k": 40,
+          "min_p": 0.0,
+          "presence_penalty": 2.0,
+          "repetition_penalty": 1.0
+        },
+        "CachePrompt": true,
+        "ContextShift": false,
+        "Fit": false,
+        "ContextTokens": 3048,
+        "Host": "127.0.0.1",
+        "Port": 8080,
+        "Dataset": "longbench",
+        "ChatTemplateSource": "gguf_metadata",
+        "BaseUrl": "http://127.0.0.1:8080",
+        "Client": "requests",
+        "ScoringEndpoint": "/completion",
+        "RawLogprobs": true,
+        "ModelRevision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+        "StartupTimeoutSeconds": 600,
+        "RequestTimeoutSeconds": 7200
+      }
+    }
+  ]
+}

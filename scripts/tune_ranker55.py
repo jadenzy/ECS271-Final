@@ -22,6 +22,7 @@ os.environ.setdefault('OPENBLAS_NUM_THREADS', '4')
 import numpy as np
 
 import ranker55 as recipe
+from feature_contract import bundle_recipe, save_model_recipe, validate_recipe
 from label_reference_messages import load_references
 from message_dataset import load_message_dataset
 from raw_datasets import ROOT, sha256
@@ -174,7 +175,8 @@ def aggregate(rows):
                 complete_reference_nonforget_type_macro=macro([r for r in nonforget if r['complete_reference']]))
 
 
-def run(train_features, val_features, output_model, output_root, trials, *, root=ROOT, threshold=.01):
+def run(train_features, val_features, output_model, output_root, trials, *, root=ROOT, threshold=.01,
+        forget_weight=recipe.FORGET_QUESTION_WEIGHT):
     import lightgbm as lgb
     started = time.perf_counter()
     root, output, model_path = Path(root).resolve(), Path(output_root).resolve(), Path(output_model).resolve()
@@ -188,8 +190,8 @@ def run(train_features, val_features, output_model, output_root, trials, *, root
     trial_root = model_path.parent / 'ranker55_trials'
     trial_root.mkdir(parents=True, exist_ok=True)
     protocol = dict(status='running', dataset='v2', fit_split='train', tuning_split='val', test_used=False,
-                    label_policy='binary exact-reference membership; no Qwen-generated labels',
-                    baseline_parameters=recipe.PARAMETERS,
+                    label_policy='supplied NPZ y relevance grades 0/1/2; no automatic label-file loading',
+                    baseline_parameters=recipe.PARAMETERS, forget_question_weight=forget_weight,
                     selection_metric='nonforget_type_macro.hit_at_10', adoption_threshold=threshold,
                     adoption_rule='strictly greater than threshold over default and no NDCG decrease',
                     selection_bias='Validation selects hyperparameters; these are development results, not final test performance.',
@@ -202,10 +204,13 @@ def run(train_features, val_features, output_model, output_root, trials, *, root
         train = stack.enter_context(Bundle(train_features))
         val = stack.enter_context(Bundle(val_features))
         tm, vm = train.metadata, val.metadata
+        feature_recipe = validate_recipe(tm.get('feature_recipe'))
+        if validate_recipe(vm.get('feature_recipe')) != feature_recipe:
+            raise ValueError('Incompatible training/validation feature recipes')
         if (tm.get('dataset'), tm.get('split'), tm.get('memory_unit')) != ('v2', 'train', 'single_message'):
             raise ValueError('Training bundle must be V2 train with single-message features')
         if tm.get('statistics_fingerprint') != vm.get('statistics_fingerprint') or not tm.get('statistics_fingerprint'):
-            raise ValueError('Train and validation must use identical frozen training corpus statistics')
+            raise ValueError('Train and validation must use identical SUBTLEX recipe manifests')
         for key, digest in tm.get('source_sha256', {}).items():
             if sha256(root / key) != digest:
                 raise ValueError('Training sources changed; rebuild training features')
@@ -216,6 +221,9 @@ def run(train_features, val_features, output_model, output_root, trials, *, root
         if set(train.read('persona_ids').tolist()) & set(val.read('persona_ids').tolist()):
             raise ValueError('Training and validation personas overlap')
         X, y, offsets = recipe.validate_training_data(train.read('X'), train.read('y'), train.read('offsets'), train.read('feature_names'))
+        protocol['training_grade_counts'] = {str(grade): int(np.count_nonzero(y == grade)) for grade in (0, 1, 2)}
+        question_weights = recipe.forget_question_weights(train_qids, forget_weight, root=root)
+        protocol['training_question_weights'] = {str(float(w)): int(n) for w, n in zip(*np.unique(question_weights, return_counts=True))}
         VX = val.read('X')
         if val.read('feature_names').tolist() != recipe.FEATURE_NAMES or VX.ndim != 2 or VX.shape[1] != 55:
             raise ValueError('Validation features must follow the complete 55-feature schema')
@@ -234,8 +242,8 @@ def run(train_features, val_features, output_model, output_root, trials, *, root
         # prefiltering because min_child_samples varies between configurations.
         binning_parameters = {k:v for k,v in recipe.PARAMETERS.items() if k != 'n_estimators'}
         binning_parameters['feature_pre_filter'] = False
-        dataset = lgb.Dataset(X, label=y, group=np.diff(offsets), feature_name=recipe.FEATURE_NAMES,
-                              params=binning_parameters, free_raw_data=True)
+        dataset = lgb.Dataset(X, label=y, group=np.diff(offsets), weight=recipe.row_weights(question_weights, offsets),
+                              feature_name=recipe.FEATURE_NAMES, params=binning_parameters, free_raw_data=True)
         dataset.construct()
         selected = None
         best_score = None
@@ -252,6 +260,7 @@ def run(train_features, val_features, output_model, output_root, trials, *, root
             primary = stats['nonforget_type_macro']
             path = trial_root / f'trial_{number:02d}.txt'
             recipe._save_model_atomic(booster, path)
+            save_model_recipe(path, feature_recipe)
             entry = dict(trial=number, parameters=tuning, metrics=stats, model_path=str(path),
                          elapsed_seconds=time.perf_counter()-before, model_sha256=sha256(path))
             protocol['trials'].append(entry)
@@ -260,6 +269,7 @@ def run(train_features, val_features, output_model, output_root, trials, *, root
                 selected = entry
                 best_score = (primary['hit_at_10'], primary['ndcg_at_10'])
                 recipe._save_model_atomic(booster, model_path)
+                save_model_recipe(model_path, feature_recipe)
             gain = primary['hit_at_10'] - baseline['hit_at_10']
             entry['gain_over_default'] = gain
             entry['eligible_for_adoption'] = number == 0 or (gain > threshold + 1e-12 and primary['ndcg_at_10'] >= baseline['ndcg_at_10'] - 1e-12)
@@ -271,6 +281,7 @@ def run(train_features, val_features, output_model, output_root, trials, *, root
             print(f"  non-forget type-macro Hit@10={primary['hit_at_10']:.4%}, NDCG@10={primary['ndcg_at_10']:.4%}, gain={gain*100:+.3f} points", flush=True)
         winner = lgb.Booster(model_str=Path(selected['model_path']).read_text(encoding='utf-8'))
         recipe._save_model_atomic(winner, model_path)
+        save_model_recipe(model_path, feature_recipe)
         chosen_rows = score_questions(winner.predict(VX, num_threads=4), cosine, targets)
         temporary = output / 'per_question.jsonl.tmp'
         with temporary.open('w', encoding='utf-8', newline='\n') as stream:
@@ -288,7 +299,8 @@ def run(train_features, val_features, output_model, output_root, trials, *, root
             m = t['metrics']['nonforget_type_macro']
             writer.writerow([t['trial'], *[t['parameters'][k] for k in ('min_child_samples','num_leaves','max_depth','reg_lambda')], m['hit_at_10'],m['ndcg_at_10'],t['gain_over_default']*100,t['eligible_for_adoption']])
     lines = ['# Ranker55 V2 validation tuning', '', f"Selected trial: {selected['trial']}. Model: {model_path}",
-             '', 'Training uses binary original-reference labels. Validation selects hyperparameters; test was not used.',
+             '', 'Training accepts supplied relevance grades 0/1/2 with linear gains [0,1,2]. Validation metrics use original reference membership; test was not used.',
+             f'ask_to_forget training questions have weight {forget_weight}; every other question has weight 1.',
              f"Validation: {protocol['validation_questions']} questions, {protocol['complete_reference_questions']} with complete visible references.",
              '', '| Trial | Min child | Leaves/depth | L2 | Non-forget macro Hit@10 | NDCG@10 | Gain (pp) |', '|---|---:|---|---:|---:|---:|---:|']
     for t in protocol['trials']:
@@ -302,12 +314,14 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--train-features', type=Path, default=ROOT/'data/ranker55/v2/train/features.npz')
     parser.add_argument('--val-features', type=Path, default=ROOT/'data/ranker55/v2/val/features.npz')
-    parser.add_argument('--output', type=Path, default=ROOT/'models/ranker55.txt')
+    parser.add_argument('--output', type=Path, default=ROOT/'models/subtlex_mix/alpha_0.5/ranker55.txt')
     parser.add_argument('--output-root', type=Path, default=ROOT/'results/ranker55_tuning/v2/val')
     parser.add_argument('--min-child-samples', nargs='+', type=int, default=[50,100,200])
     parser.add_argument('--tree-shapes', nargs='+', default=['15:4','31:5','63:6'], help='Paired num_leaves:max_depth settings')
     parser.add_argument('--reg-lambda', nargs='+', type=float, default=[1.,5.,10.])
     parser.add_argument('--adoption-threshold', type=float, default=.01)
+    parser.add_argument('--forget-weight', type=float, default=recipe.FORGET_QUESTION_WEIGHT,
+                        help=f'Training weight of ask_to_forget questions (default: {recipe.FORGET_QUESTION_WEIGHT})')
     args = parser.parse_args(argv)
     try:
         shapes = [tuple(map(int, text.split(':'))) for text in args.tree_shapes]
@@ -326,11 +340,12 @@ def main(argv=None):
             if args.val_features.resolve() != (ROOT/'data/ranker55/v2/val/features.npz').resolve():
                 raise ValueError('Validation features must be located at the standard path: data/ranker55/v2/val/features.npz')
             command = [sys.executable, '-B', '-u', str(ROOT/'scripts/build_ranker_features.py'), '--splits', 'val',
-                       '--statistics', str(statistics), '--batch-size', '16', '--batch-tokens', '2400']
-            print('Building validation features with frozen training statistics.', flush=True)
+                       '--alpha', str(bundle_recipe(args.train_features)['alpha']),
+                       '--batch-size', '16', '--batch-tokens', '2400']
+            print('Building validation features with the matching SUBTLEX mixture.', flush=True)
             subprocess.run(command, check=True, cwd=ROOT)
         report = run(args.train_features, args.val_features, args.output, args.output_root, trials,
-                     threshold=args.adoption_threshold)
+                     threshold=args.adoption_threshold, forget_weight=args.forget_weight)
         print(json.dumps({k:report[k] for k in ('status','selected_parameters','output_model','elapsed_seconds')}, indent=2))
     except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as error:
         path = args.output_root / 'report.json'

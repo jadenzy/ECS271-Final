@@ -5,6 +5,7 @@ This module owns startup, health checks, tokenization, requests, retries and cle
 Run this file for a standalone server; --print-settings never loads a model.
 """
 import argparse
+import bisect
 from collections import OrderedDict
 import ctypes
 from datetime import datetime, timezone
@@ -95,6 +96,7 @@ class LocalQwenTokenizer:
             dll.llama_vocab_get_add_eos.restype = ctypes.c_bool
             self.cache_block_counts = pre.value == b'qwen35' and not dll.llama_vocab_get_add_eos(self.vocab)
             self._block_counts = OrderedDict()
+            self._lock = threading.Lock()
             template = dll.llama_model_chat_template(self.model, None)
             if not template:
                 raise ValueError('The Qwen GGUF has no chat template')
@@ -144,12 +146,13 @@ class LocalQwenTokenizer:
         total = 0
         for index, block in enumerate(re.split(r'(?<=\n)(?=\[)', text)):
             key = (block, index == 0)
-            if key not in self._block_counts:
-                self._block_counts[key] = len(self.tokenize(block, add_special=index == 0))
-                while len(self._block_counts) > 4096:
-                    self._block_counts.popitem(last=False)
-            self._block_counts.move_to_end(key)
-            total += self._block_counts[key]
+            with self._lock:
+                if key not in self._block_counts:
+                    self._block_counts[key] = len(self.tokenize(block, add_special=index == 0))
+                    while len(self._block_counts) > 4096:
+                        self._block_counts.popitem(last=False)
+                self._block_counts.move_to_end(key)
+                total += self._block_counts[key]
         return total
 
     def close(self):
@@ -167,7 +170,7 @@ def parse_args(argv=None, *, root=None):
     root = Path(root) if root is not None else ROOT
     config = json.loads((root / 'configs/qwen_server.json').read_text(encoding='utf-8'))
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--dataset', choices=['v2', 'v1', 'locomo'], default='v2')
+    parser.add_argument('--dataset', choices=['v2', 'v1', 'locomo', 'longbench'], default='v2')
     parser.add_argument('--mode', choices=['full_history', 'no_memory', 'reference_only', 'selector'], default='full_history')
     parser.add_argument('--ctx-size', type=int)
     parser.add_argument('--memory-tokens', type=int,
@@ -284,6 +287,9 @@ class LlamaCppServer:
         self.load_seconds = 0.0
         self.session = requests.Session()
         self.session.trust_env = False
+        adapter = requests.adapters.HTTPAdapter(pool_connections=32, pool_maxsize=32)
+        self.session.mount('http://', adapter)
+        self._prompt_lock = threading.Lock()
         self.local_tokenizer = None
         self._rendered_prompts = OrderedDict()
 
@@ -312,10 +318,16 @@ class LlamaCppServer:
             self.sample_memory()
             stop_sampling.wait(1)
 
-    def question_memory(self, started, finished):
-        samples = [s for s in self.memory_samples if started <= s['sampled_at'] <= finished]
+    def question_memory(self, started, finished, *, snapshot=True):
+        # Samples are appended in time order under the sampling lock.
+        first = bisect.bisect_left(self.memory_samples, started, key=lambda s: s['sampled_at'])
+        last = bisect.bisect_right(self.memory_samples, finished, key=lambda s: s['sampled_at'])
+        samples = self.memory_samples[first:last]
         source = 'during_request'
-        if not samples:
+        if not samples and not snapshot and self.memory_samples:
+            # Concurrent judge requests reuse the background sample instead of serializing on nvidia-smi.
+            samples, source = [self.memory_samples[-1]], 'latest_background_sample'
+        elif not samples:
             samples = [self.sample_memory()]
             source = 'post_request_snapshot'
         return {**memory_statistics(samples), 'memory_sampling': source}
@@ -376,10 +388,15 @@ class LlamaCppServer:
         self.__enter__()
 
     def post(self, path, payload):
-        if path == '/completion':
+        if path == '/completion' and self.config.get('baseline') != 'judge':
             payload = {**payload, 'cache_prompt': True}
+        elif path == '/completion':
+            payload = {**payload, 'cache_prompt': False}
+        timeout = self.config['server_settings']['RequestTimeoutSeconds']
+        if self.config.get('baseline') == 'judge':
+            timeout = (10, 120)
         try:
-            response = self.session.post(self.base + path, json=payload, timeout=self.config['server_settings']['RequestTimeoutSeconds'])
+            response = self.session.post(self.base + path, json=payload, timeout=timeout)
         except requests.RequestException as error:
             code = self.process.poll() if self.process is not None else None
             log_path = self.out / 'qwen-server.log'
@@ -412,17 +429,19 @@ class LlamaCppServer:
     def remember_rendered_prompt(self, messages, rendered):
         """Keep a bounded cache; selector packing pins its bare and final prompts."""
         key = self._prompt_key(messages)
-        self._rendered_prompts[key] = rendered
-        self._rendered_prompts.move_to_end(key)
-        while len(self._rendered_prompts) > 4:
-            self._rendered_prompts.popitem(last=False)
+        with self._prompt_lock:
+            self._rendered_prompts[key] = rendered
+            self._rendered_prompts.move_to_end(key)
+            while len(self._rendered_prompts) > 4:
+                self._rendered_prompts.popitem(last=False)
 
     def render_prompt(self, messages):
         if self.local_tokenizer is None:
             return self.render_prompt_http(messages)
         key = self._prompt_key(messages)
-        if key in self._rendered_prompts:
-            return self._rendered_prompts[key]
+        with self._prompt_lock:
+            if key in self._rendered_prompts:
+                return self._rendered_prompts[key]
         rendered = self.local_tokenizer.render_prompt(messages)
         self.remember_rendered_prompt(messages, rendered)
         return rendered
@@ -463,6 +482,8 @@ class LlamaCppServer:
         if self.config.get('baseline') == 'no_memory':
             history_tokens = 0
             print(f'  Prompt: {token_count:,} Qwen tokens, question/options only; scoring...', flush=True)
+        elif self.config.get('baseline') == 'judge':
+            history_tokens = 1
         else:
             _, bare_count = self.render_prompt([messages[0], messages[-1]])
             history_tokens = token_count - bare_count
@@ -510,7 +531,8 @@ class LlamaCppServer:
         conditional = {label: value - normalizer for label, value in logprobs.items()}
         finished = time.perf_counter()
         ranking_seconds = selection_seconds
-        memory = self.question_memory(started - ranking_seconds, finished)
+        measurement = {'snapshot': False} if self.config.get('baseline') == 'judge' else {}
+        memory = self.question_memory(started - ranking_seconds, finished, **measurement)
         return {'predicted_label': max(logprobs, key=logprobs.get), 'label_raw_logprobs': logprobs, 'label_conditional_logprobs': conditional, 'prompt_tokens': token_count, 'memory_tokens': history_tokens, 'history_input_tokens': history_tokens, 'inference_seconds': inference_seconds, 'elapsed_seconds': finished - started + ranking_seconds, **memory, 'logprob_attempts': attempts, 'server_restarts': int(restarted), 'top_logprobs_requested': n_probs, 'timings': response.get('timings', {}), 'prefill_chunks': response.get('prefill_chunks'), 'prompt_sha256': hashlib.sha256(prompt.encode()).hexdigest()}
 
     def close(self):

@@ -1,9 +1,13 @@
-"""Select 40 distinct non-reference messages per V2 training question for Qwen.
+"""Select 20 distinct non-reference messages per V2 training question for Qwen.
 
 python scripts/select_label_candidates.py --features data/ranker55/v2/train/features.npz
-Loads models/ranker55.txt; never trains a model or calls Qwen. The CLI defaults to
+Loads models/subtlex_mix/alpha_0.5/ranker55.txt; never trains a model or calls Qwen. The CLI defaults to
 all cached queries; --limit-questions 100 selects a deterministic pilot.
 References retain label 2. Selected and unselected non-references remain unjudged.
+
+Each question gets 12 ranker, 3 weighted BM25, 3 dense chunk and 2 random messages. The lexical and
+dense picks find evidence the ranker misses; the random picks give ordinary negatives for ranking the
+full history.
 
 The NPZ must contain X, feature_names, offsets, question_ids (one per group), and
 message_ids (one per X row), computed over each question's COMPLETE visible pool
@@ -23,11 +27,12 @@ import numpy as np
 from label_reference_messages import REFERENCE_LABEL, label_question, load_references
 from message_dataset import SPLIT_ROOT, load_message_dataset
 from raw_datasets import ROOT, read_rows, sha256
+from feature_contract import bundle_recipe, bundle_embedding_root, check_model_recipe, validate_recipe
 
 # One authoritative feature schema; no copied model weights or training code.
 import ranker55 as _recipe
 FEATURE_NAMES = _recipe.FEATURE_NAMES
-ALLOCATION = {'ranker': 20, 'qweight_bm25': 5, 'dense_chunk': 5, 'neighbor': 5, 'random': 5}
+ALLOCATION = {'ranker': 12, 'qweight_bm25': 3, 'dense_chunk': 3, 'random': 2}
 BUDGET = sum(ALLOCATION.values())
 
 
@@ -58,6 +63,7 @@ def load_features(path, questions, sources=None, *, dataset='v2', split='train',
             raise ValueError('Evaluation features require builder metadata_json and source hashes')
         if 'metadata_json' in data.files:
             metadata = json.loads(str(data['metadata_json'].item()))
+            validate_recipe(metadata.get('feature_recipe'))
             if require_metadata and metadata.get('memory_unit') != 'single_message':
                 raise ValueError('Evaluation features must use the single_message retrieval unit')
             if metadata.get('dataset') != dataset or metadata.get('split') != split:
@@ -65,6 +71,8 @@ def load_features(path, questions, sources=None, *, dataset='v2', split='train',
             recorded = metadata.get('source_sha256', {})
             if sources is not None and any(recorded.get(name) != digest for name, digest in sources.items()):
                 raise ValueError('Feature source hashes differ from the active raw data/splits; rebuild features')
+        else:
+            raise ValueError('Features require SUBTLEX recipe metadata; rebuild older artifacts')
     names = string_vector(names, 'feature_names')
     if names not in (FEATURE_NAMES, FEATURE_NAMES[:-1]):
         raise ValueError('feature_names must match the ordered 55- or 54-feature recipe')
@@ -100,7 +108,7 @@ class SavedModels:
     Paths are relative to the manifest. Hashes bind training declarations to files.
     A single model has unknown training overlap; never call its scores OOF.
     """
-    def __init__(self, model_path, fold_manifest, feature_names):
+    def __init__(self, model_path, fold_manifest, feature_names, *, feature_recipe=None):
         import lightgbm as lgb
         self.models, self.routes, self.records = {}, {}, []
         self.mode = 'single_model_training_overlap_unknown'
@@ -121,6 +129,11 @@ class SavedModels:
             path = path.resolve()
             digest = sha256(path)
             record = {'path': str(path), 'sha256': digest}
+            contract = feature_recipe
+            sidecar = check_model_recipe(path, contract)
+            record['feature_recipe'] = contract
+            if sidecar is not None:
+                self.input_paths.append(sidecar)
             if fold_manifest is not None:
                 train, held = entry.get('training_persona_ids'), entry.get('held_out_persona_ids')
                 if any(not isinstance(v, list) or not v or
@@ -221,7 +234,7 @@ def diverse_pick(order, count, selected, similarity, weight):
 
 def select_question(question, messages, reference_ids, ranker, weighted_bm25, dense,
                     *, seed=271, embeddings=None, diversity_weight=0):
-    """Allocate exactly 20/5/5/5/5, scoring all messages before reference exclusion."""
+    """Allocate exactly 12/3/3/2, scoring all messages before reference exclusion."""
     n = len(messages)
     ids = [m['message_id'] for m in messages]
     indices = [m['message_index'] for m in messages]
@@ -233,7 +246,7 @@ def select_question(question, messages, reference_ids, ranker, weighted_bm25, de
         raise ValueError('References must be a nonempty subset of visible messages')
     eligible = {i for i, mid in enumerate(ids) if mid not in reference_ids}
     if len(eligible) < BUDGET:
-        raise ValueError(f"{question['example_id']}: needs 40 non-reference messages; only {len(eligible)} available")
+        raise ValueError(f"{question['example_id']}: needs {BUDGET} non-reference messages; only {len(eligible)} available")
     scores = [np.asarray(values, dtype=float) for values in (ranker, weighted_bm25, dense)]
     if any(s.shape != (n,) or not np.isfinite(s).all() for s in scores):
         raise ValueError('Scores must cover every visible message with finite values')
@@ -250,49 +263,24 @@ def select_question(question, messages, reference_ids, ranker, weighted_bm25, de
     ranks = [{i: rank for rank, i in enumerate(order, 1)} for order in orders]
     selected, records = set(), []
 
-    def add(rows, bucket, actual_source=None, neighbor_info=None):
+    def add(rows, bucket):
         for i in rows:
             m = messages[i]
             row = {key: m[key] for key in ('message_id', 'message_index', 'role', 'text')}
             row.update(label=None, status='pending_qwen', allocation=bucket,
-                       source=actual_source or bucket, selection_order=len(records) + 1,
+                       source=bucket, selection_order=len(records) + 1,
                        ranker_score=float(scores[0][i]), ranker_rank=ranks[0][i],
                        qweight_bm25=float(scores[1][i]), qweight_bm25_rank=ranks[1][i],
                        dense_chunk_max=float(scores[2][i]), dense_chunk_rank=ranks[2][i])
-            if neighbor_info is not None:
-                distance, anchor = neighbor_info[i]
-                row.update(neighbor_distance=distance, anchor_message_id=ids[anchor])
             records.append(row)
             selected.add(i)
 
-    add([i for i in orders[0] if i in eligible][:20], 'ranker')
+    add([i for i in orders[0] if i in eligible][:ALLOCATION['ranker']], 'ranker')
     for bucket, order in (('qweight_bm25', orders[1]), ('dense_chunk', orders[2])):
-        add(diverse_pick([i for i in order if i in eligible], 5, selected, similarity, diversity_weight), bucket)
-
-    # Only non-reference selected messages are anchors; gold references do not
-    # steer neighbor selection. Require real consecutive source indices, including
-    # the intervening message for +/-2, rather than bridging system/empty turns.
-    by_index = {index: i for i, index in enumerate(indices)}
-    neighbor_info = {}
-    for anchor in sorted(selected, key=ranks[0].get):
-        for delta in (-1, 1, -2, 2):
-            index = indices[anchor] + delta
-            i = by_index.get(index)
-            step = 1 if delta > 0 else -1
-            if (i not in eligible or i in selected
-                    or any(pos not in by_index for pos in range(indices[anchor] + step, index + step, step))):
-                continue
-            old = neighbor_info.get(i)
-            if old is None or (abs(delta), ranks[0][anchor]) < (old[0], ranks[0][old[1]]):
-                neighbor_info[i] = (abs(delta), anchor)
-    neighbors = sorted(neighbor_info, key=lambda i: (neighbor_info[i][0], ranks[0][i], indices[i]))
-    chosen = diverse_pick(neighbors, 5, selected, similarity, diversity_weight)
-    add(chosen, 'neighbor', neighbor_info=neighbor_info)
-    if len(chosen) < 5:
-        add([i for i in orders[0] if i in eligible - selected][:5 - len(chosen)],
-            'neighbor', actual_source='ranker_refill')
+        add(diverse_pick([i for i in order if i in eligible], ALLOCATION[bucket], selected, similarity,
+                         diversity_weight), bucket)
     remaining = sorted(eligible - selected)
-    add(random.Random(stable_seed(seed, question['example_id'])).sample(remaining, 5), 'random')
+    add(random.Random(stable_seed(seed, question['example_id'])).sample(remaining, ALLOCATION['random']), 'random')
     if len(selected) != BUDGET or Counter(r['allocation'] for r in records) != ALLOCATION:
         raise AssertionError('Candidate allocation failed')
     return records
@@ -308,7 +296,7 @@ def run(features, *, model=None, fold_manifest=None, root=ROOT, split_root=None,
     if not math.isfinite(diversity_weight) or not 0 <= diversity_weight <= 1:
         raise ValueError('diversity_weight must be between 0 and 1')
     if diversity_weight and embedding_root is None:
-        embedding_root = Path(features).resolve().parent / 'embeddings'
+        embedding_root = bundle_embedding_root(features)
         if not (embedding_root / 'memory_embedding_metadata.json').is_file():
             raise ValueError('Provide --embedding-root when enabling diversity, or build the feature bundle first')
     if model is not None and fold_manifest is not None:
@@ -331,7 +319,8 @@ def run(features, *, model=None, fold_manifest=None, root=ROOT, split_root=None,
     references = load_references([by_id[qid] for qid in chosen], sources, root)
     timings['reference_load'] = time.perf_counter() - stage
     stage = time.perf_counter()
-    models = SavedModels(model or root / 'models/ranker55.txt', fold_manifest, names)
+    models = SavedModels(model or root / 'models/subtlex_mix/alpha_0.5/ranker55.txt', fold_manifest, names,
+                         feature_recipe=bundle_recipe(features))
     timings['model_load'] = time.perf_counter() - stage
     stage = time.perf_counter()
     embeddings = MessageEmbeddings(embedding_root) if diversity_weight else None
@@ -394,7 +383,6 @@ def run(features, *, model=None, fold_manifest=None, root=ROOT, split_root=None,
                   'diversity_cache': embeddings.provenance if embeddings is not None else None,
                   'labels': {'reference': 2, 'pending_qwen': None, 'unselected': None},
                   'ties': 'descending score, then ascending original message index',
-                  'neighbor_fallback': 'fill shortages from remaining ranker order; source=ranker_refill',
                   'files_sha256': {'train.jsonl': sha256(temporary)}}
         timings['total_before_report_publish'] = time.perf_counter() - started
         report['runtime_seconds'] = timings
@@ -411,7 +399,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--features', type=Path, required=True, help='Complete-pool NPZ with aligned question/message IDs')
     source = parser.add_mutually_exclusive_group()
-    source.add_argument('--model', type=Path, help='Saved LightGBM text model (default: models/ranker55.txt)')
+    source.add_argument('--model', type=Path, help='Saved LightGBM text model (default: models/subtlex_mix/alpha_0.5/ranker55.txt)')
     source.add_argument('--fold-manifest', type=Path, help='Saved persona-held-out models with hashes and training/held persona IDs')
     parser.add_argument('--split-root', type=Path, default=SPLIT_ROOT)
     parser.add_argument('--output-root', type=Path, default=ROOT / 'data/label_candidates/v2')

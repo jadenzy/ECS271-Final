@@ -13,6 +13,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 import select_label_candidates as candidates
+from feature_contract import save_model_recipe
+from subtlex_fixture import recipe as test_recipe
 from message_dataset import load_message_dataset
 from raw_datasets import read_rows, sha256
 from test_message_retrieval import write_fixture
@@ -35,48 +37,38 @@ class SelectionTests(unittest.TestCase):
     def test_exact_allocations_exclude_references_and_preserve_unknown_labels(self):
         fixture = selection_fixture()
         rows = self.select(fixture)
-        self.assertEqual(len(rows), 40)
-        self.assertEqual(len({r['message_id'] for r in rows}), 40)
+        self.assertEqual(candidates.ALLOCATION, {'ranker': 12, 'qweight_bm25': 3, 'dense_chunk': 3, 'random': 2})
+        self.assertEqual(len(rows), candidates.BUDGET)
+        self.assertEqual(len({r['message_id'] for r in rows}), candidates.BUDGET)
         self.assertFalse({r['message_id'] for r in rows} & fixture[2])
         self.assertEqual(Counter(r['allocation'] for r in rows), candidates.ALLOCATION)
+        self.assertEqual([r['source'] for r in rows], [r['allocation'] for r in rows])
         self.assertTrue(all(r['label'] is None and r['status'] == 'pending_qwen' for r in rows))
-        self.assertEqual([r['selection_order'] for r in rows], list(range(1, 41)))
+        self.assertEqual([r['selection_order'] for r in rows], list(range(1, candidates.BUDGET + 1)))
         self.assertTrue(all(r['text'] == fixture[1][int(r['message_id'][1:])]['text'] for r in rows))
 
     def test_channel_refill_walks_remaining_rankings_and_ties_follow_source_order(self):
         q, messages, refs, _ = selection_fixture()
         rows = self.select((q, messages, refs, [np.zeros(len(messages))] * 3))
-        self.assertEqual([r['message_id'] for r in rows[:20]], [f'm{i}' for i in range(3, 23)])
-        self.assertEqual([r['message_id'] for r in rows[20:25]], [f'm{i}' for i in range(23, 28)])
-        self.assertEqual([r['message_id'] for r in rows[25:30]], [f'm{i}' for i in range(28, 33)])
+        self.assertEqual([r['message_id'] for r in rows[:12]], [f'm{i}' for i in range(3, 15)])
+        self.assertEqual([r['message_id'] for r in rows[12:15]], [f'm{i}' for i in range(15, 18)])
+        self.assertEqual([r['message_id'] for r in rows[15:18]], [f'm{i}' for i in range(18, 21)])
         self.assertEqual(rows[0]['ranker_rank'], 4)  # rank computed before gold exclusion
-
-    def test_actual_neighbors_use_source_indices_and_fallback_is_explicit(self):
-        rows = self.select(selection_fixture(gap=3))
-        self.assertEqual([r['source'] for r in rows if r['allocation'] == 'neighbor'], ['ranker_refill'] * 5)
-        q, messages, refs, scores = selection_fixture()
-        rows = self.select((q, messages, refs, scores))
-        lookup = {m['message_id']: m['message_index'] for m in messages}
-        anchors = {r['message_id'] for r in rows[:30]}
-        for r in rows:
-            if r['source'] == 'neighbor':
-                self.assertIn(r['anchor_message_id'], anchors)
-                self.assertNotIn(r['anchor_message_id'], refs)
-                self.assertEqual(abs(r['message_index'] - lookup[r['anchor_message_id']]), r['neighbor_distance'])
-                self.assertIn(r['neighbor_distance'], (1, 2))
 
     def test_random_selection_is_repeatable_seeded_and_outside_prior_allocations(self):
         fixture = selection_fixture()
+        ranked = candidates.BUDGET - candidates.ALLOCATION['random']
         first, second = self.select(fixture, seed=271), self.select(fixture, seed=272)
         self.assertEqual(first, self.select(fixture, seed=271))
-        self.assertEqual(first[:35], second[:35])
-        self.assertNotEqual(first[35:], second[35:])
-        self.assertFalse({r['message_id'] for r in first[:35]} & {r['message_id'] for r in first[35:]})
+        self.assertEqual(first[:ranked], second[:ranked])
+        self.assertNotEqual(first[ranked:], second[ranked:])
+        self.assertFalse({r['message_id'] for r in first[:ranked]} & {r['message_id'] for r in first[ranked:]})
 
-    def test_exactly_40_eligible_works_and_shortage_raises(self):
-        self.assertEqual(len(self.select(selection_fixture(n=43))), 40)
-        with self.assertRaisesRegex(ValueError, 'only 39 available'):
-            self.select(selection_fixture(n=42))
+    def test_exactly_budget_eligible_works_and_shortage_raises(self):
+        # The fixture has three references, so n = budget + 3 leaves exactly the budget eligible.
+        self.assertEqual(len(self.select(selection_fixture(n=candidates.BUDGET + 3))), candidates.BUDGET)
+        with self.assertRaisesRegex(ValueError, f'only {candidates.BUDGET - 1} available'):
+            self.select(selection_fixture(n=candidates.BUDGET + 2))
 
     def test_missing_references_truncated_pool_and_nonfinite_scores_are_rejected(self):
         q, messages, refs, scores = selection_fixture()
@@ -99,7 +91,7 @@ class SelectionTests(unittest.TestCase):
         all_identical = np.zeros((43, 768), dtype=np.float32)
         all_identical[:, 0] = 1
         rows = self.select(fixture, embeddings=all_identical, diversity_weight=.1)
-        self.assertEqual(len(rows), 40)
+        self.assertEqual(len(rows), candidates.BUDGET)
         self.assertEqual(Counter(r['allocation'] for r in rows), candidates.ALLOCATION)
 
 
@@ -137,17 +129,19 @@ class SavedSelectionTests(unittest.TestCase):
             writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
             writer.writeheader()
             writer.writerows(rows)
-        self.questions, self.memories, _ = load_message_dataset('v2', ['train'], root=self.root)
+        self.questions, self.memories, sources = load_message_dataset('v2', ['train'], root=self.root)
         self.feature_path = self.root / 'features.npz'
         n = len(self.questions[0]['memory_ids'])
         self.arrays = dict(X=np.random.default_rng(7).normal(size=(n, 55)).astype(np.float32),
                            offsets=np.array([0, n]), feature_names=np.array(candidates.FEATURE_NAMES),
                            question_ids=np.array([self.questions[0]['example_id']]),
-                           message_ids=np.array(self.questions[0]['memory_ids']))
+                           message_ids=np.array(self.questions[0]['memory_ids']),
+                           metadata_json=np.array(json.dumps({'dataset':'v2','split':'train','source_sha256':sources,'feature_recipe':test_recipe()})))
         np.savez(self.feature_path, **self.arrays)
-        self.model_path = self.root / 'models/ranker55.txt'
-        self.model_path.parent.mkdir()
+        self.model_path = self.root / 'models/subtlex_mix/alpha_0.5/ranker55.txt'
+        self.model_path.parent.mkdir(parents=True)
         self.model_path.write_text(self.model_texts[55], encoding='utf-8')
+        save_model_recipe(self.model_path, test_recipe())
 
     def run_selector(self, **kwargs):
         with contextlib.redirect_stdout(io.StringIO()):
@@ -159,8 +153,10 @@ class SavedSelectionTests(unittest.TestCase):
         report = self.run_selector()
         output = self.root / 'data/label_candidates/v2'
         row = read_rows(output / 'train.jsonl')[0]
-        self.assertEqual(report['counts']['candidates'], 40)
+        self.assertEqual(report['counts']['candidates'], candidates.BUDGET)
         self.assertEqual(report['counts']['references'], 2)
+        self.assertEqual(report['allocation'], candidates.ALLOCATION)
+        self.assertEqual(row['new_label_budget'], candidates.BUDGET)
         self.assertEqual(report['selection_provenance'], 'single_model_training_overlap_unknown')
         self.assertFalse(report['training'])
         self.assertFalse(report['qwen_called'])
@@ -184,6 +180,7 @@ class SavedSelectionTests(unittest.TestCase):
         self.assertEqual(sha256(self.feature_path), feature_hash)
         preserved = {p: sha256(p) for p in output.iterdir()}
         self.model_path.write_text(self.model_texts[54], encoding='utf-8')
+        save_model_recipe(self.model_path, test_recipe())
         self.arrays['X'][0, 0] = np.nan
         np.savez(self.feature_path, **self.arrays)
         with self.assertRaisesRegex(ValueError, 'nonfinite'):
@@ -194,6 +191,7 @@ class SavedSelectionTests(unittest.TestCase):
 
     def test_54_feature_saved_model_accepts_the_matching_prefix_of_a_55_feature_cache(self):
         self.model_path.write_text(self.model_texts[54], encoding='utf-8')
+        save_model_recipe(self.model_path, test_recipe())
         self.assertEqual(self.run_selector()['models'][0]['feature_count'], 54)
         np.savez(self.feature_path, **{**self.arrays, 'X': self.arrays['X'][:, :54],
                                       'feature_names': np.array(candidates.FEATURE_NAMES[:54])})
@@ -214,11 +212,13 @@ class SavedSelectionTests(unittest.TestCase):
         arrays = {**self.arrays, 'X': np.tile(self.arrays['X'], (3, 1)), 'offsets': np.arange(4) * n,
                   'question_ids': np.array(qids), 'message_ids': np.tile(self.arrays['message_ids'], 3),
                   'y': np.full(3 * n, -99)}  # cache labels never drive selection
+        _, _, sources = load_message_dataset('v2', ['train'], root=self.root)
+        arrays['metadata_json'] = np.array(json.dumps({'dataset':'v2','split':'train','source_sha256':sources,'feature_recipe':test_recipe()}))
         np.savez(self.feature_path, **arrays)
         output = self.root / 'data/label_candidates/v2/train.jsonl'
         self.run_selector(limit_questions=1)
         pilot = read_rows(output)[0]
-        self.assertEqual(self.run_selector(limit_questions=0)['counts']['candidates'], 120)
+        self.assertEqual(self.run_selector(limit_questions=0)['counts']['candidates'], 3 * candidates.BUDGET)
         all_rows = read_rows(output)
         self.assertEqual(pilot, next(row for row in all_rows if row['example_id'] == pilot['example_id']))
         digest = sha256(output)
@@ -239,7 +239,8 @@ class SavedSelectionTests(unittest.TestCase):
         vectors /= np.linalg.norm(vectors, axis=1, keepdims=True)
         np.save(cache_root / 'memory_embeddings.npy', vectors)
         np.save(cache_root / 'memory_done.npy', np.ones(len(members), dtype=np.bool_))
-        self.assertEqual(self.run_selector(embedding_root=cache_root, diversity_weight=.1)['counts']['candidates'], 40)
+        self.assertEqual(self.run_selector(embedding_root=cache_root, diversity_weight=.1)['counts']['candidates'],
+                         candidates.BUDGET)
         cache = candidates.MessageEmbeddings(cache_root)
         self.addCleanup(cache.vectors._mmap.close)
         self.addCleanup(cache.done._mmap.close)
@@ -266,7 +267,7 @@ class SavedSelectionTests(unittest.TestCase):
 
     def test_saved_fold_models_require_disjoint_personas_and_matching_hashes(self):
         manifest = self.root / 'models/folds.json'
-        entry = {'path': 'ranker55.txt', 'sha256': sha256(self.model_path),
+        entry = {'path': 'subtlex_mix/alpha_0.5/ranker55.txt', 'sha256': sha256(self.model_path),
                  'training_persona_ids': ['v2:99'], 'held_out_persona_ids': ['v2:7']}
         manifest.write_text(json.dumps({'models': [entry]}), encoding='utf-8')
         report = self.run_selector(fold_manifest=manifest)
@@ -282,6 +283,7 @@ class SavedSelectionTests(unittest.TestCase):
     def test_wrong_saved_feature_schema_and_unsafe_output_are_rejected(self):
         # Keep header byte lengths intact: LightGBM's text loader uses offsets.
         self.model_path.write_text(self.model_texts[55].replace('feature_names=cosine ', 'feature_names=wrongx '), encoding='utf-8')
+        save_model_recipe(self.model_path, test_recipe())
         with self.assertRaisesRegex(ValueError, 'feature names/order'):
             self.run_selector()
         with self.assertRaisesRegex(ValueError, 'Outputs must stay'):

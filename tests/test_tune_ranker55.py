@@ -12,6 +12,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 import ranker55
+from subtlex_fixture import recipe as test_recipe
 import tune_ranker55 as tuning
 from label_reference_messages import label_question, load_references
 from message_dataset import load_message_dataset
@@ -53,7 +54,7 @@ class TuningTests(unittest.TestCase):
                       offsets=np.array([0,n]),feature_names=np.array(ranker55.FEATURE_NAMES),
                       question_ids=np.array([qs[0]['example_id']]),persona_ids=np.array([qs[0]['persona_id']]),
                       message_ids=np.array(qs[0]['memory_ids']),
-                      metadata_json=np.array(json.dumps(dict(dataset='v2',split=split,memory_unit='single_message',
+                      metadata_json=np.array(json.dumps(dict(dataset='v2',split=split,memory_unit='single_message',feature_recipe=test_recipe(),
                                                             statistics_fingerprint='frozen-training-stats',source_sha256=sources))))
             if split=='val':
                 data['y']=np.full(n,-1,dtype=np.int8)  # deliberately not usable as training labels
@@ -118,13 +119,23 @@ class TuningTests(unittest.TestCase):
         metadata=json.loads(str(data['metadata_json'].item()))
         data['metadata_json']=np.array(json.dumps({**metadata,'statistics_fingerprint':'wrong'}))
         np.savez(self.paths['val'],**data)
-        with self.assertRaisesRegex(ValueError,'frozen training corpus'):
+        with self.assertRaisesRegex(ValueError,'SUBTLEX recipe manifests'):
             self.run_tiny()
         data['metadata_json']=np.array(json.dumps(metadata))
         data['persona_ids']=self.arrays['train']['persona_ids']
         np.savez(self.paths['val'],**data)
         with self.assertRaisesRegex(ValueError,'personas overlap'):
             self.run_tiny()
+
+    def test_tuner_accepts_three_relevance_grades_with_linear_gains(self):
+        data = dict(self.arrays['train'])
+        data['y'] = data['y'] * 2
+        data['y'][np.flatnonzero(data['y'] == 0)[0]] = 1
+        np.savez(self.paths['train'], **data)
+        report = self.run_tiny()
+        self.assertEqual(report['baseline_parameters']['label_gain'], [0, 1, 2])
+        self.assertEqual(report['training_grade_counts']['1'], 1)
+        self.assertGreater(report['training_grade_counts']['2'], 0)
 
 
 if __name__=='__main__':

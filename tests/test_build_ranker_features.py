@@ -19,6 +19,7 @@ import select_label_candidates as candidates
 from raw_datasets import read_rows, sha256
 from test_embeddinggemma2 import FakeEncoder
 from test_message_retrieval import write_fixture
+from test_subtlex_mixture import prior_fixture
 
 
 class DistinctEncoder(FakeEncoder):
@@ -33,51 +34,14 @@ class DistinctEncoder(FakeEncoder):
 
 
 class StatisticsTests(unittest.TestCase):
-    def test_statistics_auto_detection_precedence_overrides_and_fresh_fitting(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            shared = root / 'data/ranker55/statistics.json'
-            bundled = root / 'data/ranker55/v2/train/statistics.json'
-            custom = root / 'data/ranker55/custom/statistics.json'
-            self.assertIsNone(builder.resolve_statistics(root=root))
-            bundled.parent.mkdir(parents=True)
-            bundled.write_text('{}')
-            self.assertEqual(builder.resolve_statistics(root=root), bundled)
-            shared.write_text('{}')
-            self.assertEqual(builder.resolve_statistics(root=root), shared)
-            custom.parent.mkdir()
-            self.assertEqual(builder.resolve_statistics(root=root, output_root=custom.parent), shared)
-            custom.write_text('{}')
-            self.assertEqual(builder.resolve_statistics(root=root, output_root=custom.parent), custom)
-            override = root / 'explicit.json'
-            self.assertEqual(builder.resolve_statistics(root=root, statistics=override), override)
-            self.assertIsNone(builder.resolve_statistics(root=root, fit_question_ids=root / 'fold.json'))
-            self.assertIsNone(builder.resolve_statistics(root=root, refit_statistics=True))
-            with self.assertRaises(ValueError):
-                builder.resolve_statistics(root=root, statistics=shared, refit_statistics=True)
-
-    def test_df_counts_unique_source_occurrences_and_qdf_counts_question_presence(self):
-        qs = [{'example_id': 'v2:train:0', 'dataset': 'v2', 'split': 'train', 'persona_id': 'v2:1',
-               'memory_ids': ['a', 'b'], 'question': 'tea tea ideas'},
-              {'example_id': 'v2:train:1', 'dataset': 'v2', 'split': 'train', 'persona_id': 'v2:1',
-               'memory_ids': ['a', 'b'], 'question': 'tea coffee'}]
-        memories = {'a': {'text': 'tea tea'}, 'b': {'text': 'tea'}}
-        stats = builder.fit_statistics(qs, memories, {})
-        self.assertEqual(stats['n'], 2)  # not four question-message pairs, not one text
-        self.assertEqual(stats['df'], {'tea': 2})
-        self.assertEqual(stats['qdf'], {'coffee': 1, 'ideas': 1, 'tea': 2})
-        self.assertEqual(stats['nq'], 2)
-        with self.assertRaisesRegex(ValueError, 'active V2 training'):
-            builder.fit_statistics([{**qs[0], 'split': 'val'}], memories, {})
-
-    def test_retained_bm25_and_question_weight_formula(self):
-        stats = {'n': 2, 'df': {'tea': 1}, 'nq': 10, 'qdf': {'tea': 10}}
-        index = builder.recipe._Index([['tea', 'tea'], ['coffee']], stats)
+    def test_bm25_requires_explicit_mixture_weights(self):
+        index = builder.recipe._Index([['tea', 'tea'], ['coffee']], {'n': 2, 'df': {'tea': 1}})
         expected = np.log(2) * 2 * 3 / (2 + 2)
         self.assertAlmostEqual(index.score(['tea'], k1=2)[0], expected)
-        self.assertAlmostEqual(index.score(['tea'], k1=2, weighted=True)[0], .1 * expected)
+        self.assertAlmostEqual(index.score(['tea'], k1=2, weighted=True, term_weights={'tea': .2})[0], .2 * expected)
+        with self.assertRaisesRegex(ValueError, 'requires SUBTLEX'):
+            index.score(['tea'], weighted=True)
         np.testing.assert_array_equal(index.score(['missing']), [0, 0])
-        self.assertEqual(builder.recipe.tokenize('CAFÉ ＴＥＡ, 中文!'), ['café', 'tea', '中文'])
 
 
 class BundleTests(unittest.TestCase):
@@ -88,7 +52,9 @@ class BundleTests(unittest.TestCase):
         write_fixture(self.root)
         self.encoder = DistinctEncoder()
         self.info = {k: builder.recipe.EMBEDDING_RECIPE[k] for k in ('repo', 'revision')}
-        self.bundle = self.root / 'data/ranker55/v2/train'
+        self.prior, self.manifest = prior_fixture(self.root)
+        self.output = self.root / 'data/ranker55'
+        self.bundle = self.output / 'v2/train'
         self.long_text = ' '.join(f'Term{i},' for i in range(70)) + ' Original ending!'
         history_path = self.root / 'data/raw/personamem_v2/data/chat_history_32k/linked_history.json'
         history = json.loads(history_path.read_text())
@@ -113,12 +79,31 @@ class BundleTests(unittest.TestCase):
 
     def build(self, **kwargs):
         with contextlib.redirect_stdout(io.StringIO()):
-            return builder.run(root=self.root, encoder=self.encoder, model_info=self.info, **kwargs)
+            return builder.run(root=self.root, encoder=self.encoder, model_info=self.info, subtlex_prior=self.prior, subtlex_manifest=self.manifest, **kwargs)
+
+    def test_four_workers_match_serial_features_labels_and_score_order(self):
+        self.build()
+        with np.load(self.bundle / 'features.npz', allow_pickle=False) as data:
+            expected = {name: data[name].copy() for name in data.files}
+        paths = ['bm25/scores/train.jsonl', 'cosine/scores/train.jsonl',
+                 'reference_labels/train.jsonl']
+        scores = {name: (self.bundle / name).read_bytes() for name in paths}
+        calls = len(self.encoder.calls)
+        self.build(feature_workers=4)
+        self.assertEqual(len(self.encoder.calls), calls)  # completed embeddings are reused
+        with np.load(self.bundle / 'features.npz', allow_pickle=False) as data:
+            for name, value in expected.items():
+                np.testing.assert_array_equal(data[name], value, err_msg=name)
+        for name in paths:
+            self.assertEqual((self.bundle / name).read_bytes(), scores[name])
 
     def test_full_export_matches_recipe_and_keeps_reference_targets_separate(self):
         before = {p: sha256(p) for p in (self.root / 'data/raw').rglob('*') if p.is_file()}
         report = self.build()['v2/train']
-        fitted, tasks = builder.prepare_inputs(root=self.root)
+        tasks = builder.prepare_inputs(root=self.root)
+        counts, total, lock = builder.subtlex.load_prior(self.prior, self.manifest)
+        mixture = builder.subtlex.Mixture(counts, total, builder.subtlex.configuration(.5, lock))
+        fitted = {'schema_version': 2, 'feature_recipe': mixture.config}
         _, _, qs, memories, _, _ = tasks[0]
         with np.load(self.bundle / 'features.npz', allow_pickle=False) as data:
             self.assertEqual(data['X'].shape, (sum(len(q['memory_ids']) for q in qs), 55))
@@ -132,7 +117,7 @@ class BundleTests(unittest.TestCase):
             for i, q in enumerate(qs):
                 members = [memories[mid] for mid in q['memory_ids']]
                 bare = self.encoder.lengths([m['text'] for m in members], 'content')
-                expected = builder.recipe.feature_matrix(q['question'], members, bare, fitted, self.encoder.encode)
+                expected = builder.recipe.feature_matrix(q['question'], members, bare, (mixture.history(q, members), .5), self.encoder.encode)
                 start, end = data['offsets'][i:i + 2]
                 np.testing.assert_allclose(data['X'][start:end], expected, rtol=0, atol=2e-6)
                 np.testing.assert_array_equal(data['content_token_lengths'][start:end], bare)
@@ -161,47 +146,28 @@ class BundleTests(unittest.TestCase):
         self.assertEqual(list(self.bundle.rglob('*.tmp')), [])
         self.assertFalse((self.bundle / '.features_work.npy').exists())
 
-    def test_existing_statistics_are_reused_without_rewriting_and_refit_is_explicit(self):
-        self.build()
-        shared = self.root / 'data/ranker55/statistics.json'
-        before = shared.read_bytes(), shared.stat().st_mtime_ns
-        with patch.object(builder, 'fit_statistics', side_effect=AssertionError('Unexpected refit')):
-            self.build()
-        self.assertEqual((shared.read_bytes(), shared.stat().st_mtime_ns), before)
-        with patch.object(builder, 'fit_statistics', wraps=builder.fit_statistics) as fit:
-            self.build(refit_statistics=True)
-        fit.assert_called_once()
-
-    def test_missing_or_invalid_explicit_statistics_do_not_fall_back(self):
-        self.build()
-        explicit = self.root / 'explicit.json'
-        with self.assertRaises(FileNotFoundError):
-            builder.prepare_inputs(root=self.root, statistics=explicit)
-        explicit.write_text('{}')
-        with self.assertRaisesRegex(ValueError, 'frozen training-only'):
-            builder.prepare_inputs(root=self.root, statistics=explicit)
-
-    def test_question_limit_does_not_shrink_fitted_statistics_and_fold_ids_do(self):
+    def test_manifest_is_independent_of_selected_questions(self):
         self.build(limit_questions=1)
-        stats = json.loads((self.root / 'data/ranker55/statistics.json').read_text())
-        self.assertEqual(stats['nq'], 2)
+        before = json.loads((self.output / 'statistics.json').read_text())
         with np.load(self.bundle / 'features.npz') as data:
             self.assertEqual(len(data['question_ids']), 1)
-        ids = self.root / 'fit_ids.json'
-        ids.write_text('["v2:train:00001"]')
-        fitted, tasks = builder.prepare_inputs(root=self.root, fit_question_ids=ids, limit_questions=1)
-        self.assertEqual(fitted['nq'], 1)
-        self.assertEqual(fitted['fit_question_ids'], ['v2:train:00001'])
-        self.assertEqual(tasks[0][2][0]['example_id'], 'v2:train:00000')
+        self.build(rebuild_cache=True)
+        self.assertEqual(json.loads((self.output / 'statistics.json').read_text()), before)
+        self.assertFalse({'n', 'df', 'nq', 'qdf'} & before.keys())
+
+    def test_removed_options_are_rejected(self):
+        for flag in ('--lexical-recipe', '--statistics', '--refit-statistics', '--fit-question-ids'):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                builder.parse_args([flag, 'unused'])
 
     def test_frozen_statistics_support_v1_cutoffs_and_empty_chunk_cache(self):
         self.build()
-        frozen = self.root / 'data/ranker55/statistics.json'
+        frozen = self.output / 'statistics.json'
         digest = sha256(frozen)
-        report = self.build(datasets=['v1', 'locomo'], statistics=frozen)
+        report = self.build(datasets=['v1', 'locomo'])
         self.assertEqual(set(report), {'v1/comparison', 'locomo/comparison'})
-        self.assertEqual(sha256(frozen), digest)
-        path = self.root / 'data/ranker55/v1/comparison'
+        self.assertEqual(json.loads(frozen.read_text())['feature_recipe']['name'], 'subtlex_mix_v1')
+        path = self.output / 'v1/comparison'
         with np.load(path / 'features.npz') as data:
             self.assertEqual(np.diff(data['offsets']).tolist(), [1, 2])
             self.assertEqual(data['message_indices'].tolist(), [1, 1, 2])
@@ -211,36 +177,22 @@ class BundleTests(unittest.TestCase):
         self.assertEqual(chunks.shape, (0, 768))
         self.assertFalse((path / 'reference_labels').exists())
 
-    def test_held_out_requires_statistics_and_does_not_change_question_df(self):
-        frozen = self.root / 'data/ranker55/statistics.json'
-        csv_path = self.root / 'data/raw/personamem_v2/benchmark/text/val.csv'
-        with csv_path.open(encoding='utf-8', newline='') as stream:
-            row = next(csv.DictReader(stream))
-        row.update(persona_id='8', user_query=json.dumps({'role': 'user', 'content': 'heldoutonlyterm'}))
-        self.write_csv(csv_path, [row])
+    def test_held_out_build_needs_no_training_statistics(self):
         (self.root / 'data/splits/v2/val_ids.json').write_text('["v2:val:00000"]')
-        with self.assertRaisesRegex(ValueError, 'No fitted statistics.json found'):
-            self.build(splits=['val'])
-        self.build()
         self.build(splits=['val'])
-        stats = json.loads((self.root / 'data/ranker55/v2/val/statistics.json').read_text())
-        self.assertNotIn('heldoutonlyterm', stats['qdf'])
-        self.assertEqual(stats, json.loads(frozen.read_text()))
-        self.build(splits=['val'], statistics=frozen)
-        row['persona_id'] = '7'
-        self.write_csv(csv_path, [row])
-        with self.assertRaisesRegex(ValueError, 'personas overlap'):
-            self.build(splits=['val'], statistics=frozen)
+        stats = json.loads((self.output / 'v2/val/statistics.json').read_text())
+        self.assertEqual(stats['feature_recipe']['name'], 'subtlex_mix_v1')
+        self.assertFalse({'n', 'df', 'nq', 'qdf'} & stats.keys())
 
     def test_npz_trains_existing_ranker_and_feeds_candidate_selector_and_diagnostics(self):
         self.build()
-        model_path = self.root / 'models/ranker55.txt'
+        model_path = self.root / 'models/subtlex_mix/alpha_0.5/ranker55.txt'
         result = builder.recipe.train_from_npz(self.bundle / 'features.npz', model_path)
         self.assertEqual(result['features'], 55)
         with contextlib.redirect_stdout(io.StringIO()):
             report = candidates.run(self.bundle / 'features.npz', root=self.root, diversity_weight=.1)
-            diagnostic = diagnostics.run(root=self.root, make_plot=False)
-        self.assertEqual(report['counts']['candidates'], 80)
+            diagnostic = diagnostics.run(root=self.root, make_plot=False, feature_root=self.bundle)
+        self.assertEqual(report['counts']['candidates'], 2 * candidates.BUDGET)
         self.assertEqual(report['counts']['references'], 2)
         self.assertEqual(diagnostic['questions'], 2)
         self.assertIn('k1=2', diagnostic['bm25_definition'])

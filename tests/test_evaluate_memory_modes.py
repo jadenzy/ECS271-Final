@@ -15,6 +15,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 import evaluate_qwen as evaluation
 import select_label_candidates as candidates
+from feature_contract import save_model_recipe
+from subtlex_fixture import recipe as test_recipe
 from raw_datasets import load_dataset, memories_for_question
 from test_message_retrieval import write_fixture
 
@@ -62,9 +64,10 @@ class MemoryModeTests(unittest.TestCase):
         value = json.loads(path.read_text())
         value['choices'] = ['REFERENCE ANSWER', *[str(i) for i in range(9)]]
         path.write_text(json.dumps(value) + '\n', encoding='utf-8')
-        self.model = self.root / 'models/ranker55.txt'
-        self.model.parent.mkdir()
+        self.model = self.root / 'models/subtlex_mix/alpha_0.5/ranker55.txt'
+        self.model.parent.mkdir(parents=True)
         self.model.write_text(self.model_text, encoding='utf-8')
+        save_model_recipe(self.model, test_recipe())
 
     def save(self, relative, value):
         path = self.root / relative
@@ -98,7 +101,7 @@ class MemoryModeTests(unittest.TestCase):
                   'feature_names': np.array(candidates.FEATURE_NAMES),
                   'offsets': np.array(offsets), 'question_ids': np.array([q['example_id'] for q in questions]),
                   'message_ids': np.array(ids),
-                  'metadata_json': np.array(json.dumps({'dataset': dataset, 'split': split,
+                  'metadata_json': np.array(json.dumps({'dataset': dataset, 'split': split, 'feature_recipe':test_recipe(),
                                                       'memory_unit': 'single_message', 'source_sha256': sources})),
                   # These would fail if the evaluator ever tried to load them.
                   'y': np.array([{'poison': 'do not read labels'}], dtype=object),
@@ -290,6 +293,32 @@ class MemoryModeTests(unittest.TestCase):
         chosen, metrics = evaluation.pack_selector_messages(self.fake_server(), question, config, members, list(range(15)), 2048)
         self.assertEqual(len(chosen), 15)
         self.assertLessEqual(metrics['packed_memory_tokens'], 2048)
+
+    def test_score_cutoff_stops_at_low_scores_only_after_the_token_floor(self):
+        question = self.inputs('v2')[0][0]
+        config = {**evaluation.evaluation_config('v2', 'selector'), 'context_tokens': 32768}
+        members = [{'message_index': i, 'source_message': {'role': 'user', 'content': 'Short.'}} for i in range(6)]
+        scores, ranked, server = np.array([3., 2.5, 1.2, 1., .4, .2]), list(range(6)), self.fake_server()
+        chosen, metrics = evaluation.pack_selector_messages(server, question, config, members, ranked, 2048,
+                                                            scores=scores, score_cutoff=1.5)
+        self.assertEqual((chosen, metrics['score_cutoff_stop']), ([0, 1], True))  # 1.2 is more than 1.5 below 3
+        # Below the floor, lower-scoring messages are still packed; the cutoff applies once it is reached.
+        floor = server.render_prompt(evaluation.build_messages(
+            question, config, evaluation.selected_history(members, [0, 1, 2])))[1] - 100
+        chosen, metrics = evaluation.pack_selector_messages(server, question, config, members, ranked, 2048,
+                                                            scores=scores, score_cutoff=1.5, floor_tokens=floor)
+        self.assertEqual((chosen, metrics['packed_memory_tokens']), ([0, 1, 2], floor))
+        chosen, metrics = evaluation.pack_selector_messages(server, question, config, members, ranked, 2048)
+        self.assertEqual(len(chosen), 6)
+        self.assertNotIn('score_cutoff_stop', metrics)
+        with contextlib.redirect_stderr(io.StringIO()):
+            for argv in (['--mode', 'selector', '--floor-tokens', '10'], ['--mode', 'selector', '--score-cutoff', '1', '--top-k', '5'],
+                         ['--mode', 'selector', '--score-cutoff', '-1'], ['--score-cutoff', '1'],
+                         ['--mode', 'selector', '--score-cutoff', '1', '--floor-tokens', '5000']):
+                with self.subTest(argv=argv), self.assertRaises(SystemExit):
+                    evaluation.parse_args(argv)
+        args = evaluation.parse_args(['--mode', 'selector', '--score-cutoff', '1.5', '--floor-tokens', '1000'])
+        self.assertEqual((args.memory_tokens, args.score_cutoff, args.floor_tokens), (2048, 1.5, 1000))
 
     def test_all_supported_modes_write_correct_reports_and_selector_resume_is_guarded(self):
         for dataset in ('v2', 'v1', 'locomo'):

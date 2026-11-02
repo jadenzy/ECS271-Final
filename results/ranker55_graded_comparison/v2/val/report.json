@@ -1,0 +1,455 @@
+{
+  "experiment": "Graded Qwen-label training on judged rows only, with a references-only control on the same rows",
+  "split": "v2/val (selection only; test not loaded)",
+  "runs": {
+    "graded": {
+      "train_features": "data/ranker55/v2/train_graded/features.npz",
+      "labels": "references 2, Qwen useful 1, Qwen not useful 0",
+      "tuning": "results/ranker55_tuning_graded/v2/val",
+      "model": "models/qwen_graded/ranker55.txt"
+    },
+    "control": {
+      "train_features": "data/ranker55/v2/train_graded_control/features.npz",
+      "labels": "references 1, every other judged row 0",
+      "tuning": "results/ranker55_tuning_graded_control/v2/val",
+      "model": "models/qwen_graded_control/ranker55.txt"
+    }
+  },
+  "rows": {
+    "judged_rows": 427709,
+    "all_rows": 4273942,
+    "rows_per_question": [
+      21,
+      28
+    ]
+  },
+  "reference_model": "models/subtlex_mix/alpha_0.5/ranker55.txt (all rows, references only, 56.00% non-forget type-macro Hit@10)",
+  "metric": "non-forget type-macro Hit@10; paired persona bootstrap (5000 draws) of the change versus the current model",
+  "summary": [
+    {
+      "model": "current model (all rows, references only)",
+      "path": "C:\\Users\\jaden\\ECS271-Final\\models\\subtlex_mix\\alpha_0.5\\ranker55.txt",
+      "hit_at_10": 0.5599940586893397,
+      "ndcg_at_10": 0.3166642446445513,
+      "hit_at_20": 0.6607481328735273,
+      "forget_hit_at_10": 0.9319371727748691,
+      "all_question_hit_at_10": 0.6606786427145709,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.7425149700598802,
+        "ask_to_forget": 0.9319371727748691,
+        "health_and_medical_conditions": 0.6178861788617886,
+        "neutral_preferences": 0.6506024096385542,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.6982758620689655,
+        "therapy_background": 0.6506849315068494
+      }
+    },
+    {
+      "model": "graded: adopted (trial 15)",
+      "path": "C:\\Users\\jaden\\ECS271-Final\\models\\qwen_graded\\ranker55_trials\\trial_15.txt",
+      "hit_at_10": 0.29308373296139106,
+      "ndcg_at_10": 0.1301419372192112,
+      "hit_at_20": 0.38380395213567414,
+      "forget_hit_at_10": 0.6544502617801047,
+      "all_question_hit_at_10": 0.37524950099800397,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.4251497005988024,
+        "ask_to_forget": 0.6544502617801047,
+        "health_and_medical_conditions": 0.4065040650406504,
+        "neutral_preferences": 0.27710843373493976,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.3620689655172414,
+        "therapy_background": 0.2876712328767123
+      },
+      "change": -0.26691032572794865,
+      "bootstrap_95": [
+        -0.30413890163181,
+        -0.2276397900551825
+      ],
+      "rule": "fail"
+    },
+    {
+      "model": "control: adopted (trial 15)",
+      "path": "C:\\Users\\jaden\\ECS271-Final\\models\\qwen_graded_control\\ranker55_trials\\trial_15.txt",
+      "hit_at_10": 0.260764491153861,
+      "ndcg_at_10": 0.11251469993615437,
+      "hit_at_20": 0.3342572609788612,
+      "forget_hit_at_10": 0.5497382198952879,
+      "all_question_hit_at_10": 0.3283433133732535,
+      "by_type_hit_at_10": {
+        "anti_stereotypical_pref": 0.38922155688622756,
+        "ask_to_forget": 0.5497382198952879,
+        "health_and_medical_conditions": 0.34146341463414637,
+        "neutral_preferences": 0.24096385542168675,
+        "sensitive_info": 0.0,
+        "stereotypical_pref": 0.31896551724137934,
+        "therapy_background": 0.273972602739726
+      },
+      "change": -0.2992295675354787,
+      "bootstrap_95": [
+        -0.3385769558992742,
+        -0.2577534734903686
+      ],
+      "rule": "fail"
+    }
+  ],
+  "paired_settings": [
+    {
+      "parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 31,
+        "max_depth": 5,
+        "reg_lambda": 5.0
+      },
+      "graded_hit_at_10": 0.27571718731999134,
+      "control_hit_at_10": 0.24612874013393168,
+      "graded_ndcg_at_10": 0.12180520438980617,
+      "control_ndcg_at_10": 0.10796577095421384
+    },
+    {
+      "parameters": {
+        "min_child_samples": 50,
+        "num_leaves": 15,
+        "max_depth": 4,
+        "reg_lambda": 1.0
+      },
+      "graded_hit_at_10": 0.25098065597817726,
+      "control_hit_at_10": 0.22260073026457397,
+      "graded_ndcg_at_10": 0.11245603043471086,
+      "control_ndcg_at_10": 0.09941560904854457
+    },
+    {
+      "parameters": {
+        "min_child_samples": 50,
+        "num_leaves": 15,
+        "max_depth": 4,
+        "reg_lambda": 5.0
+      },
+      "graded_hit_at_10": 0.26585837607996793,
+      "control_hit_at_10": 0.22780654350391683,
+      "graded_ndcg_at_10": 0.11528049485884612,
+      "control_ndcg_at_10": 0.10198415316823868
+    },
+    {
+      "parameters": {
+        "min_child_samples": 50,
+        "num_leaves": 15,
+        "max_depth": 4,
+        "reg_lambda": 10.0
+      },
+      "graded_hit_at_10": 0.26105760026490116,
+      "control_hit_at_10": 0.22997382812801057,
+      "graded_ndcg_at_10": 0.11675567560539517,
+      "control_ndcg_at_10": 0.10137020862363494
+    },
+    {
+      "parameters": {
+        "min_child_samples": 50,
+        "num_leaves": 31,
+        "max_depth": 5,
+        "reg_lambda": 1.0
+      },
+      "graded_hit_at_10": 0.27119550144042487,
+      "control_hit_at_10": 0.24613319236121445,
+      "graded_ndcg_at_10": 0.12200752110605124,
+      "control_ndcg_at_10": 0.1098987370919124
+    },
+    {
+      "parameters": {
+        "min_child_samples": 50,
+        "num_leaves": 31,
+        "max_depth": 5,
+        "reg_lambda": 5.0
+      },
+      "graded_hit_at_10": 0.27454963513761454,
+      "control_hit_at_10": 0.2421196364763664,
+      "graded_ndcg_at_10": 0.11921334539201268,
+      "control_ndcg_at_10": 0.10771465425243759
+    },
+    {
+      "parameters": {
+        "min_child_samples": 50,
+        "num_leaves": 31,
+        "max_depth": 5,
+        "reg_lambda": 10.0
+      },
+      "graded_hit_at_10": 0.2737218362191132,
+      "control_hit_at_10": 0.2516311737112701,
+      "graded_ndcg_at_10": 0.11936126668344195,
+      "control_ndcg_at_10": 0.10787350917235534
+    },
+    {
+      "parameters": {
+        "min_child_samples": 50,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 1.0
+      },
+      "graded_hit_at_10": 0.28256767384800247,
+      "control_hit_at_10": 0.24084483114033253,
+      "graded_ndcg_at_10": 0.1236357170997121,
+      "control_ndcg_at_10": 0.10725562602145411
+    },
+    {
+      "parameters": {
+        "min_child_samples": 50,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 5.0
+      },
+      "graded_hit_at_10": 0.28506552564626053,
+      "control_hit_at_10": 0.24463969383669867,
+      "graded_ndcg_at_10": 0.1260108325407935,
+      "control_ndcg_at_10": 0.10586839311768086
+    },
+    {
+      "parameters": {
+        "min_child_samples": 50,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 10.0
+      },
+      "graded_hit_at_10": 0.2911433247607151,
+      "control_hit_at_10": 0.25612725145691406,
+      "graded_ndcg_at_10": 0.12288176774634085,
+      "control_ndcg_at_10": 0.11274283196126576
+    },
+    {
+      "parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 15,
+        "max_depth": 4,
+        "reg_lambda": 1.0
+      },
+      "graded_hit_at_10": 0.2639573317589959,
+      "control_hit_at_10": 0.2275181064008572,
+      "graded_ndcg_at_10": 0.11400453919301157,
+      "control_ndcg_at_10": 0.10182189092569195
+    },
+    {
+      "parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 15,
+        "max_depth": 4,
+        "reg_lambda": 5.0
+      },
+      "graded_hit_at_10": 0.26286436410392,
+      "control_hit_at_10": 0.22510620830758488,
+      "graded_ndcg_at_10": 0.11638482825358105,
+      "control_ndcg_at_10": 0.10071620247422797
+    },
+    {
+      "parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 15,
+        "max_depth": 4,
+        "reg_lambda": 10.0
+      },
+      "graded_hit_at_10": 0.2660825755264629,
+      "control_hit_at_10": 0.21651290203669507,
+      "graded_ndcg_at_10": 0.11671040262897221,
+      "control_ndcg_at_10": 0.09609557586905972
+    },
+    {
+      "parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 31,
+        "max_depth": 5,
+        "reg_lambda": 1.0
+      },
+      "graded_hit_at_10": 0.2760252204847325,
+      "control_hit_at_10": 0.24348200216300356,
+      "graded_ndcg_at_10": 0.12413789846666717,
+      "control_ndcg_at_10": 0.10867761744707778
+    },
+    {
+      "parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 31,
+        "max_depth": 5,
+        "reg_lambda": 10.0
+      },
+      "graded_hit_at_10": 0.27432219857241535,
+      "control_hit_at_10": 0.2431500437486235,
+      "graded_ndcg_at_10": 0.12088487326464188,
+      "control_ndcg_at_10": 0.1075088370145611
+    },
+    {
+      "parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 1.0
+      },
+      "graded_hit_at_10": 0.29308373296139106,
+      "control_hit_at_10": 0.260764491153861,
+      "graded_ndcg_at_10": 0.1301419372192112,
+      "control_ndcg_at_10": 0.11251469993615437
+    },
+    {
+      "parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 5.0
+      },
+      "graded_hit_at_10": 0.26058676725545865,
+      "control_hit_at_10": 0.25230217733041677,
+      "graded_ndcg_at_10": 0.11802517764286315,
+      "control_ndcg_at_10": 0.11039062573156751
+    },
+    {
+      "parameters": {
+        "min_child_samples": 100,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 10.0
+      },
+      "graded_hit_at_10": 0.28294483960958483,
+      "control_hit_at_10": 0.24986653994335598,
+      "graded_ndcg_at_10": 0.12499641692012453,
+      "control_ndcg_at_10": 0.11168551603218546
+    },
+    {
+      "parameters": {
+        "min_child_samples": 200,
+        "num_leaves": 15,
+        "max_depth": 4,
+        "reg_lambda": 1.0
+      },
+      "graded_hit_at_10": 0.26543050547530617,
+      "control_hit_at_10": 0.23040970583597117,
+      "graded_ndcg_at_10": 0.11449246940397649,
+      "control_ndcg_at_10": 0.10008417545373986
+    },
+    {
+      "parameters": {
+        "min_child_samples": 200,
+        "num_leaves": 15,
+        "max_depth": 4,
+        "reg_lambda": 5.0
+      },
+      "graded_hit_at_10": 0.25993097180718666,
+      "control_hit_at_10": 0.23937681771041386,
+      "graded_ndcg_at_10": 0.11718147156107904,
+      "control_ndcg_at_10": 0.10271471125681998
+    },
+    {
+      "parameters": {
+        "min_child_samples": 200,
+        "num_leaves": 15,
+        "max_depth": 4,
+        "reg_lambda": 10.0
+      },
+      "graded_hit_at_10": 0.2528331154428096,
+      "control_hit_at_10": 0.22183422352800117,
+      "graded_ndcg_at_10": 0.11519321357586221,
+      "control_ndcg_at_10": 0.0992195128611822
+    },
+    {
+      "parameters": {
+        "min_child_samples": 200,
+        "num_leaves": 31,
+        "max_depth": 5,
+        "reg_lambda": 1.0
+      },
+      "graded_hit_at_10": 0.27305691653557784,
+      "control_hit_at_10": 0.23594025907101057,
+      "graded_ndcg_at_10": 0.1198979087698886,
+      "control_ndcg_at_10": 0.10698286835752417
+    },
+    {
+      "parameters": {
+        "min_child_samples": 200,
+        "num_leaves": 31,
+        "max_depth": 5,
+        "reg_lambda": 5.0
+      },
+      "graded_hit_at_10": 0.2662002493305831,
+      "control_hit_at_10": 0.23757051412020572,
+      "graded_ndcg_at_10": 0.11520857895188985,
+      "control_ndcg_at_10": 0.106209989361441
+    },
+    {
+      "parameters": {
+        "min_child_samples": 200,
+        "num_leaves": 31,
+        "max_depth": 5,
+        "reg_lambda": 10.0
+      },
+      "graded_hit_at_10": 0.2747761231755919,
+      "control_hit_at_10": 0.24152355774560438,
+      "graded_ndcg_at_10": 0.12356478188629456,
+      "control_ndcg_at_10": 0.10631833055984652
+    },
+    {
+      "parameters": {
+        "min_child_samples": 200,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 1.0
+      },
+      "graded_hit_at_10": 0.2816698113412548,
+      "control_hit_at_10": 0.24872550200830457,
+      "graded_ndcg_at_10": 0.12437523841624427,
+      "control_ndcg_at_10": 0.10887192557896823
+    },
+    {
+      "parameters": {
+        "min_child_samples": 200,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 5.0
+      },
+      "graded_hit_at_10": 0.28734456997884755,
+      "control_hit_at_10": 0.2527853105089492,
+      "graded_ndcg_at_10": 0.13042200023770475,
+      "control_ndcg_at_10": 0.11272952289027398
+    },
+    {
+      "parameters": {
+        "min_child_samples": 200,
+        "num_leaves": 63,
+        "max_depth": 6,
+        "reg_lambda": 10.0
+      },
+      "graded_hit_at_10": 0.2813794335346908,
+      "control_hit_at_10": 0.24932206901747775,
+      "graded_ndcg_at_10": 0.12530903968183224,
+      "control_ndcg_at_10": 0.11124443362962151
+    }
+  ],
+  "mean_rank_fraction": {
+    "note": "lower = ranked higher by that channel; judged non-references were chosen for high scores",
+    "cosine_rank_fraction": {
+      "all_rows_references": 0.212,
+      "all_rows_other": 0.506,
+      "judged_useful": 0.09,
+      "judged_not_useful": 0.3
+    },
+    "bm25_rank_fraction": {
+      "all_rows_references": 0.405,
+      "all_rows_other": 0.503,
+      "judged_useful": 0.236,
+      "judged_not_useful": 0.333
+    },
+    "qweight_bm25_rank_fraction": {
+      "all_rows_references": 0.391,
+      "all_rows_other": 0.504,
+      "judged_useful": 0.222,
+      "judged_not_useful": 0.326
+    },
+    "dense_chunk_rank": {
+      "all_rows_references": 0.202,
+      "all_rows_other": 0.506,
+      "judged_useful": 0.046,
+      "judged_not_useful": 0.18
+    }
+  },
+  "findings": [
+    "Dropping unjudged rows collapses retrieval: both runs score 26-29% Hit@10 versus 56.00%, about cosine-only level.",
+    "The judged negatives were selected for high retrieval scores, so within those rows high scores no longer separate references; the model never sees the ~210 ordinary messages per question it must rank at inference.",
+    "Qwen useful labels help: graded beats control at all 27 tree settings, by +3.22 points Hit@10 on average (+0.83 to +4.96) and +1.42 NDCG@10."
+  ],
+  "decision": "Do not adopt either model. Keep the current model; test Qwen labels on all rows (unjudged = 0) next."
+}

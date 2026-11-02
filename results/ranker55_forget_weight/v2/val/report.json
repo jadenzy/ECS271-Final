@@ -1,0 +1,100 @@
+{
+  "model": "C:\\Users\\jaden\\ECS271-Final\\models\\subtlex_mix\\alpha_0.5\\ranker55.txt",
+  "model_sha256": "509f3cacb6ef8d5a5a3199f250c20729ce08b1fae9e6ade5f4a5feab35e94888",
+  "previous_model": "C:\\Users\\jaden\\ECS271-Final\\models\\subtlex_mix\\alpha_0.5\\ranker55_trials\\trial_17.txt",
+  "parameters": {
+    "min_child_samples": 100,
+    "num_leaves": 63,
+    "max_depth": 6,
+    "reg_lambda": 10.0
+  },
+  "forget_question_weight": 0.5,
+  "fit": {
+    "features": 55,
+    "trees": 300,
+    "questions": 18532,
+    "candidate_rows": 4273942,
+    "positive_rows": 57069,
+    "grade_counts": {
+      "0": 4216873,
+      "1": 57069,
+      "2": 0
+    },
+    "question_weight_counts": {
+      "0.5": 3982,
+      "1.0": 14550
+    },
+    "label_gain": [
+      0,
+      1,
+      2
+    ],
+    "output_model": "C:\\Users\\jaden\\ECS271-Final\\models\\subtlex_mix\\alpha_0.5\\ranker55.txt",
+    "forget_question_weight": 0.5
+  },
+  "selection_note": "Forget weight chosen on V2 validation among 1.0/0.5/0.25/0.1; development result, not final test performance.",
+  "previous": {
+    "nonforget_type_macro": {
+      "questions": 811,
+      "hit_at_10": 0.5481105191683395,
+      "ndcg_at_10": 0.29689622944194466,
+      "incremental_hit_over_cosine": 0.29266320942527596,
+      "tail_rescue_over_cosine_at_10": 0.4336119052129286
+    },
+    "all_questions": {
+      "questions": 1002,
+      "hit_at_10": 0.655688622754491,
+      "ndcg_at_10": 0.4148080617574083,
+      "incremental_hit_over_cosine": 0.24550898203592814,
+      "tail_rescue_over_cosine_at_10": 0.4365482233502538
+    },
+    "ask_to_forget": {
+      "questions": 191,
+      "hit_at_10": 0.9633507853403142,
+      "ndcg_at_10": 0.8266423697285054,
+      "incremental_hit_over_cosine": -0.03141361256544506,
+      "tail_rescue_over_cosine_at_10": 0.0
+    },
+    "by_type_hit_at_10": {
+      "anti_stereotypical_pref": 0.7365269461077845,
+      "ask_to_forget": 0.9633507853403142,
+      "health_and_medical_conditions": 0.6178861788617886,
+      "neutral_preferences": 0.6144578313253012,
+      "sensitive_info": 0.0,
+      "stereotypical_pref": 0.6896551724137931,
+      "therapy_background": 0.6301369863013698
+    }
+  },
+  "current": {
+    "nonforget_type_macro": {
+      "questions": 811,
+      "hit_at_10": 0.5599940586893397,
+      "ndcg_at_10": 0.3166642446445513,
+      "incremental_hit_over_cosine": 0.3045467489462761,
+      "tail_rescue_over_cosine_at_10": 0.4526480868705409
+    },
+    "all_questions": {
+      "questions": 1002,
+      "hit_at_10": 0.6606786427145709,
+      "ndcg_at_10": 0.4180649386404696,
+      "incremental_hit_over_cosine": 0.250499001996008,
+      "tail_rescue_over_cosine_at_10": 0.45685279187817257
+    },
+    "ask_to_forget": {
+      "questions": 191,
+      "hit_at_10": 0.9319371727748691,
+      "ndcg_at_10": 0.7521427694226265,
+      "incremental_hit_over_cosine": -0.06282722513089012,
+      "tail_rescue_over_cosine_at_10": 0.0
+    },
+    "by_type_hit_at_10": {
+      "anti_stereotypical_pref": 0.7425149700598802,
+      "ask_to_forget": 0.9319371727748691,
+      "health_and_medical_conditions": 0.6178861788617886,
+      "neutral_preferences": 0.6506024096385542,
+      "sensitive_info": 0.0,
+      "stereotypical_pref": 0.6982758620689655,
+      "therapy_background": 0.6506849315068494
+    }
+  }
+}

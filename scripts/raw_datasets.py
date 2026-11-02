@@ -9,7 +9,11 @@ import re
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-SPLITS = {'v2': ('train', 'val', 'test'), 'v1': ('comparison',), 'locomo': ('comparison',)}
+SPLITS = {'v2': ('train', 'val', 'test'), 'v1': ('comparison',), 'locomo': ('comparison',), 'longbench': ('comparison',)}
+# LongBench v2 contexts are documents; they become passages of whole lines no longer than this.
+# Numeric tables reach about one embedding token per character, so 1,000 characters stays
+# under EmbeddingGemma's 1,200-token input limit.
+PASSAGE_WORDS, PASSAGE_CHARACTERS = 150, 1000
 
 
 def sha256(path):
@@ -61,6 +65,43 @@ def v2_history_path(base, link):
     if not path.is_relative_to(folder) or path.suffix != '.json':
         raise ValueError(f'Invalid chat_history_32k_link: {link!r}')
     return path
+
+
+def passages(text, words=PASSAGE_WORDS, characters=PASSAGE_CHARACTERS):
+    """Cut a document into passages of whole lines within both limits, in order.
+
+    A line over a limit is split at whitespace (one over-long word at the character limit)
+    and its pieces joined by single spaces; every other line keeps its exact text.
+    """
+    result, lines, count, size = [], [], 0, 0
+
+    def flush():
+        nonlocal lines, count, size
+        joined = '\n'.join(lines).strip()
+        if joined:
+            result.append(joined)
+        lines, count, size = [], 0, 0
+
+    for line in text.splitlines():
+        tokens = line.split()
+        if len(tokens) <= words and len(line) <= characters:
+            if lines and (count + len(tokens) > words or size + 1 + len(line) > characters):
+                flush()
+            lines.append(line)
+            count, size = count + len(tokens), size + len(line) + 1
+            continue
+        flush()
+        pieces = [token[i:i + characters] for token in tokens for i in range(0, len(token), characters)]
+        piece, piece_size = [], 0
+        for token in pieces:
+            if piece and (len(piece) == words or piece_size + 1 + len(token) > characters):
+                result.append(' '.join(piece))
+                piece, piece_size = [], 0
+            piece_size += len(token) + (1 if piece else 0)
+            piece.append(token)
+        lines, count, size = ([' '.join(piece)], len(piece), piece_size) if piece else ([], 0, 0)
+    flush()
+    return result
 
 
 def load_dataset(dataset='v2', splits=None, root=ROOT, *, include_contexts=True,
@@ -165,6 +206,29 @@ def load_dataset(dataset='v2', splits=None, root=ROOT, *, include_contexts=True,
                               'question_type': row['question_type']})
             if include_answers:
                 targets[example_id] = options[row['correct_choice_index']]['label']
+            else:
+                questions[-1].pop('options')
+    elif dataset == 'longbench':
+        # Each question has its own document, so it is also its own history and bootstrap group.
+        path = root / 'data/raw/longbench_v2/data.json'
+        source_paths.append(path)
+        for row in json.loads(path.read_text(encoding='utf-8')):
+            example_id = 'longbench:' + row['_id']
+            if example_id not in owners:
+                continue
+            if include_contexts:
+                contexts[example_id] = [{'role': 'user', 'content': text} for text in passages(row['context'])]
+            if row['answer'] not in ('A', 'B', 'C', 'D'):
+                raise ValueError(f'{example_id}: answer must be A, B, C or D')
+            options = ([{'label': letter.lower(), 'text': row[f'choice_{letter}']} for letter in 'ABCD']
+                       if include_answers else None)
+            questions.append({'example_id': example_id, 'dataset': dataset, 'split': owners[example_id],
+                              'persona_id': example_id, 'history_id': example_id, 'version': '32k',
+                              'source_end_index': None, 'question': row['question'], 'options': options,
+                              'question_type': row['domain'], 'sub_domain': row['sub_domain'],
+                              'difficulty': row['difficulty']})
+            if include_answers:
+                targets[example_id] = row['answer'].lower()
             else:
                 questions[-1].pop('options')
     else:

@@ -6,12 +6,12 @@ training samples, saved predictions, or encoded data.
 
 Train from an external NPZ with X, y, offsets and feature_names:
   python -B scripts/ranker55.py
-Defaults: data/ranker55/v2/train/features.npz -> models/ranker55.txt.
+Defaults: data/ranker55/v2/train/features.npz -> models/subtlex_mix/alpha_0.5/ranker55.txt.
 Existing model output files are replaced atomically after successful training.
 Inspect the recipe without fitting:
   python -B scripts/ranker55.py --describe
 
-feature_matrix() constructs inputs when given externally fitted statistics,
+feature_matrix() constructs inputs when given a SUBTLEX/history lexical prior,
 source messages, token lengths, and a pinned embedding callback. Arrays must be
 computed over the complete question-visible candidate pool before training-row
 filtering. NumPy and LightGBM are the training dependencies.
@@ -32,6 +32,7 @@ import unicodedata
 sys.dont_write_bytecode = True
 os.environ.setdefault('OPENBLAS_NUM_THREADS', '4')
 import numpy as np
+from feature_contract import bundle_recipe, save_model_recipe, validate_recipe
 
 FEATURE_NAMES = ['cosine',
  'cosine_rank_fraction',
@@ -92,7 +93,7 @@ FEATURE_NAMES = ['cosine',
 
 PARAMETERS = {'objective': 'lambdarank',
  'device_type': 'cpu',
- 'label_gain': [0, 1],
+ 'label_gain': [0, 1, 2],
  'n_estimators': 300,
  'learning_rate': 0.05,
  'num_leaves': 31,
@@ -152,7 +153,7 @@ class _Index:
                     self.postings[term].append((i, frequency))
         self.statistics = statistics
 
-    def score(self, terms, *, global_idf=False, weighted=False, k1=1.5):
+    def score(self, terms, *, global_idf=False, weighted=False, k1=1.5, term_weights=None):
         scores = np.zeros(self.count)
         for term in sorted(set(terms)):
             postings = self.postings.get(term, ())
@@ -163,8 +164,9 @@ class _Index:
             idf = math.log1p((n-df+.5)/(df+.5))
             weight = 1.
             if weighted:
-                nq = self.statistics['nq']
-                weight *= max(.1, min(1., math.log((nq+1)/(self.statistics['qdf'].get(term, 0)+1))/math.log(nq+1)))
+                if term_weights is None:
+                    raise ValueError('Weighted BM25 requires SUBTLEX mixture term weights')
+                weight = term_weights[term]
             for i, frequency in postings:
                 # b=0 for every retained BM25 channel.
                 scores[i] += weight*idf*frequency*(k1+1)/(frequency+k1)
@@ -214,24 +216,6 @@ def _validate_messages(messages, source_end_index=None):
         raise ValueError('Expected complete nonempty user/assistant message text')
 
 
-def _validate_statistics(statistics, terms):
-    if not isinstance(statistics, Mapping):
-        raise ValueError('statistics must provide n, df, nq and qdf')
-    for count_name, map_name in [('n', 'df'), ('nq', 'qdf')]:
-        count = statistics.get(count_name)
-        frequencies = statistics.get(map_name)
-        if isinstance(count, bool) or not isinstance(count, Integral) or count <= 0:
-            raise ValueError(f'{count_name} must be a positive integer corpus size')
-        if not isinstance(frequencies, Mapping):
-            raise ValueError(f'{map_name} must map terms to document frequencies')
-        # Only these terms contribute to this query; avoid scanning the full
-        # background vocabulary again for each question.
-        for term in terms:
-            df = frequencies.get(term, 0)
-            if isinstance(df, bool) or not isinstance(df, Integral) or not 0 <= df <= count:
-                raise ValueError(f'{map_name}[{term!r}] must be an integer between 0 and {count_name}')
-
-
 def _embedding_rows(embed, texts, kind):
     raw = np.asarray(embed(texts, kind))
     if np.iscomplexobj(raw):
@@ -244,15 +228,15 @@ def _embedding_rows(embed, texts, kind):
     return vectors
 
 
-def feature_matrix(question, messages, token_lengths, statistics, embed, *, source_end_index=None):
+def feature_matrix(question, messages, token_lengths, lexical, embed, *, source_end_index=None):
     """Build all 55 inputs over the full chronological question-visible pool.
 
     token_lengths maps message_id to unprefixed EmbeddingGemma token count, or is
     an aligned list. embed(texts, 'question'|'memory') returns normalized float32
     768-dimensional vectors using the frozen encoder/prefix/pooling recipe.
-    statistics is an external dictionary with n, df, nq and qdf fitted on the
-    chosen background training corpus. No fitted statistics are stored here.
-    Only question text, source text/role/order and supplied statistics enter X.
+    lexical=(HistoryPrior, alpha) supplies visible parent-message DF and
+    mixed external/history term weights. Only question text, visible source
+    text/role/order, and the pinned external prior enter X.
     source_end_index is exclusive, matching the dataset loader's history[:end].
     """
     _validate_messages(messages, source_end_index)
@@ -264,15 +248,18 @@ def feature_matrix(question, messages, token_lengths, statistics, embed, *, sour
     if not isinstance(question, str):
         raise ValueError('question must be text')
     qt = sorted(set(tokenize(question)))
-    stats = statistics
-    _validate_statistics(stats, qt)
+    history, alpha = lexical
+    if history.n != n:
+        raise ValueError('Lexical history must match the complete visible pool')
+    stats = {'n': history.n, 'df': history.df}
+    term_weights = history.weights(qt, alpha)
     query = _embedding_rows(embed, [question], 'question')
     vectors = _embedding_rows(embed, [m['text'] for m in messages], 'memory')
     cosine = np.clip(vectors @ query[0], -1., 1.)
     terms = [tokenize(m['text']) for m in messages]
     plain = _Index(terms, stats)
     bm = plain.score(qt, k1=2.)
-    weighted_bm = plain.score(qt, k1=2., weighted=True)
+    weighted_bm = plain.score(qt, k1=2., weighted=True, term_weights=term_weights)
     chunks, parents, counts = [], [], []
     for i, words in enumerate(terms):
         pieces = [words] if len(words) <= 64 else [words[j:j+48] for j in range(0, len(words), 24)]
@@ -281,7 +268,7 @@ def feature_matrix(question, messages, token_lengths, statistics, embed, *, sour
         parents.extend([i]*len(pieces))
     chunk_index = _Index(chunks, stats, stop=True)
     chunk_scores = chunk_index.score(qt, global_idf=True, k1=1.5)
-    weighted_chunks = chunk_index.score(qt, global_idf=True, k1=1.5, weighted=True)
+    weighted_chunks = chunk_index.score(qt, global_idf=True, k1=1.5, weighted=True, term_weights=term_weights)
     parents = np.array(parents)
 
     def aggregate(scores):
@@ -349,16 +336,16 @@ def validate_training_data(X, y, offsets, feature_names):
         raise ValueError('feature_names must match all 55 ordered FEATURE_NAMES')
     if X.ndim != 2 or X.shape[1] != 55 or not len(X) or not np.isfinite(X).all():
         raise ValueError('X must be a nonempty finite matrix with 55 columns')
-    if y.ndim != 1 or len(y) != len(X) or not np.isin(y, [0, 1]).all():
-        raise ValueError('y must contain one binary reference label per row')
+    if y.ndim != 1 or len(y) != len(X) or not np.isin(y, [0, 1, 2]).all():
+        raise ValueError('y must contain one relevance grade (0, 1 or 2) per row; exclude unjudged rows')
     offsets = _integer_vector(offsets, 'Question offsets')
     if len(offsets) < 2 or offsets[0] != 0 or offsets[-1] != len(X) or np.any(np.diff(offsets) <= 0):
         raise ValueError('offsets must partition all rows into nonempty questions')
-    positive_counts = np.add.reduceat(y.astype(np.int64), offsets[:-1])
+    positive_counts = np.add.reduceat((y > 0).astype(np.int64), offsets[:-1])
     if np.any(positive_counts == 0):
-        raise ValueError('Each training question must have at least one reference positive')
-    if not np.any(positive_counts < np.diff(offsets)):
-        raise ValueError('Training requires at least one question with both positive and negative candidates')
+        raise ValueError('Each training question must have at least one positive relevance grade')
+    if not any(np.any(y[start:end] != y[start]) for start, end in zip(offsets[:-1], offsets[1:])):
+        raise ValueError('Training requires at least one question with two distinct relevance grades')
     return X, y.astype(np.int8), offsets
 
 
@@ -392,6 +379,26 @@ def _save_model_atomic(booster, target):
             temporary.unlink(missing_ok=True)
 
 
+# ask_to_forget questions are easy (about 96% validation Hit@10) and about a fifth of training.
+# At full weight they pulled the ranker away from preference evidence: weight 0.5 raised
+# non-forget type-macro Hit@10 from 54.81% to 56.00% while forget questions went 96.3% -> 93.2%.
+FORGET_QUESTION_WEIGHT = 0.5
+
+
+def forget_question_weights(question_ids, forget_weight=FORGET_QUESTION_WEIGHT, *, root=None):
+    """Per-question training weights from the raw question types; 1 for every other type."""
+    if not math.isfinite(forget_weight) or forget_weight <= 0:
+        raise ValueError('forget_weight must be positive')
+    if forget_weight == 1:
+        return np.ones(len(question_ids))
+    from message_dataset import load_message_dataset
+    questions, _, _ = load_message_dataset('v2', ['train'], **({'root': root} if root is not None else {}))
+    types = {q['example_id']: q['question_type'] for q in questions}
+    if any(qid not in types for qid in question_ids):
+        raise ValueError('Every weighted question must be an active V2 training question')
+    return np.array([forget_weight if types[qid] == 'ask_to_forget' else 1. for qid in question_ids])
+
+
 def training_parameters(*, min_child_samples=100, num_leaves=31, max_depth=5, reg_lambda=5.0):
     """Override only the requested tuning controls; preserve the feature recipe."""
     if (type(min_child_samples) is not int or min_child_samples < 1
@@ -404,26 +411,44 @@ def training_parameters(*, min_child_samples=100, num_leaves=31, max_depth=5, re
             'max_depth': max_depth, 'reg_lambda': reg_lambda}
 
 
-def train_ranker(X, y, offsets, *, feature_names=FEATURE_NAMES, output_model=None, **tuning):
+def row_weights(question_weights, offsets):
+    """Repeat one positive weight per question across that question's rows."""
+    weights = np.asarray(question_weights, dtype=float)
+    if weights.shape != (len(offsets) - 1,) or not np.isfinite(weights).all() or np.any(weights <= 0):
+        raise ValueError('question_weights needs one finite positive weight per question')
+    return np.repeat(weights, np.diff(offsets))
+
+
+def train_ranker(X, y, offsets, *, feature_names=FEATURE_NAMES, output_model=None,
+                 feature_recipe=None, question_weights=None, **tuning):
     """Fit the fixed 300-tree recipe; optionally save the newly trained model.
 
     No parameter search, early stopping or held-out split is used here. For
     persona-separated evaluation, call this on each training fold and score its
     held-persona fold externally. Keep all rows of each question together.
+    question_weights (one per question, e.g. forget_question_weights) scale whole
+    questions; None weights every question equally.
     An existing model output is replaced atomically after successful fitting.
     """
     import lightgbm as lgb
+    feature_recipe = validate_recipe(feature_recipe)
     target = _model_output_path(output_model)
     X, y, offsets = validate_training_data(X, y, offsets, feature_names)
+    weights = None if question_weights is None else row_weights(question_weights, offsets)
     model = lgb.LGBMRanker(**training_parameters(**tuning))
-    model.fit(X, y, group=np.diff(offsets), feature_name=FEATURE_NAMES)
+    model.fit(X, y, group=np.diff(offsets), sample_weight=weights, feature_name=FEATURE_NAMES)
     if target is not None:
         _save_model_atomic(model.booster_, target)
+        save_model_recipe(target, feature_recipe)
     return model
 
 
-def train_from_npz(features, output_model, **tuning):
-    """Load external prepared features and fit; never embeds data in this file."""
+def train_from_npz(features, output_model, *, question_weights=None, **tuning):
+    """Load external prepared features and fit; never embeds data in this file.
+
+    question_weights follow the NPZ question order; the CLI derives them from
+    question_ids with forget_question_weights.
+    """
     target = _model_output_path(output_model, features)
     if target is None:
         raise ValueError('An output model path is required')
@@ -437,10 +462,15 @@ def train_from_npz(features, output_model, **tuning):
             raise ValueError('Missing training arrays: '+', '.join(sorted(missing)))
         # Decompress each array once and close the input before fitting/saving.
         X, y, offsets, names = (data[key] for key in ('X', 'y', 'offsets', 'feature_names'))
-    model = train_ranker(X, y, offsets, feature_names=names, output_model=target, **tuning)
+    model = train_ranker(X, y, offsets, feature_names=names, output_model=target,
+                         feature_recipe=bundle_recipe(features), question_weights=question_weights, **tuning)
+    weights = np.ones(len(offsets) - 1) if question_weights is None else np.asarray(question_weights, dtype=float)
     return {'features': model.n_features_in_, 'trees': model.booster_.num_trees(),
             'questions': len(offsets)-1, 'candidate_rows': len(y),
-            'positive_rows': int(np.sum(y)), 'output_model': str(target.resolve())}
+            'positive_rows': int(np.count_nonzero(y > 0)),
+            'grade_counts': {str(grade): int(np.count_nonzero(y == grade)) for grade in (0, 1, 2)},
+            'question_weight_counts': {str(float(w)): int(n) for w, n in zip(*np.unique(weights, return_counts=True))},
+            'label_gain': PARAMETERS['label_gain'], 'output_model': str(target.resolve())}
 
 
 def main(argv=None):
@@ -449,23 +479,35 @@ def main(argv=None):
     root = Path(__file__).resolve().parents[1]
     parser.add_argument('--features', type=Path, default=root / 'data/ranker55/v2/train/features.npz',
                         help='Training NPZ (default: data/ranker55/v2/train/features.npz)')
-    parser.add_argument('--output', type=Path, default=root / 'models/selector/ranker55.txt',
-                        help='Destination model (default: models/selector/ranker55.txt); overwritten atomically')
+    parser.add_argument('--output', type=Path, default=root / 'models/subtlex_mix/alpha_0.5/ranker55.txt',
+                        help='Destination model (default: models/subtlex_mix/alpha_0.5/ranker55.txt); overwritten atomically')
     parser.add_argument('--min-child-samples', type=int, default=100)
     parser.add_argument('--num-leaves', type=int, default=31)
     parser.add_argument('--max-depth', type=int, default=5)
     parser.add_argument('--reg-lambda', type=float, default=5.0)
+    parser.add_argument('--forget-weight', type=float, default=FORGET_QUESTION_WEIGHT,
+                        help=f'Training weight of ask_to_forget questions (default: {FORGET_QUESTION_WEIGHT}); '
+                             '1 weights every question equally')
     args = parser.parse_args(argv)
     if args.describe:
         print(json.dumps({'feature_names': FEATURE_NAMES, 'feature_groups': FEATURE_GROUPS,
-                          'parameters': PARAMETERS, 'embedding_recipe': EMBEDDING_RECIPE}, indent=2))
+                          'parameters': PARAMETERS, 'forget_question_weight': FORGET_QUESTION_WEIGHT,
+                          'embedding_recipe': EMBEDDING_RECIPE}, indent=2))
     elif args.features and args.output:
         try:
-            result = train_from_npz(args.features, args.output, min_child_samples=args.min_child_samples,
-                                    num_leaves=args.num_leaves, max_depth=args.max_depth, reg_lambda=args.reg_lambda)
+            weights = None
+            if args.forget_weight != 1:
+                with np.load(args.features, allow_pickle=False) as data:
+                    if 'question_ids' not in data.files:
+                        raise ValueError('--forget-weight needs question_ids in the training NPZ')
+                    question_ids = data['question_ids'].tolist()
+                weights = forget_question_weights(question_ids, args.forget_weight)
+            result = train_from_npz(args.features, args.output, question_weights=weights,
+                                    min_child_samples=args.min_child_samples, num_leaves=args.num_leaves,
+                                    max_depth=args.max_depth, reg_lambda=args.reg_lambda)
         except (ValueError, OSError) as error:
             parser.error(str(error))
-        print(json.dumps(result, indent=2))
+        print(json.dumps({**result, 'forget_question_weight': args.forget_weight}, indent=2))
     else:
         parser.error('Use --describe, or --features PATH --output PATH')
 

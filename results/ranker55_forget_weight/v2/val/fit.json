@@ -1,0 +1,23 @@
+{
+  "features": 55,
+  "trees": 300,
+  "questions": 18532,
+  "candidate_rows": 4273942,
+  "positive_rows": 57069,
+  "grade_counts": {
+    "0": 4216873,
+    "1": 57069,
+    "2": 0
+  },
+  "question_weight_counts": {
+    "0.5": 3982,
+    "1.0": 14550
+  },
+  "label_gain": [
+    0,
+    1,
+    2
+  ],
+  "output_model": "C:\\Users\\jaden\\ECS271-Final\\models\\subtlex_mix\\alpha_0.5\\ranker55.txt",
+  "forget_question_weight": 0.5
+}
