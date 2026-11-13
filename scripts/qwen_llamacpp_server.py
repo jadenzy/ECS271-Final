@@ -170,7 +170,7 @@ def parse_args(argv=None, *, root=None):
     root = Path(root) if root is not None else ROOT
     config = json.loads((root / 'configs/qwen_server.json').read_text(encoding='utf-8'))
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--dataset', choices=['v2', 'v1', 'locomo', 'longbench'], default='v2')
+    parser.add_argument('--dataset', choices=['v2', 'v1', 'locomo'], default='v2')
     parser.add_argument('--mode', choices=['full_history', 'no_memory', 'reference_only', 'selector'], default='full_history')
     parser.add_argument('--ctx-size', type=int)
     parser.add_argument('--memory-tokens', type=int,

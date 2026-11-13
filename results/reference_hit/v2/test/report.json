@@ -1,0 +1,166 @@
+{
+  "split": "test",
+  "features": "C:\\Users\\jaden\\Code\\ECS271\\data\\ranker55\\subtlex\\v2\\test\\features.npz",
+  "questions": 1119,
+  "rows": 261206,
+  "question_types": {
+    "anti_stereotypical_pref": 226,
+    "ask_to_forget": 253,
+    "health_and_medical_conditions": 137,
+    "neutral_preferences": 213,
+    "stereotypical_pref": 142,
+    "therapy_background": 148
+  },
+  "models": {
+    "references_only": {
+      "model": "models/subtlex_mix/alpha_0.5/ranker55.txt",
+      "all_questions": {
+        "questions": 1119,
+        "hit_at_10": 0.7470956210902592,
+        "ndcg_at_10": 0.48498858829494346,
+        "incremental_hit_over_cosine": 0.2716711349419124,
+        "tail_rescue_over_cosine_at_10": 0.5672913117546848
+      },
+      "nonforget": {
+        "questions": 866,
+        "hit_at_10": 0.6893764434180139,
+        "ndcg_at_10": 0.3953289546475958,
+        "incremental_hit_over_cosine": 0.3672055427251732,
+        "tail_rescue_over_cosine_at_10": 0.5672913117546848
+      },
+      "by_type": {
+        "anti_stereotypical_pref": {
+          "questions": 226,
+          "hit_at_10": 0.7654867256637168,
+          "ndcg_at_10": 0.46242500345908916,
+          "incremental_hit_over_cosine": 0.3495575221238938,
+          "tail_rescue_over_cosine_at_10": 0.6287878787878788
+        },
+        "ask_to_forget": {
+          "questions": 253,
+          "hit_at_10": 0.9446640316205533,
+          "ndcg_at_10": 0.791886780937643,
+          "incremental_hit_over_cosine": -0.055335968379446654,
+          "tail_rescue_over_cosine_at_10": null
+        },
+        "health_and_medical_conditions": {
+          "questions": 137,
+          "hit_at_10": 0.6788321167883211,
+          "ndcg_at_10": 0.38851742287094737,
+          "incremental_hit_over_cosine": 0.43065693430656926,
+          "tail_rescue_over_cosine_at_10": 0.5728155339805825
+        },
+        "neutral_preferences": {
+          "questions": 213,
+          "hit_at_10": 0.6384976525821596,
+          "ndcg_at_10": 0.3565840786507108,
+          "incremental_hit_over_cosine": 0.38497652582159625,
+          "tail_rescue_over_cosine_at_10": 0.5283018867924528
+        },
+        "stereotypical_pref": {
+          "questions": 142,
+          "hit_at_10": 0.7464788732394366,
+          "ndcg_at_10": 0.43322715839060566,
+          "incremental_hit_over_cosine": 0.36619718309859156,
+          "tail_rescue_over_cosine_at_10": 0.6477272727272727
+        },
+        "therapy_background": {
+          "questions": 148,
+          "hit_at_10": 0.6013513513513513,
+          "ndcg_at_10": 0.31857616057889654,
+          "incremental_hit_over_cosine": 0.3108108108108108,
+          "tail_rescue_over_cosine_at_10": 0.47619047619047616
+        }
+      },
+      "nonforget_type_macro": {
+        "questions": 866,
+        "hit_at_10": 0.686129343924997,
+        "ndcg_at_10": 0.3918659647900499,
+        "incremental_hit_over_cosine": 0.3684397952322923,
+        "tail_rescue_over_cosine_at_10": 0.5707646096957326
+      },
+      "complete_reference_nonforget_type_macro": {
+        "questions": 866,
+        "hit_at_10": 0.686129343924997,
+        "ndcg_at_10": 0.3918659647900499,
+        "incremental_hit_over_cosine": 0.3684397952322923,
+        "tail_rescue_over_cosine_at_10": 0.5707646096957326
+      }
+    },
+    "qwen_graded": {
+      "model": "models/qwen_graded_all/ranker55.txt",
+      "all_questions": {
+        "questions": 1119,
+        "hit_at_10": 0.7327971403038427,
+        "ndcg_at_10": 0.47289086294761856,
+        "incremental_hit_over_cosine": 0.25737265415549593,
+        "tail_rescue_over_cosine_at_10": 0.5383304940374787
+      },
+      "nonforget": {
+        "questions": 866,
+        "hit_at_10": 0.6685912240184757,
+        "ndcg_at_10": 0.36846244123521943,
+        "incremental_hit_over_cosine": 0.34642032332563505,
+        "tail_rescue_over_cosine_at_10": 0.5383304940374787
+      },
+      "by_type": {
+        "anti_stereotypical_pref": {
+          "questions": 226,
+          "hit_at_10": 0.7477876106194691,
+          "ndcg_at_10": 0.44524965495570307,
+          "incremental_hit_over_cosine": 0.3318584070796461,
+          "tail_rescue_over_cosine_at_10": 0.5909090909090909
+        },
+        "ask_to_forget": {
+          "questions": 253,
+          "hit_at_10": 0.9525691699604744,
+          "ndcg_at_10": 0.8303415080185187,
+          "incremental_hit_over_cosine": -0.04743083003952564,
+          "tail_rescue_over_cosine_at_10": null
+        },
+        "health_and_medical_conditions": {
+          "questions": 137,
+          "hit_at_10": 0.6496350364963503,
+          "ndcg_at_10": 0.355949309766559,
+          "incremental_hit_over_cosine": 0.4014598540145985,
+          "tail_rescue_over_cosine_at_10": 0.5339805825242718
+        },
+        "neutral_preferences": {
+          "questions": 213,
+          "hit_at_10": 0.596244131455399,
+          "ndcg_at_10": 0.3106990720955875,
+          "incremental_hit_over_cosine": 0.34272300469483563,
+          "tail_rescue_over_cosine_at_10": 0.48427672955974843
+        },
+        "stereotypical_pref": {
+          "questions": 142,
+          "hit_at_10": 0.7394366197183099,
+          "ndcg_at_10": 0.41985144461339347,
+          "incremental_hit_over_cosine": 0.3591549295774648,
+          "tail_rescue_over_cosine_at_10": 0.6363636363636364
+        },
+        "therapy_background": {
+          "questions": 148,
+          "hit_at_10": 0.6013513513513513,
+          "ndcg_at_10": 0.29661614297453076,
+          "incremental_hit_over_cosine": 0.3108108108108108,
+          "tail_rescue_over_cosine_at_10": 0.47619047619047616
+        }
+      },
+      "nonforget_type_macro": {
+        "questions": 866,
+        "hit_at_10": 0.6668909499281759,
+        "ndcg_at_10": 0.3656731248811547,
+        "incremental_hit_over_cosine": 0.3492014012354711,
+        "tail_rescue_over_cosine_at_10": 0.5443441031094448
+      },
+      "complete_reference_nonforget_type_macro": {
+        "questions": 866,
+        "hit_at_10": 0.6668909499281759,
+        "ndcg_at_10": 0.3656731248811547,
+        "incremental_hit_over_cosine": 0.3492014012354711,
+        "tail_rescue_over_cosine_at_10": 0.5443441031094448
+      }
+    }
+  }
+}

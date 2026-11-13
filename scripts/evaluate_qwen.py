@@ -6,6 +6,8 @@ default is full-history PersonaMem-v2 test evaluation. V1 and LoCoMo use their f
 comparison datasets. V2 also supports no-memory and original-reference-only
 (label 2) baselines. Selector mode supports all three datasets using saved NPZ
 features and a LightGBM model; no embedding generation or training runs here.
+Full history is every visible user and assistant message: the source system messages
+(PersonaMem persona profiles) are never passed to Qwen, in any mode.
 """
 import argparse
 from collections import defaultdict
@@ -89,8 +91,6 @@ def evaluation_config(dataset='v2', mode='full_history', *, root=None):
     config.update(dataset=dataset, baseline=mode)
     if dataset == 'locomo':
         config.update(answer_labels=list('abcdefghij'), system_prompt='Use the conversation history to answer the question about its speakers. Select exactly one option, including the unanswerable option when appropriate. Reply with exactly one lowercase answer letter: a, b, c, d, e, f, g, h, i, or j.', primary_nll='negative log-probability normalized over the ten permitted labels')
-    elif dataset == 'longbench':
-        config.update(system_prompt='Use the provided context passages to answer the question. Select exactly one option. Reply with exactly one lowercase answer letter: a, b, c, or d.')
     return config
 
 class NoMemoryInputs:
@@ -100,12 +100,19 @@ class NoMemoryInputs:
         return ([], {'history_messages': 0})
 
 class VisibleHistories:
-    """Read complete source messages directly from raw data."""
+    """Read complete source messages directly from raw data.
 
-    def __init__(self, questions, contexts=None):
+    exclude_system=True is the full-history input: the source system messages (the V2 persona
+    profile at the head of each history, the V1 persona description that opens each session)
+    are dropped, because they are not conversation evidence and no other mode sees them. The
+    remaining messages keep their source index, so their transcript labels do not change.
+    """
+
+    def __init__(self, questions, contexts=None, *, exclude_system=False):
         datasets = {q['dataset'] for q in questions}
-        if len(datasets) != 1 or not datasets <= {'v1', 'v2', 'locomo', 'longbench'}:
+        if len(datasets) != 1 or not datasets <= {'v1', 'v2', 'locomo'}:
             raise ValueError('VisibleHistories requires one dataset')
+        self.exclude_system = exclude_system
         self.questions = {q['example_id']: dict(q) for q in questions}
         if contexts is None:
             _, contexts, _, _ = load_dataset(next(iter(datasets)), root=ROOT)
@@ -118,7 +125,12 @@ class VisibleHistories:
         if any((original[k] != question[k] for k in ('persona_id', 'dataset', 'split', 'version', 'history_id', 'source_end_index'))):
             raise ValueError('Question/history ownership mismatch')
         messages = visible_messages(question, self.contexts)
-        return (messages, {'history_id': question['history_id'], 'source_end_index': question['source_end_index'], 'effective_end_index': len(messages), 'history_messages': len(messages)})
+        source = {'history_id': question['history_id'], 'source_end_index': question['source_end_index'], 'effective_end_index': len(messages), 'history_messages': len(messages)}
+        if self.exclude_system:
+            kept = [{**m, 'source_message_index': i} for i, m in enumerate(messages) if m.get('role') != 'system']
+            source.update(history_messages=len(kept), source_system_messages_excluded=len(messages) - len(kept))
+            messages = kept
+        return (messages, source)
 
 class ReferenceHistories:
     """Oracle: verbatim annotated snippets, even when absent from visible history."""
@@ -428,13 +440,11 @@ def save_summary(out, rows, config, protocol, hardware=None, status='complete', 
         if 'score_cutoff' in protocol['selector']:
             limitations += [f"Score cutoff: once {protocol['selector']['floor_tokens']:,} memory tokens are packed, packing stops at the first message scoring more than {protocol['selector']['score_cutoff']:g} below the question's top score."]
     elif config['dataset'] == 'v2':
-        limitations += ['Each question follows its entire official 32K source history, quoted as a chronological role-labelled transcript. Source system messages are preserved. CSV persona profiles, preferences, and reference snippets are not added.', 'Use training personas for selector fitting, validation personas for tuning, and test personas for final reporting.']
+        limitations += ['Each question follows every user and assistant message of its official 32K source history, quoted as a chronological role-labelled transcript. The source system message (the persona profile at the head of the history) is excluded, as in every other mode. CSV persona profiles, preferences, and reference snippets are not added.', 'Use training personas for selector fitting, validation personas for tuning, and test personas for final reporting.']
     elif config['dataset'] == 'v1':
-        limitations += ['The entire source history before the question cutoff is used, including all repeated system persona descriptions, quoted as a chronological role-labelled transcript in a preceding user message.', 'Source cutoffs of -1 retain official Python slicing semantics and exclude the last source message.']
+        limitations += ['Every user and assistant message before the question cutoff is used, quoted as a chronological role-labelled transcript in a preceding user message. The repeated source system messages (the persona description that opens each session) are excluded, as in selector mode.', 'Source cutoffs of -1 retain official Python slicing semantics and exclude the last source message.']
     if config['dataset'] == 'locomo':
         limitations += ['LoCoMo-MC10 uses ten answer options. Conversation IDs are the bootstrap unit; the ten shared conversations are correlated groups, not independent questions.', 'Both speakers and session timestamps are retained. Session summaries and answer metadata are excluded from memory inputs. Source question-type labels are preserved.', 'Evaluation preserves designated correct indices and answer text; local distractor edits, when present, are recorded in the choice-correction audit.', 'This is evaluation of the multiple-choice adaptation; its accuracy is not original LoCoMo answer F1.']
-    elif config['dataset'] == 'longbench':
-        limitations += ['LongBench v2 subset: the questions whose raw context is at most 32,768 Qwen tokens (data/splits/longbench). Each context is cut into passages of whole lines (at most 150 words and 1,200 characters) presented as user messages in the shared transcript format; most contexts are documents, not conversations.', 'Each question has its own context, so the question is the bootstrap unit. Question types are LongBench domains.']
     elif not no_memory:
         limitations += ['32K is measured by the source tokenizer; the actual Qwen context may need to be larger.']
     limitations += [f"The text-only model uses {config.get('model_dtype', 'Q4_K_M')} weights on CUDA without CPU offload. Runtime settings are recorded in the protocol. The configured context cap has not been benchmarked for VRAM fit."]
@@ -510,7 +520,7 @@ def save_summary(out, rows, config, protocol, hardware=None, status='complete', 
             values = ['unavailable' if segment[key] is None else f'{segment[key]:.3f}' for key in ('mean_elapsed_seconds', 'mean_gpu_memory_mib', 'mean_ram_working_set_mib')]
             first, last = (segment['first_prediction'] + 1, segment['first_prediction'] + segment['questions'])
             lines.append(f"| {first}–{last} | {segment['questions']} | " + ' | '.join(values) + ' |')
-    input_description = 'a complete chronological transcript of all visible source messages, with role labels and all repeated system persona descriptions, followed by the question and all options'
+    input_description = 'a complete chronological transcript of all visible user and assistant messages with role labels (source system persona messages are excluded), followed by the question and all options'
     if no_memory:
         input_description = 'only the shared evaluation instructions, question, and all options; no conversation or persona profile'
     elif mode == 'reference_only':
@@ -546,7 +556,7 @@ def parse_args(argv=None, *, fixed_mode=None):
         parser.add_argument('--mode', '-m', choices=EVALUATION_MODES, default='full_history')
     else:
         parser.set_defaults(mode=fixed_mode)
-    parser.add_argument('--dataset', '-d', choices=['v2'] if fixed_mode == 'no_memory' else ['v2', 'v1', 'locomo', 'longbench'], default='v2')
+    parser.add_argument('--dataset', '-d', choices=['v2'] if fixed_mode == 'no_memory' else ['v2', 'v1', 'locomo'], default='v2')
     parser.add_argument('--selector-model', type=Path, help='Selector mode: saved LightGBM model (default: models/subtlex_mix/alpha_0.5/ranker55.txt)')
     parser.add_argument('--selector-features', type=Path, help='Selector mode: matching dataset/split NPZ (default: data/ranker55/{dataset}/{split}/features.npz)')
     selection = parser.add_mutually_exclusive_group()
@@ -593,7 +603,7 @@ def supported_test_selection(protocol):
     subset = config.get('subset', protocol.get('selection', {}).get('subset', 'full'))
     if dataset == 'v2':
         return protocol.get('split') == 'test'
-    return dataset in ('v1', 'locomo', 'longbench') and protocol.get('split') == 'comparison' and subset == 'full'
+    return dataset in ('v1', 'locomo') and protocol.get('split') == 'comparison' and subset == 'full'
 
 def latest_unfinished_run(baseline=None):
     """Find saved work using prediction records, never stale summary status."""
@@ -608,7 +618,7 @@ def latest_unfinished_run(baseline=None):
             continue
         if config.get('input_policy') != 'raw_complete_messages_v1':
             continue
-        if config.get('baseline') not in EVALUATION_MODES or config.get('dataset') not in ('v1', 'v2', 'locomo', 'longbench'):
+        if config.get('baseline') not in EVALUATION_MODES or config.get('dataset') not in ('v1', 'v2', 'locomo'):
             continue
         if not supported_test_selection(protocol):
             continue
@@ -616,6 +626,8 @@ def latest_unfinished_run(baseline=None):
             continue
         if config['baseline'] in ('no_memory', 'reference_only') and config['dataset'] != 'v2':
             continue
+        if any(key in protocol.get('selector', {}) for key in ('blend_model_path', 'length_penalty')):
+            continue  # saved by selector experiments that were removed; never resumed
         total = protocol.get('questions')
         if type(total) is not int or total <= 0:
             raise ValueError(f'Invalid question count in {path}')
@@ -687,7 +699,7 @@ def run_evaluation(args):
     no_memory = args.mode == 'no_memory'
     locomo = args.dataset == 'locomo'
     version = 'full' if locomo else '32k'
-    dataset_name = {'locomo': 'LoCoMo-MC10', 'longbench': 'LongBench-v2'}.get(args.dataset, 'PersonaMem-' + args.dataset)
+    dataset_name = 'LoCoMo-MC10' if locomo else 'PersonaMem-' + args.dataset
     config.update(input_policy='raw_complete_messages_v1', server_settings=settings, model=settings['Model'], baseline=args.mode, dataset=args.dataset, dataset_name=dataset_name, dataset_version=version, subset=subset, context_tokens=settings['ContextTokens'])
     split_dir = ROOT / 'data/splits' / args.dataset
     selection_path = split_dir / f'{args.split}_ids.json'
@@ -715,7 +727,7 @@ def run_evaluation(args):
         if args.memory_tokens is not None:
             histories.provenance['configured_context_tokens'] = settings['ContextTokens']
     else:
-        histories = VisibleHistories(questions, raw_contexts)
+        histories = VisibleHistories(questions, raw_contexts, exclude_system=True)
     print(f"{config['dataset_name']} / {version.upper()} / {subset} / {args.mode} / {args.split}: {len(questions)} questions from {len(selected_personas)} persona/conversation groups; grouped by history for consistent ordering.", flush=True)
     print('The server module manages llama-server.exe using configs/qwen_server.json. Skipping prompt preflight.', flush=True)
     if args.dry_run:
@@ -730,13 +742,15 @@ def run_evaluation(args):
         print(json.dumps(details, indent=2), flush=True)
         return
     name = args.split + (f'_limit_{args.limit}' if args.limit else '')
+    if args.mode == 'full_history' and not locomo:
+        # Runs saved before the persona messages were dropped keep the plain split name.
+        name += '_messages_only'
     if args.mode == 'selector':
         name += f'_memory_{args.memory_tokens}' if args.memory_tokens is not None else f'_top_{args.top_k}'
         if args.score_cutoff is not None:
             name += f'_cutoff_{args.score_cutoff:g}_floor_{args.floor_tokens}'
     family = f'qwen35_4b{args.mode}_raw'
-    output_base = ROOT / {'locomo': f'results/{family}/locomo_mc10/full',
-                          'longbench': f'results/{family}/longbench_v2/32k'}.get(args.dataset, f'results/{family}/personamem_{args.dataset}/32k')
+    output_base = ROOT / (f'results/{family}/locomo_mc10/full' if locomo else f'results/{family}/personamem_{args.dataset}/32k')
     if subset == 'compact':
         output_base /= 'compact'
     out = (args.output or output_base / name).resolve()
@@ -753,7 +767,8 @@ def run_evaluation(args):
     elif args.mode in ('reference_only', 'selector'):
         protocol[args.mode] = histories.provenance
     else:
-        protocol['full_history'] = {'prompt_preflight': False, 'context_check': 'Full native prompt plus one answer token must fit before each scoring request; no truncation.', 'source_histories_sha256': raw_sources, 'visible_boundaries': 'original V1 end index; complete V2/LoCoMo history', 'initial_system_persona_included': not locomo}
+        protocol['full_history'] = {'prompt_preflight': False, 'context_check': 'Full native prompt plus one answer token must fit before each scoring request; no truncation.', 'source_histories_sha256': raw_sources, 'visible_boundaries': 'original V1 end index; complete V2/LoCoMo history', 'initial_system_persona_included': False,
+                                    'input': 'visible user and assistant messages only; source system (persona) messages are excluded'}
     path = out / 'predictions.jsonl'
     protocol_path = out / 'protocol.json'
     previous = json.loads(protocol_path.read_text(encoding='utf-8')) if protocol_path.exists() else {}
@@ -769,6 +784,8 @@ def run_evaluation(args):
                     or previous.get('selector') != protocol.get('selector')
                     or previous.get('reference_only') != protocol.get('reference_only')):
         raise ValueError('Saved predictions use different memory inputs, selector settings or source files; choose a new output directory')
+    if records and args.mode == 'full_history' and previous.get('full_history', {}).get('initial_system_persona_included'):
+        raise ValueError('Saved predictions were scored with the source persona messages in the history; choose a new output directory')
     runs = previous.get('server_runs', previous.get('runtime_segments', [])) if records else []
     if records and (not runs):
         runs = [{'first_prediction': 0, 'server_settings': previous.get('config', {}).get('server_settings', {})}]

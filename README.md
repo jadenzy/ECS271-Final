@@ -1,8 +1,8 @@
 # Single-message memory retrieval
 
-Each retrieval memory is **one complete original user or assistant message**. Its text is preserved exactly, with the role, source index and original message object stored as metadata. Retrieval messages remain whole and unchanged. Auxiliary chunks supply features while the retrieval unit stays the original message. System/persona messages and empty/non-text turns are excluded from retrieval.
+Each retrieval memory is **one complete original user or assistant message**. Its text is preserved exactly, with the role, source index and original message object stored as metadata. Retrieval messages remain whole and unchanged. Auxiliary chunks supply features while the retrieval unit stays the original message. System/persona messages and empty/non-text turns are excluded from retrieval, and the full-history baseline leaves the system/persona messages out as well, so every evaluation mode reads only conversation messages.
 
-Original sources remain under `data/raw/`, and active IDs under `data/splits/`. V2 training contains 18,532 questions across 800 personas after the documented incomplete-reference exclusions. Validation/test membership is preserved. V1 and LoCoMo remain comparison datasets. Historical results retain the retrieval units and model identities recorded when they were generated; regenerate retrieval outputs for the current single-message format.
+Original sources remain under `data/raw/`, and active IDs under `data/splits/`. V2 training contains 18,532 questions across 800 personas after the documented incomplete-reference exclusions. Validation (909 questions, 40 personas) and test (1,119 questions, 50 personas) exclude the `sensitive_info` type, whose reference snippets are absent from the histories; see [Validation and test exclusions](#validation-and-test-exclusions). V1 and LoCoMo remain comparison datasets. Historical results retain the retrieval units and model identities recorded when they were generated; regenerate retrieval outputs for the current single-message format.
 
 Datasets and processed reference labels are versioned; oversized dataset files use Git LFS. Trained models and generated ranker feature/embedding caches stay local and are excluded from Git.
 
@@ -104,10 +104,10 @@ Alpha 0.5 was checked on V2 validation. Alpha changes 18 columns: the 10 `qweigh
 
 | Alpha | 0 (history only) | 0.1 | 0.25 | **0.5** | 0.75 | 0.9 | 1 (SUBTLEX only) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Non-forget type-macro Hit@10 | 54.69% | 54.69% | 54.83% | **56.00%** | 54.84% | 55.53% | 55.14% |
-| NDCG@10 | 31.35% | 31.06% | 30.97% | **31.67%** | 31.26% | 31.55% | 31.24% |
+| Non-forget type-macro Hit@10 | 65.63% | 65.63% | 65.79% | **67.20%** | 65.81% | 66.64% | 66.17% |
+| NDCG@10 | 37.62% | 37.27% | 37.16% | **38.00%** | 37.52% | 37.86% | 37.48% |
 
-No alpha beats 0.5. Alphas 0, 0.1, 0.25 and 0.75 are lower by about 1.2–1.3 points, and their 95% persona-bootstrap intervals exclude zero. The tree setting was tuned at 0.5, which slightly favors it. Details are in `results/ranker55_alpha/v2/val/report.json`.
+No alpha beats 0.5. Alphas 0, 0.1, 0.25 and 0.75 are lower by about 1.4–1.6 points, and their 95% persona-bootstrap intervals exclude zero. The tree setting was tuned at 0.5, which slightly favors it. Details are in `results/ranker55_alpha/v2/val/report.json`.
 Outputs are under `data/ranker55/{dataset}/{split}/` for every alpha; changing alpha replaces the feature exports after successful construction. Use `--output-root` to keep an additional experiment separately. The manifest and model sidecar retain alpha;
 `statistics.json` records the external recipe instead of V2-derived counts.
 Cache reuse requires the same complete input cohort/order, source hashes,
@@ -137,7 +137,37 @@ python scripts/label_reference_messages.py --splits train
 
 The labeler reads the reference snippet from each active V2 question's original CSV. A message receives **2** exactly when its original `(role, content)` matches a reference for that question, otherwise **0**. All matching occurrences are positive. An adjacent assistant reply receives its own independent label. Zero denotes annotation non-membership and does not prove semantic irrelevance. New rows and reports declare `schema_version: 3`; the diagnostics also support legacy schema 2 with binary reference labels.
 
-Outputs are `data/reference_labels/v2/{split}.jsonl` and `report.json`. Candidate entries contain `message_id`, `message_index`, `role`, and `label`. Unmatched references raise an error, and empty references must exist in the raw history. All requested splits are staged before completed files are replaced. Validation/test labeling is supported, but those splits still contain incomplete references; it does not silently change membership.
+Outputs are `data/reference_labels/v2/{split}.jsonl` and `report.json`. Candidate entries contain `message_id`, `message_index`, `role`, and `label`. Unmatched references raise an error, and empty references must exist in the raw history. All requested splits are staged before completed files are replaced. Validation/test labeling is supported, but those splits still contain a few incomplete references (4 validation and 7 test `ask_to_forget` questions each lack one assistant acknowledgment); labeling does not silently change membership.
+
+## Validation and test exclusions
+
+`sensitive_info` questions are removed from V2 validation and test. Their annotated reference snippets appear nowhere in the linked 32K histories (0 of 222 validation and 0 of 313 test reference messages), so no retriever can find them and every ranker scored 0% Hit@10 on the type. Training already excluded it (`data/splits/v2/training_exclusions.json`).
+
+```powershell
+python scripts/exclude_eval_questions.py            # dry run: prints what would change
+python scripts/exclude_eval_questions.py --apply
+```
+
+| Split | Questions before | Removed | Questions after | Personas |
+| --- | ---: | ---: | ---: | ---: |
+| Validation | 1,002 | 93 | 909 | 40 |
+| Test | 1,242 | 123 | 1,119 | 50 |
+
+The script rewrites `data/splits/v2/{val,test}_ids.json`, updates `persona_split.json`, and lists every removed ID in `data/splits/v2/evaluation_exclusions.json`. It filters the matching feature bundles under `data/ranker55/subtlex/v2/` instead of rebuilding them: a question's features depend only on its own history, so the retained rows are copied unchanged and verified equal, and the previous bundle stays beside the new one as `features_before_exclusion.npz`. The embedding caches under `data/ranker55/v2/{val,test}/` still describe the old splits, so rebuilding those bundles from scratch needs the embeddings regenerated. Four validation and seven test `ask_to_forget` questions still lack one of their four references (the assistant's acknowledgment) and stay in.
+
+Effect on the numbers in this README:
+
+- **Validation Hit@10 and NDCG@10** are non-forget type-macro averages, now over five question types instead of six. The removed type contributed exactly 0 for every ranker, so every earlier average, difference and interval is multiplied by 6/5; the order of models and the significance of each comparison are unchanged. Reports under `results/ranker55_*/v2/val/` were written before the removal and keep the six-type values.
+- **V2 test accuracy** is recomputed from the saved predictions on the 1,119 active questions (`python scripts/compare_selector_runs.py --active-only`). The run folders under `results/` keep all 1,242 predictions and their original summaries.
+
+`scripts/reference_hit_check.py --split val` (or `test`) measures the reference Hit@10 of saved rankers on either split, on the CPU; test references are read for measurement only. On the current splits, with feature bundles rebuilt on an RTX 3060 laptop whose embeddings differ slightly from the original build (validation 66.91% here against 67.20% in the tables below):
+
+| Ranker | Validation Hit@10 | Validation NDCG@10 | Test Hit@10 | Test NDCG@10 |
+| --- | ---: | ---: | ---: | ---: |
+| **References only (current model)** | **66.91%** | **37.89%** | **68.61%** | **39.19%** |
+| Qwen grades, best of 27 settings | 63.77% | 34.53% | 66.69% | 36.57% |
+
+Per-type results are in `results/reference_hit/v2/{val,test}/report.json`; `report_before_exclusion.json` beside each holds the same measurement on the old splits.
 
 ## Select messages for Qwen labeling
 
@@ -200,30 +230,30 @@ It runs `--replicas 3` llama-server processes with `--parallel 4` slots each on 
 
 | Training data | Non-forget type-macro Hit@10 | NDCG@10 | `ask_to_forget` Hit@10 |
 | --- | ---: | ---: | ---: |
-| **All rows, references only (current model)** | **56.00%** | **31.67%** | **93.19%** |
-| Judged rows, Qwen grades 2/1/0 | 29.31% | 13.01% | 65.45% |
-| Judged rows, references only (control) | 26.08% | 11.25% | 54.97% |
+| **All rows, references only (current model)** | **67.20%** | **38.00%** | **93.19%** |
+| Judged rows, Qwen grades 2/1/0 | 35.17% | 15.62% | 65.45% |
+| Judged rows, references only (control) | 31.29% | 13.50% | 54.97% |
 
-The candidates were picked because they score high, so within the judged rows a high retrieval score no longer separates references. On BM25, the rejected candidates actually rank above the references (mean rank fraction 0.33 vs 0.41). The model also never sees the ordinary messages it must rank at inference. The Qwen labels still carry signal: graded beats the control at all 27 settings, by +3.2 points Hit@10 on average. Neither model is adopted. Details are in `results/ranker55_graded_comparison/v2/val/report.json`.
+The candidates were picked because they score high, so within the judged rows a high retrieval score no longer separates references. On BM25, the rejected candidates actually rank above the references (mean rank fraction 0.33 vs 0.41). The model also never sees the ordinary messages it must rank at inference. The Qwen labels still carry signal: graded beats the control at all 27 settings, by +3.9 points Hit@10 on average. Neither model is adopted. Details are in `results/ranker55_graded_comparison/v2/val/report.json`.
 
 **All-rows graded training does not help either.** With `--all-rows` (4,273,942 rows: 57,069 references at 2, 17,066 Qwen-useful at 1, the rest 0):
 
 | Training labels (all rows) | Non-forget type-macro Hit@10 | NDCG@10 | `ask_to_forget` Hit@10 | Change vs current (95% persona bootstrap) |
 | --- | ---: | ---: | ---: | --- |
-| **References only (current model)** | **56.00%** | **31.67%** | 93.19% | – |
-| Qwen grades, same setting (100 / 63 / 6 / 10) | 52.80% | 28.75% | 94.76% | −3.20 (−5.08 to −1.44) |
-| Qwen grades, best of 27 settings (100 / 63 / 6 / 1) | 53.49% | 28.74% | 95.29% | −2.51 (−4.27 to −0.81) |
+| **References only (current model)** | **67.20%** | **38.00%** | 93.19% | – |
+| Qwen grades, same setting (100 / 63 / 6 / 10) | 63.36% | 34.49% | 94.76% | −3.84 (−6.10 to −1.72) |
+| Qwen grades, best of 27 settings (100 / 63 / 6 / 1) | 64.19% | 34.49% | 95.29% | −3.01 (−5.12 to −0.97) |
 
 Qwen's useful messages already rank above the references on every channel (mean cosine rank fraction 0.09 vs 0.21), so rewarding them pulls the ranker toward plain similarity and away from the references. The current reference-only model stays. Details are in `results/ranker55_graded_all_comparison/v2/val/report.json`.
 
-Qwen answer accuracy on V2 test (1,242 questions, selector mode, 2,048 memory tokens) agrees:
+Qwen answer accuracy on V2 test (1,119 questions, selector mode, 2,048 memory tokens) agrees:
 
 | Ranker | Accuracy | Persona 95% CI | Output |
 | --- | ---: | --- | --- |
-| **References only (current model)** | **39.37%** | 36.63% to 42.01% | `results/qwen35_4bselector_raw/personamem_v2/32k/compact/test_memory_2048_references_only` |
-| Qwen grades, best of 27 settings | 37.28% | 34.49% to 40.19% | `.../compact/test_memory_2048_qwen_graded_all` |
+| **References only (current model)** | **39.41%** | 36.66% to 42.07% | `results/qwen35_4bselector_raw/personamem_v2/32k/compact/test_memory_2048_references_only` |
+| Qwen grades, best of 27 settings | 37.27% | 34.43% to 40.24% | `.../compact/test_memory_2048_qwen_graded_all` |
 
-Paired by question, the Qwen-graded ranker is −2.09 points (persona bootstrap −3.49 to −0.62). It answers 36 questions the reference-only ranker misses and misses 62 that it answers. It is lower on every question type except `health_and_medical_conditions` (+1.5), most on `anti_stereotypical_pref` (−5.3). The two rankers share about two thirds of their selected messages (mean Jaccard 0.67).
+Paired by question, the Qwen-graded ranker is −2.14 points (persona bootstrap −3.61 to −0.61). It answers 34 questions the reference-only ranker misses and misses 58 that it answers. It is lower on every question type except `health_and_medical_conditions` (+1.5), most on `anti_stereotypical_pref` (−5.3). The two rankers share about two thirds of their selected messages (mean Jaccard 0.67). The run folders still hold all 1,242 predictions; these figures use the 1,119 active test questions.
 
 On PersonaMem V1 (589 comparison questions, 20 personas, same settings), the order flips but the difference is not significant:
 
@@ -232,7 +262,7 @@ On PersonaMem V1 (589 comparison questions, 20 personas, same settings), the ord
 | References only (current model) | 60.95% | 56.79% to 65.34% | `results/qwen35_4bselector_raw/personamem_v1/32k/comparison_memory_2048_references_only` |
 | Qwen grades, best of 27 settings | 62.65% | 59.48% to 65.78% | `.../comparison_memory_2048_qwen_graded_all` |
 
-Paired by question this is +1.70 points (persona bootstrap −1.37 to +4.51). The Qwen-graded ranker gets 27 questions right that the other misses and 17 the other way; it is equal or higher on every V1 question type, most on `track_full_preference_evolution` (+3.6). The rankers share 61% of their selected messages. For reference, Qwen with the full V1 history scores 62.48%.
+Paired by question this is +1.70 points (persona bootstrap −1.37 to +4.51). The Qwen-graded ranker gets 27 questions right that the other misses and 17 the other way; it is equal or higher on every V1 question type, most on `track_full_preference_evolution` (+3.6). The rankers share 61% of their selected messages. For reference, Qwen with the full V1 history scores 62.48% (measured with the persona messages still in the history).
 
 On LoCoMo-MC10 (1,986 questions, 10 conversations, same settings), the Qwen-graded ranker is much better:
 
@@ -243,20 +273,19 @@ On LoCoMo-MC10 (1,986 questions, 10 conversations, same settings), the Qwen-grad
 
 Paired by question this is +7.55 points (conversation bootstrap +5.17 to +10.28; 247 questions gained, 97 lost). It is +10 to +14 points on `single_hop`, `multi_hop`, `open_domain` and `temporal_reasoning`, and −5.8 on `adversarial` (unanswerable questions, where more on-topic memory makes Qwen pick an answer). The rankers share only 48% of their selected messages. Qwen with the full LoCoMo history scores 68.83%. LoCoMo questions ask for facts stated in the conversation, so ranking by topical match is what they need; PersonaMem V2 references are often indirect, where the same bias hurts. The forget-weight refit also matters here: the previous reference-only model (forget weight 1.0, `results/qwen35_4bselector_raw_2/locomo_mc10/full/comparison_memory_2048`) scored 63.19%, 2.77 points above the current one (paired −4.26 to −1.27).
 
-On the LongBench v2 subset (111 questions; see [LongBench v2](#longbench-v2)), the two rankers are close: references only 36.04%, Qwen grades 37.84% (+1.80, paired −4.50 to +8.11; 7 questions gained, 5 lost). Qwen with each full document scores 45.05%.
-
-**Overall, across all four evaluations** (2,048 memory tokens for both rankers; full history uses the whole visible context):
+**Overall, across the three evaluations** (2,048 memory tokens for both rankers; full history uses the whole visible context):
 
 | Dataset | Questions | Full history | References-only ranker | Qwen-graded ranker | Qwen grades − references only (paired 95%) |
 | --- | ---: | ---: | ---: | ---: | --- |
-| PersonaMem V2 test | 1,242 | 37.36% | **39.37%** | 37.28% | −2.09 (−3.46 to −0.64) |
-| PersonaMem V1 | 589 | 62.48% | 60.95% | **62.65%** | +1.70 (−1.21 to +4.66) |
+| PersonaMem V2 test | 1,119 | 37.18%† | **39.41%** | 37.27% | −2.14 (−3.61 to −0.61) |
+| PersonaMem V1 | 589 | 62.48%† | 60.95% | **62.65%** | +1.70 (−1.21 to +4.66) |
 | LoCoMo-MC10 | 1,986 | **68.83%** | 60.42% | 67.98% | +7.55 (+5.22 to +10.40) |
-| LongBench v2 (≤32k tokens) | 111 | **45.05%** | 36.04% | 37.84% | +1.80 (−4.50 to +8.11) |
-| **Macro average** (each dataset equal) | 3,928 | **53.43%** | 49.20% | 51.44% | **+2.24** (+0.34 to +4.05) |
-| **Pooled** (all questions) | 3,928 | **57.26%** | 53.16% | 56.62% | **+3.46** (+2.00 to +5.12) |
+| **Macro average** (each dataset equal) | 3,694 | **56.16%** | 53.59% | 55.96% | **+2.37** (+0.94 to +3.81) |
+| **Pooled** (all questions) | 3,694 | **58.23%** | 54.14% | 57.82% | **+3.68** (+2.17 to +5.40) |
 
-Intervals resample each dataset's groups (personas, conversations or LongBench questions) within that dataset, 5,000 draws. Across datasets the Qwen-graded ranker is better on both averages, with intervals above zero; it loses only on PersonaMem V2, the dataset the rankers were selected on. Full history scores higher on average but uses the whole context, up to 34k tokens per prompt instead of 2,048. The pooled average is about half LoCoMo. The reference-only model remains the default in the scripts.
+Intervals resample each dataset's groups (personas or conversations) within that dataset, 5,000 draws. Across datasets the Qwen-graded ranker is better on both averages, with intervals above zero; it loses only on PersonaMem V2, the dataset the rankers were selected on. Full history is level with the Qwen-graded ranker on average (macro +0.20 points, −1.48 to +1.99) but uses the whole context, up to 38k tokens per prompt instead of 2,048. The pooled average is more than half LoCoMo. The reference-only model remains the default in the scripts.
+
+† Scored with the dataset's persona (system) messages still in the history. Full history no longer includes them (see [Qwen evaluation](#qwen-evaluation)), and these two baselines have not been rerun without them.
 
 For a one-question runtime/sample check:
 
@@ -286,13 +315,13 @@ Training gives `ask_to_forget` questions weight **0.5** and every other question
 
 | Forget weight | Non-forget type-macro Hit@10 | NDCG@10 | `ask_to_forget` Hit@10 | All-question Hit@10 |
 | --- | ---: | ---: | ---: | ---: |
-| 1.0 (previous) | 54.81% | 29.69% | 96.34% | 65.57% |
-| **0.5 (current)** | **56.00%** | **31.67%** | 93.19% | **66.07%** |
-| 0.25 | 56.72% | 32.25% | 90.58% | 66.07% |
-| 0.1 | 57.40% | 33.61% | 78.53% | 64.37% |
-| 0 (forget dropped) | 57.47% | 34.00% | 43.98% | 57.88% |
+| 1.0 (previous) | 65.77% | 35.63% | 96.34% | 72.28% |
+| **0.5 (current)** | **67.20%** | **38.00%** | 93.19% | **72.83%** |
+| 0.25 | 68.1% | 38.7% | 90.58% | 72.83% |
+| 0.1 | 68.9% | 40.3% | 78.53% | 70.96% |
+| 0 (forget dropped) | 69.0% | 40.8% | 43.98% | 63.81% |
 
-The weight was chosen on validation, so these are development results. The question type is used only for training weights, never as a ranking input. In the same experiments, larger trees (127/7, 255/8), 600 rounds, `max_bin` 255, type-balanced weights, logistic regression on the same 55 features (35.48%), and an extra message-specificity feature did not improve Hit@10. Role matters only together with other features: references are 50.0% assistant messages, the same as all messages (49.8%), yet setting `role_assistant` to 0 in training and validation lowers Hit@10 by 0.97 points for this model (56.00% → 55.02%, persona bootstrap −2.66 to +0.66) and by 1.83 for the all-rows Qwen-graded model (53.49% → 51.66%, −3.12 to −0.60), whose useful labels are 67.7% assistant messages. `models/subtlex_mix/alpha_0.5/ranker55.txt` is the weighted refit; the previous model remains as `ranker55_trials/trial_17.txt`, and the comparison is in `results/ranker55_forget_weight/v2/val/report.json`.
+The weight was chosen on validation, so these are development results. Rows 0.25, 0.1 and 0, and the logistic-regression and no-role figures below, were not saved at full precision: they are the earlier six-type figures multiplied by 6/5 and shown to one decimal. The question type is used only for training weights, never as a ranking input. In the same experiments, larger trees (127/7, 255/8), 600 rounds, `max_bin` 255, type-balanced weights, logistic regression on the same 55 features (42.6%), and an extra message-specificity feature did not improve Hit@10. Role matters only together with other features: references are 50.0% assistant messages, the same as all messages (49.8%), yet setting `role_assistant` to 0 in training and validation lowers Hit@10 by about 1.2 points for this model (67.20% → 66.0%, persona bootstrap −3.2 to +0.8) and by 2.2 for the all-rows Qwen-graded model (64.19% → 62.0%, −3.7 to −0.7), whose useful labels are 67.7% assistant messages. `models/subtlex_mix/alpha_0.5/ranker55.txt` is the weighted refit; the previous model remains as `ranker55_trials/trial_17.txt`, and the comparison is in `results/ranker55_forget_weight/v2/val/report.json`.
 
 ## Tests
 
@@ -314,7 +343,7 @@ This command waits for an existing training feature build without restarting it.
 
 Override the grid with `--min-child-samples 50 100`, `--tree-shapes 15:4 31:5`, or `--reg-lambda 1 5`. For one fit, `scripts/ranker55.py` accepts scalar `--min-child-samples`, `--num-leaves`, `--max-depth`, and `--reg-lambda` options.
 
-Selection uses non-forget **type-macro Hit@10** over all validation questions. A setting replaces the default only if it improves by strictly more than one percentage point and does not reduce type-macro NDCG@10 (`--adoption-threshold 0.01`). Ties favor earlier source messages. Reports include per-type and question-weighted results, incremental Hit@10 and question-level tail rescue over cosine, plus complete-reference-only results. Missing annotated reference messages remain in the NDCG ideal denominator and cannot create hits. These validation-selected results are development measurements; final test evaluation remains separate.
+Selection uses non-forget **type-macro Hit@10** over all validation questions (five question types since the `sensitive_info` removal). A setting replaces the default only if it improves by strictly more than one percentage point and does not reduce type-macro NDCG@10 (`--adoption-threshold 0.01`). Ties favor earlier source messages. Reports include per-type and question-weighted results, incremental Hit@10 and question-level tail rescue over cosine, plus complete-reference-only results. Missing annotated reference messages remain in the NDCG ideal denominator and cannot create hits. These validation-selected results are development measurements; final test evaluation remains separate.
 
 The adopted model overwrites `models/subtlex_mix/alpha_0.5/ranker55.txt`, ready for selector-mode Qwen evaluation. Trial models stay under `models/ranker55_trials/`; `report.json`, `trials.csv`, `per_question.jsonl`, and `REPORT.md` go under `results/ranker55_tuning/v2/val/`. The tuner maps the builder's uncompressed NPZ arrays and reuses a binned LightGBM training dataset across configurations. It never uses Qwen-generated judgments; adding those still requires a separate labeling and graded-training pass.
 
@@ -322,10 +351,9 @@ The local evaluator uses **Unsloth Qwen3.5-4B Q4_K_M GGUF** through the native l
 
 | Dataset | Evaluation questions | Supported `--mode` values |
 | --- | --- | --- |
-| V2 | Preserved test IDs | `full_history`, `no_memory`, `reference_only`, `selector` |
+| V2 | Active test IDs (1,119) | `full_history`, `no_memory`, `reference_only`, `selector` |
 | V1 | Full comparison dataset | `full_history`, `selector` |
 | LoCoMo | Full comparison dataset | `full_history`, `selector` |
-| LongBench v2 | The 111 questions with contexts of at most 32,768 Qwen tokens | `full_history`, `selector` |
 
 ```powershell
 python scripts/evaluate_qwen.py --dataset v2 --dry-run
@@ -333,56 +361,14 @@ python scripts/evaluate_qwen.py --mode no_memory --dry-run
 python scripts/evaluate_qwen.py --dataset v2 --mode reference_only --dry-run
 python scripts/evaluate_qwen.py --dataset v1 --dry-run
 python scripts/evaluate_qwen.py --dataset locomo --dry-run
-python scripts/evaluate_qwen.py --dataset longbench --dry-run
 python scripts/evaluate_qwen.py --dataset v2 --mode selector --dry-run
 python scripts/evaluate_qwen.py --dataset v1 --mode selector --dry-run
 python scripts/evaluate_qwen.py --dataset locomo --mode selector --dry-run
-python scripts/evaluate_qwen.py --dataset longbench --mode selector --dry-run
 ```
 
-There are no `--split` or `--subset` arguments. V2 always uses the preserved test IDs; their existing compact/full provenance remains report metadata. V1, LoCoMo and LongBench use all comparison IDs. `--limit` remains available for small smoke tests. Automatic resume follows the same dataset rules.
+There are no `--split` or `--subset` arguments. V2 always uses the active test IDs in `data/splits/v2/test_ids.json`; their existing compact/full provenance remains report metadata. V1 and LoCoMo use all comparison IDs. `--limit` remains available for small smoke tests. Automatic resume follows the same dataset rules.
 
-### LongBench v2
-
-[LongBench v2](https://huggingface.co/datasets/THUDM/LongBench-v2) has 503 four-option questions over contexts of 8k to 2M words. The evaluated subset is the **111** whose raw context is at most 32,768 Qwen tokens, matching PersonaMem's 32k scale: 61 single-document QA, 32 multi-document QA, 8 long-dialogue (agent game logs), 7 user-guide QA, 2 code and 1 table question. None of the 19 user/assistant chat histories (LongMemEval) fits. Qwen uses about 1.8 tokens per word on these contexts, so the source's "short" group (under 32k words, 180 questions) is larger than this subset.
-
-```powershell
-curl -L -o data/raw/longbench_v2/data.json https://huggingface.co/datasets/THUDM/LongBench-v2/resolve/main/data.json
-python scripts/longbench_split.py
-python scripts/build_ranker_features.py --datasets longbench
-```
-
-`data.json` is 465,490,535 bytes (SHA-256 `15d61c22d92c96900b3c4948b6aeea218d3214b676a65df48e7b8555604c7fe2`). `longbench_split.py` counts each raw context with the pinned Qwen vocabulary (no GPU) and writes `data/splits/longbench/comparison_ids.json` and `persona_split.json`. The loader cuts each context into passages of whole lines, at most 150 words and 1,000 characters each; over-long lines are split at whitespace. Numeric tables reach about one embedding token per character, and this keeps every passage under EmbeddingGemma's 1,200-token limit (largest 994). Each passage is a `user` message, so the ranker, embeddings and both prompt formats work unchanged; documents give 58–182 passages each (10,298 in all). The system prompt asks Qwen to use the provided context passages. Each question has its own document, so the question is the bootstrap unit and question types are LongBench domains. The full-history context is 34,560 tokens (longest prompt 34,440).
-
-Because every passage is a `user` message, a ranker trained with the role feature applies only its user-message rules here. Rankers fitted with `role_assistant` set to 0 (`models/no_role/`, same settings and labels; V2 val Hit@10 55.02% and 51.66%) select differently. With 2,048 memory tokens:
-
-| Ranker | With role | Without role | Without − with (paired 95%) | Output (`results/qwen35_4bselector_raw/longbench_v2/32k/`) |
-| --- | ---: | ---: | --- | --- |
-| References only | 36.04% | **43.24%** | **+7.21** (+1.80 to +13.51) | `comparison_memory_2048_references_only_no_role` |
-| Qwen grades | 37.84% | 38.74% | +0.90 (−4.53 to +6.31) | `comparison_memory_2048_qwen_graded_all_no_role` |
-
-The references-only model without role gains 10 questions and loses 2, coming within 1.8 points of full history (45.05%). On PersonaMem V2 validation the same change costs about 1 point.
-
-Doubling the memory budget to 4,096 tokens (`--memory-tokens 4096`, about 18 passages instead of 9; outputs `comparison_memory_4096_*`) barely changes accuracy:
-
-| Ranker | 2,048 tokens | 4,096 tokens | 4,096 − 2,048 (paired 95%) | Questions gained / lost |
-| --- | ---: | ---: | --- | ---: |
-| References only, with role | 36.04% | 36.04% | +0.00 (−6.31 to +6.31) | 6 / 6 |
-| References only, no role | **43.24%** | **43.24%** | +0.00 (−6.31 to +6.31) | 7 / 7 |
-| Qwen grades, with role | 37.84% | 38.74% | +0.90 (−4.50 to +7.21) | 6 / 5 |
-| Qwen grades, no role | 38.74% | 39.64% | +0.90 (−5.41 to +7.21) | 7 / 6 |
-
-Extra passages help about as many questions as they hurt. Which ranker picks the passages matters more than how many are kept.
-
-Two other ways of cutting were tested with the same limits, each with its own features (`data/ranker55/passage_variants/`) and 2,048 memory tokens. **Paragraphs first** splits at blank lines and packs whole paragraphs (11,992 passages; 103 of the 111 documents have blank lines). **Overlap** starts each passage with up to 30 words of whole lines from the end of the previous one, around at most 120 new words (13,009 passages):
-
-| Ranker | Line-based (current) | Paragraphs first | Overlap |
-| --- | ---: | ---: | ---: |
-| References only, with role | 36.04% | 40.54% (+4.50; −0.90 to +9.91) | 36.04% (+0.00; −6.31 to +6.31) |
-| Qwen grades, with role | 37.84% | 41.44% (+3.60; −2.70 to +9.91) | 35.14% (−2.70; −9.91 to +4.50) |
-| References only, no role | **43.24%** | 39.64% (−3.60; −9.91 to +2.70) | 40.54% (−2.70; −9.91 to +3.60) |
-
-No change is significant on 111 questions. Paragraphs first lowers correct-answer NLL for all three rankers (−0.05, −0.19, −0.05; all intervals include zero) and gains accuracy for the two with-role rankers, so it is the variant worth retesting on more data; overlap adds 26% more passages for no gain. The line-based cutter stays the default (`results/qwen35_4bselector_raw/longbench_v2/32k/passages_*/`).
+`full_history` passes every visible user and assistant message and nothing else. The datasets' own system messages are left out: in V2 the JSON persona profile at the head of each history (about 1,080 Qwen tokens), in V1 the persona description that opens each session (4 to 7 per history, about 890 tokens in all). The selector and the oracle never saw these messages, because retrieval memories are user and assistant messages only, so with them in, full history read evidence no ranker could select. The remaining messages keep their source index labels. LoCoMo has no system messages and its prompts are unchanged. This departs from the official PersonaMem setup, which keeps the profile in the context, so full-history results here are not comparable with published ones. New V1 and V2 full-history runs write to `comparison_messages_only` and `test_messages_only`. The saved runs in `comparison` and `test` (62.48% and 37.18%) were scored with the persona messages and have not been rerun; the evaluator refuses to resume them.
 
 `reference_only` reads only the original `related_conversation_snippet` annotation, corresponding to reference label **2**. It never reads Qwen-generated labels or adds label **1** messages. This is an oracle baseline, with reference messages preserved verbatim in original snippet order. If an annotated message is absent from the visible history, it is still included and the discrepancy is counted in predictions and the report.
 
@@ -392,7 +378,7 @@ LightGBM training, parameter tuning, and saved selector prediction explicitly us
 
 The budget uses the active Qwen native tokenizer: complete templated prompt tokens minus the instruction/question/options-only prompt tokens. It includes history headings, role/index labels, separators, session headers, and chat framing. The complete prompt must also fit the actual server context with one answer token reserved. No message is truncated; if none fits, the prompt contains only instructions and the question/options. Selected counts, actual token usage, skipped-message counts, and packing time are recorded per question. There is no default message-count cap. For a fixed-count comparison, explicitly use `--top-k 10`; it is mutually exclusive with `--memory-tokens`.
 
-`--score-cutoff D --floor-tokens F` adds a relative score cutoff to token-budget packing: once `F` memory tokens are packed, packing stops at the first message scoring more than `D` below the question's top score (`--floor-tokens` defaults to 0 and cannot exceed the budget; neither works with `--top-k`). Both values are recorded in the protocol, checked on resume, and added to the default output name. With `--score-cutoff 1.5 --floor-tokens 1000` on every evaluation question, overall accuracy stays within about half a point of the plain 2,048-token budget for both rankers while using 22–31% fewer memory tokens; see `results/selection_threshold_study/REPORT.md`.
+`--score-cutoff D --floor-tokens F` adds a relative score cutoff to token-budget packing: once `F` memory tokens are packed, packing stops at the first message scoring more than `D` below the question's top score (`--floor-tokens` defaults to 0 and cannot exceed the budget; neither works with `--top-k`). Both values are recorded in the protocol, checked on resume, and added to the default output name. With `--score-cutoff 1.5 --floor-tokens 1000` on every evaluation question of the three datasets, the references-only ranker keeps its accuracy (macro +0.14 points, −0.75 to +1.04) with 26% fewer memory tokens, and the Qwen-graded ranker uses 35% fewer and loses 0.87 points (−1.75 to +0.04). The study behind this is `results/selection_threshold_study/REPORT.md`; it was written when LongBench was a fourth dataset and before the V2 `sensitive_info` questions were removed, and still reports both.
 
 Token-budget packing formats source message blocks once per conversation boundary and loads the same GGUF vocabulary locally through the pinned `llama.dll`, without loading another set of model weights or allocating a GPU inference context. It renders the GGUF's Jinja template locally and caches exact counts at Qwen35 pre-tokenizer boundaries, preserving whitespace and separators. Startup probes compare local prompt text, token counts, and token IDs with the active server. Each final selected prompt is checked again with `/apply-template` and `/tokenize` before scoring; a mismatch stops the run. Packing therefore uses two HTTP requests per question instead of two per candidate. The final full prompt and question-only count are reused during scoring. The native binding checks the DLL hash and supports the currently pinned b11669 ABI; a runtime upgrade requires updating that binding. Full-history, reference-only, and explicit top-k modes retain their native HTTP rendering path.
 
@@ -404,12 +390,12 @@ Selector evaluation needs a completed saved model and a matching feature bundle 
 
 ```powershell
 python scripts/build_ranker_features.py --datasets v2 --splits test
-python scripts/build_ranker_features.py --datasets v1 locomo longbench
+python scripts/build_ranker_features.py --datasets v1 locomo
 ```
 
 The evaluator never generates embeddings or fits a model. Its dry run validates selector files and performs one CPU ranking, without starting Qwen. Token packing is explicitly reported as pending during a dry run because exact counts require the active native Qwen tokenizer. Missing or mismatched inputs fail before Qwen starts.
 
-`scripts/qwen_llamacpp_server.py` owns the native process and API. Its `LlamaCppServer` interface starts `models/llama.cpp/llama-server.exe`, checks readiness, handles tokenization/scoring requests and retries, samples resources, and shuts down its owned process. `scripts/evaluate_qwen.py` loads data, prepares messages, calls that interface, grades returned scores, and saves reports. Shared launch settings come from `configs/qwen_server.json`. `--dry-run` inspects data/settings without loading Qwen weights. The server module uses a direct `requests.Session` against llama.cpp native endpoints: `/completion`, `/tokenize`, `/apply-template`, `/health`, and `/props`. Raw token IDs and pre-sampling log-probabilities come directly from `/completion`; prompt caching is enabled explicitly. Full histories are checked by the native tokenizer before scoring and never truncated. Dataset caps remain 41,216 (V2), 33,280 (V1), and 32,256 (LoCoMo), plus 34,560 (LongBench, measured on its 111 prompts); no-memory context is 4,096. These originate from the prior exact tokenizer audit and require a complete native-runtime audit before declaring all prompts verified.
+`scripts/qwen_llamacpp_server.py` owns the native process and API. Its `LlamaCppServer` interface starts `models/llama.cpp/llama-server.exe`, checks readiness, handles tokenization/scoring requests and retries, samples resources, and shuts down its owned process. `scripts/evaluate_qwen.py` loads data, prepares messages, calls that interface, grades returned scores, and saves reports. Shared launch settings come from `configs/qwen_server.json`. `--dry-run` inspects data/settings without loading Qwen weights. The server module uses a direct `requests.Session` against llama.cpp native endpoints: `/completion`, `/tokenize`, `/apply-template`, `/health`, and `/props`. Raw token IDs and pre-sampling log-probabilities come directly from `/completion`; prompt caching is enabled explicitly. Full histories are checked by the native tokenizer before scoring and never truncated. Dataset caps remain 41,216 (V2), 33,280 (V1), and 32,256 (LoCoMo); no-memory context is 4,096. Without the persona messages the longest V2 and V1 full-history prompts are 36,743 and 31,641 tokens by the local tokenizer, so both still fit. These originate from the prior exact tokenizer audit and require a complete native-runtime audit before declaring all prompts verified.
 
 All previous `results/` files retain their original model identities. New native outputs use `qwen35_4b_q4_k_m_*_raw` directories. Automatic resume excludes other backends, and explicit reuse of an incompatible run is rejected. Model/runtime revisions, SHA-256 hashes and launch settings are recorded in the asset lock and new protocols. Token-cost features must identify the tokenizer/runtime that produced them.
 

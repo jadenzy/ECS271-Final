@@ -1,0 +1,181 @@
+{
+  "split": "val",
+  "features": "C:\\Users\\jaden\\Code\\ECS271\\data\\ranker55\\subtlex\\v2\\val\\features.npz",
+  "questions": 1002,
+  "rows": 233147,
+  "question_types": {
+    "anti_stereotypical_pref": 167,
+    "ask_to_forget": 191,
+    "health_and_medical_conditions": 123,
+    "neutral_preferences": 166,
+    "sensitive_info": 93,
+    "stereotypical_pref": 116,
+    "therapy_background": 146
+  },
+  "models": {
+    "references_only": {
+      "model": "models/subtlex_mix/alpha_0.5/ranker55.txt",
+      "all_questions": {
+        "questions": 1002,
+        "hit_at_10": 0.6576846307385229,
+        "ndcg_at_10": 0.41752651417012165,
+        "incremental_hit_over_cosine": 0.24650698602794407,
+        "tail_rescue_over_cosine_at_10": 0.45084745762711864
+      },
+      "nonforget": {
+        "questions": 811,
+        "hit_at_10": 0.594327990135635,
+        "ndcg_at_10": 0.3385257571487522,
+        "incremental_hit_over_cosine": 0.3205918618988902,
+        "tail_rescue_over_cosine_at_10": 0.45161290322580644
+      },
+      "by_type": {
+        "anti_stereotypical_pref": {
+          "questions": 167,
+          "hit_at_10": 0.7365269461077845,
+          "ndcg_at_10": 0.4894835405667604,
+          "incremental_hit_over_cosine": 0.3473053892215569,
+          "tail_rescue_over_cosine_at_10": 0.5882352941176471
+        },
+        "ask_to_forget": {
+          "questions": 191,
+          "hit_at_10": 0.9267015706806283,
+          "ndcg_at_10": 0.7529695191142607,
+          "incremental_hit_over_cosine": -0.0680628272251309,
+          "tail_rescue_over_cosine_at_10": 0.0
+        },
+        "health_and_medical_conditions": {
+          "questions": 123,
+          "hit_at_10": 0.6178861788617886,
+          "ndcg_at_10": 0.346697145126134,
+          "incremental_hit_over_cosine": 0.3089430894308943,
+          "tail_rescue_over_cosine_at_10": 0.4470588235294118
+        },
+        "neutral_preferences": {
+          "questions": 166,
+          "hit_at_10": 0.6506024096385542,
+          "ndcg_at_10": 0.3394195851749076,
+          "incremental_hit_over_cosine": 0.37349397590361444,
+          "tail_rescue_over_cosine_at_10": 0.525
+        },
+        "sensitive_info": {
+          "questions": 93,
+          "hit_at_10": 0.0,
+          "ndcg_at_10": 0.0,
+          "incremental_hit_over_cosine": 0.0,
+          "tail_rescue_over_cosine_at_10": 0.0
+        },
+        "stereotypical_pref": {
+          "questions": 116,
+          "hit_at_10": 0.6896551724137931,
+          "ndcg_at_10": 0.37249704849982246,
+          "incremental_hit_over_cosine": 0.3706896551724138,
+          "tail_rescue_over_cosine_at_10": 0.569620253164557
+        },
+        "therapy_background": {
+          "questions": 146,
+          "hit_at_10": 0.6506849315068494,
+          "ndcg_at_10": 0.3465998640921954,
+          "incremental_hit_over_cosine": 0.40410958904109595,
+          "tail_rescue_over_cosine_at_10": 0.5454545454545454
+        }
+      },
+      "nonforget_type_macro": {
+        "questions": 811,
+        "hit_at_10": 0.5575592730881284,
+        "ndcg_at_10": 0.31578286390996996,
+        "incremental_hit_over_cosine": 0.30075694979492923,
+        "tail_rescue_over_cosine_at_10": 0.44589481937769354
+      },
+      "complete_reference_nonforget_type_macro": {
+        "questions": 718,
+        "hit_at_10": 0.6690711277057539,
+        "ndcg_at_10": 0.37893943669196395,
+        "incremental_hit_over_cosine": 0.3609083397539151,
+        "tail_rescue_over_cosine_at_10": 0.5350737832532323
+      }
+    },
+    "qwen_graded": {
+      "model": "models/qwen_graded_all/ranker55.txt",
+      "all_questions": {
+        "questions": 1002,
+        "hit_at_10": 0.6387225548902196,
+        "ndcg_at_10": 0.40314387103983035,
+        "incremental_hit_over_cosine": 0.22754491017964074,
+        "tail_rescue_over_cosine_at_10": 0.411864406779661
+      },
+      "nonforget": {
+        "questions": 811,
+        "hit_at_10": 0.5647348951911221,
+        "ndcg_at_10": 0.30748774987690886,
+        "incremental_hit_over_cosine": 0.2909987669543773,
+        "tail_rescue_over_cosine_at_10": 0.41256366723259763
+      },
+      "by_type": {
+        "anti_stereotypical_pref": {
+          "questions": 167,
+          "hit_at_10": 0.7065868263473054,
+          "ndcg_at_10": 0.46028320289316504,
+          "incremental_hit_over_cosine": 0.31736526946107785,
+          "tail_rescue_over_cosine_at_10": 0.5392156862745098
+        },
+        "ask_to_forget": {
+          "questions": 191,
+          "hit_at_10": 0.9528795811518325,
+          "ndcg_at_10": 0.8093067729410314,
+          "incremental_hit_over_cosine": -0.041884816753926746,
+          "tail_rescue_over_cosine_at_10": 0.0
+        },
+        "health_and_medical_conditions": {
+          "questions": 123,
+          "hit_at_10": 0.6178861788617886,
+          "ndcg_at_10": 0.32510633559056373,
+          "incremental_hit_over_cosine": 0.3089430894308943,
+          "tail_rescue_over_cosine_at_10": 0.4588235294117647
+        },
+        "neutral_preferences": {
+          "questions": 166,
+          "hit_at_10": 0.6024096385542169,
+          "ndcg_at_10": 0.2917541727196891,
+          "incremental_hit_over_cosine": 0.32530120481927716,
+          "tail_rescue_over_cosine_at_10": 0.4666666666666667
+        },
+        "sensitive_info": {
+          "questions": 93,
+          "hit_at_10": 0.0,
+          "ndcg_at_10": 0.0,
+          "incremental_hit_over_cosine": 0.0,
+          "tail_rescue_over_cosine_at_10": 0.0
+        },
+        "stereotypical_pref": {
+          "questions": 116,
+          "hit_at_10": 0.6724137931034483,
+          "ndcg_at_10": 0.35694321716872346,
+          "incremental_hit_over_cosine": 0.35344827586206895,
+          "tail_rescue_over_cosine_at_10": 0.5316455696202531
+        },
+        "therapy_background": {
+          "questions": 146,
+          "hit_at_10": 0.589041095890411,
+          "ndcg_at_10": 0.29233277483791004,
+          "incremental_hit_over_cosine": 0.34246575342465757,
+          "tail_rescue_over_cosine_at_10": 0.4636363636363636
+        }
+      },
+      "nonforget_type_macro": {
+        "questions": 811,
+        "hit_at_10": 0.5313895887928618,
+        "ndcg_at_10": 0.28773661720167526,
+        "incremental_hit_over_cosine": 0.27458726549966267,
+        "tail_rescue_over_cosine_at_10": 0.40999796926825965
+      },
+      "complete_reference_nonforget_type_macro": {
+        "questions": 718,
+        "hit_at_10": 0.6376675065514341,
+        "ndcg_at_10": 0.3452839406420103,
+        "incremental_hit_over_cosine": 0.3295047185995952,
+        "tail_rescue_over_cosine_at_10": 0.4919975631219116
+      }
+    }
+  }
+}

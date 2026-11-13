@@ -121,27 +121,47 @@ class FullHistoryTests(unittest.TestCase):
                 evaluation.parse_args(options)
 
 
-    def test_full_history_keeps_all_dialogue_and_has_one_initial_system(self):
-        visible = self.history[:-1]
-        messages = evaluation.build_messages(question(), self.config, visible)
+    def full_history(self, source):
+        q = {**question(), 'source_end_index': None}
+        visible, details = evaluation.VisibleHistories([q], {q['history_id']: source}, exclude_system=True).get(q)
+        return q, visible, details
+
+    def test_full_history_keeps_all_dialogue_and_drops_the_source_persona(self):
+        source = self.history[:-1]
+        q, visible, details = self.full_history(source)
+        messages = evaluation.build_messages(q, self.config, visible)
         self.assertEqual([m['role'] for m in messages], ['system', 'user', 'user'])
-        self.assertTrue(all(message['content'] in messages[1]['content'] for message in visible))
-        self.assertEqual(visible, self.history[:-1])
-        self.assertIn(question()['question'], messages[-1]['content'])
-        for option in question()['options']:
+        self.assertEqual(messages[0]['content'], self.config['system_prompt'])
+        transcript = messages[1]['content']
+        self.assertNotIn('SOURCE PERSONA', transcript)
+        self.assertNotIn('role: system', transcript)
+        self.assertTrue(all(m['content'] in transcript for m in source if m['role'] != 'system'))
+        self.assertEqual(source, self.history[:-1])
+        self.assertEqual((details['effective_end_index'], details['history_messages'], details['source_system_messages_excluded']), (3, 2, 1))
+        self.assertIn(q['question'], messages[-1]['content'])
+        for option in q['options']:
             self.assertIn(f'{option["label"]}) {option["text"]}', messages[-1]['content'])
 
     def test_missing_history_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'requires the visible source history'):
             evaluation.build_messages(question(), self.config, None)
 
-    def test_repeated_system_messages_are_preserved_in_place(self):
-        visible = self.history[:-1] + [{'role': 'system', 'content': 'SECOND SESSION PERSONA'}, {'role': 'user', 'content': 'Now I prefer tea.'}]
-        messages = evaluation.build_messages(question(), self.config, visible)
-        transcript = messages[1]['content']
-        self.assertIn('[Message 3 | role: system]\nSECOND SESSION PERSONA', transcript)
-        self.assertLess(transcript.index('Understood.'), transcript.index('SECOND SESSION PERSONA'))
-        self.assertLess(transcript.index('SECOND SESSION PERSONA'), transcript.index('Now I prefer tea.'))
+    def test_repeated_system_messages_are_dropped_and_source_indices_kept(self):
+        source = self.history[:-1] + [{'role': 'system', 'content': 'SECOND SESSION PERSONA'}, {'role': 'user', 'content': 'Now I prefer tea.'}]
+        q, visible, details = self.full_history(source)
+        transcript = evaluation.build_messages(q, self.config, visible)[1]['content']
+        self.assertNotIn('PERSONA', transcript)
+        self.assertIn('[Message 1 | role: user]\nI used to prefer coffee.', transcript)
+        self.assertIn('[Message 2 | role: assistant]\nUnderstood.', transcript)
+        self.assertIn('[Message 4 | role: user]\nNow I prefer tea.', transcript)
+        self.assertEqual((details['history_messages'], details['source_system_messages_excluded']), (3, 2))
+
+    def test_visible_history_bookkeeping_for_other_modes_is_unfiltered(self):
+        q = {**question(), 'source_end_index': None}
+        visible, details = evaluation.VisibleHistories([q], {q['history_id']: self.history}).get(q)
+        self.assertEqual(visible, self.history)
+        self.assertEqual(details['history_messages'], 4)
+        self.assertNotIn('source_system_messages_excluded', details)
 
 
     def test_split_switches_are_removed(self):

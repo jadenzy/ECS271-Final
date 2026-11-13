@@ -1,0 +1,537 @@
+# How to use the scripts
+
+This guide covers all **19 Python files in `scripts/`**: 15 command-line tools and four shared modules. Commands and defaults were checked against the current source. The project retrieves complete conversation messages, trains a 55-feature LightGBM ranker, and evaluates a frozen Qwen model on multiple-choice questions.
+
+## 1. Set up and choose a workflow
+
+Run the commands below in PowerShell from the repository root, with the project environment activated:
+
+```powershell
+Set-Location C:\Users\jaden\Code\ECS271
+.venv/Scripts/Activate.ps1
+python --version
+```
+
+The existing environment uses Python 3.13.9. If setting up a fresh checkout, create the environment first with `py -3.13 -m venv .venv`, then activate it and install dependencies:
+
+```powershell
+python -m pip install -r requirements.lock.txt
+python -m pip install lightgbm==4.7.0
+```
+
+LightGBM is needed for training and saved-model prediction but is missing from `requirements.lock.txt`; 4.7.0 is the version installed in the current environment. The lock file pins a CUDA PyTorch build, so a fresh installation needs a package source that provides that wheel. You can also invoke `.venv/Scripts/python.exe` directly in place of `python` if activation is unavailable.
+
+Prepare the inputs:
+
+- Restore actual dataset contents under `data/raw/` and the matching IDs under `data/splits/`. If using a Git LFS checkout, run `git lfs pull` to obtain LFS-managed contents. The model downloader does **not** download datasets or create splits.
+- Keep the provided `data/external/subtlex_us/word_frequencies.json` together with `configs/subtlex_us.lock.json`.
+- Download the model assets needed for your task; see `download_models.py` below.
+- Feature encoding supports CPU or CUDA. The pinned Qwen runtime is a Windows x64 CUDA build and is configured for GPU inference. Ranker training and prediction run on CPU.
+
+Choose the relevant stages:
+
+| Goal | Sequence |
+| --- | --- |
+| Train a reference-only selector | Download EmbeddingGemma -> build V2 training features -> train `ranker55.py`, or tune with `tune_ranker55.py` |
+| Inspect lexical/dense retrieval | Build the complete V2 training bundle -> `diagnose_retrieval.py` |
+| Add Qwen relevance judgments | Train a selector -> select candidates -> label with `--judge` -> build graded training features -> train/tune a separate model |
+| Evaluate an existing selector | Obtain matching saved model and feature bundle -> download Qwen/runtime -> evaluator dry run -> evaluator |
+| Run a Qwen baseline | Download Qwen/runtime -> evaluator dry run -> evaluator with the desired mode |
+| Compare completed runs | Create a run mapping JSON -> `compare_selector_runs.py` |
+
+Example reference-only workflow (these commands generate features and replace the selected model output):
+
+```powershell
+python scripts/download_models.py --only embeddinggemma2
+python scripts/build_ranker_features.py --datasets v2 --splits train
+python scripts/build_ranker_features.py --datasets v2 --splits val test
+python scripts/tune_ranker55.py
+python scripts/download_models.py --only qwen llama_cpp
+python scripts/evaluate_qwen.py --dataset v2 --mode selector --dry-run
+python scripts/evaluate_qwen.py --dataset v2 --mode selector
+```
+
+If compatible features and trained weights already exist, start at the evaluation steps. Qwen evaluation and judgment commands manage their own server processes; you do not need to start the standalone server first.
+
+### Existing artifacts in this checkout
+
+The existing `data/ranker55/v2/{train,val,test}/features.npz` files are older exports without the required `subtlex_mix_v1` recipe metadata. Their validation/test bundles also contain the old 1,002/1,242-question cohorts, rather than the active 909/1,119 questions. Current consumers reject those files; file existence alone does not mean a bundle is usable. Rebuild the standard bundles with `build_ranker_features.py` before using the default training/evaluation commands above. Their old held-out embedding caches may also require `--rebuild-cache` because the split membership changed.
+
+The existing `data/ranker55/subtlex/v2/{val,test}/features.npz` files have the current alpha-0.5 recipe, active question counts, and a recipe matching the saved reference-trained model. The following dry run passed using the existing test bundle:
+
+```powershell
+python scripts/evaluate_qwen.py --dataset v2 --mode selector --selector-features data/ranker55/subtlex/v2/test/features.npz --limit 1 --dry-run
+```
+
+Use that same `--selector-features` option for inference with the existing test bundle. No features, caches, weights, or split files were changed while preparing this guide.
+
+## 2. File index
+
+| File in `scripts/` | Purpose | Execution |
+| --- | --- | --- |
+| `download_models.py` | Download and verify pinned embedding, Qwen, and native runtime assets | CLI; network for downloads |
+| `prepare_subtlex_us.py` | Convert raw SUBTLEX-US counts into a normalized lexical prior | CLI; CPU |
+| `build_ranker_features.py` | Build embeddings, all 55 features, rankings, and training reference targets | CLI; CPU/CUDA encoding, CPU features |
+| `ranker55.py` | Define the feature recipe and train one LightGBM ranker | CLI and library; CPU |
+| `tune_ranker55.py` | Train a parameter grid and choose a model on V2 validation | CLI; CPU, with possible validation feature build |
+| `select_label_candidates.py` | Select non-reference training messages for Qwen to judge | CLI; CPU |
+| `label_reference_messages.py` | Create exact reference labels, or obtain Qwen relevance judgments | CLI; CPU for exact labels, GPU for Qwen |
+| `build_graded_training.py` | Join Qwen judgments to feature rows for graded training | CLI; CPU |
+| `diagnose_retrieval.py` | Compare BM25, cosine, and reciprocal-rank fusion against references | CLI; CPU |
+| `reference_hit_check.py` | Measure saved rankers' reference Hit@10 and NDCG@10 | CLI; CPU |
+| `evaluate_qwen.py` | Evaluate Qwen with full history, no memory, references, or selected memory | CLI; GPU inference |
+| `qwen_llamacpp_server.py` | Own native Qwen startup, HTTP scoring/tokenization, monitoring, and cleanup | CLI and library; GPU when started |
+| `option_rotation_pilot.py` | Measure the effect of rotating answer-option positions | CLI; GPU, or CPU summaries |
+| `compare_selector_runs.py` | Compare saved prediction accuracies with paired bootstrap intervals | CLI; CPU |
+| `exclude_eval_questions.py` | Remove a question type from V2 evaluation IDs and filter selected bundles | CLI; CPU; changes split files with `--apply` |
+| `raw_datasets.py` | Read raw benchmarks, answers, cutoffs, IDs, and source hashes | Importable module |
+| `message_dataset.py` | Expose each visible complete message as one retrieval memory | Importable module |
+| `subtlex_mixture.py` | Validate and mix the external lexical prior with visible-history frequencies | Importable module |
+| `feature_contract.py` | Check compatibility between feature recipes and saved ranker weights | Importable module |
+
+For the complete argument list of any CLI, use `python scripts/FILE.py --help`. The four import-only modules have no CLI or `--help` handler. `scripts/__pycache__/` contains generated Python bytecode and is not a tool to run.
+
+## 3. Setup and feature construction
+
+### `download_models.py`
+
+**Purpose:** Download the public assets pinned in `configs/assets.lock.json`, validate their sizes and SHA-256 hashes, and skip valid existing files. Rerunning repairs missing/changed assets and reuses download caches where possible.
+
+```powershell
+# Download all three groups.
+python scripts/download_models.py
+
+# Or download only the assets for the next task.
+python scripts/download_models.py --only embeddinggemma2
+python scripts/download_models.py --only qwen llama_cpp
+
+# Offline integrity check; does not download or repair files.
+python scripts/download_models.py --verify-only
+```
+
+**Outputs:** `models/embeddinggemma-2/`, `models/Qwen3.5-4B-GGUF/`, and `models/llama.cpp/`; staging files live under `.cache/model_downloads/`. `--only` also applies to `--verify-only`. A failed verification returns a nonzero exit code. Python packages, raw datasets, and GPU drivers are separate prerequisites.
+
+### `prepare_subtlex_us.py`
+
+**Purpose:** Read the tab-separated SUBTLEX-US `Word` and `FREQcount` columns, normalize words with NFKC/casefold and word tokenization, combine counts, and write token probabilities with source metadata.
+
+```powershell
+python scripts/prepare_subtlex_us.py --input data/raw/SUBTLEXusrawdata/SUBTLEXusrawdata.dat --output data/external/subtlex_us/rebuilt_word_frequencies.json
+```
+
+`--input` is required; `--encoding` defaults to `cp1252`. Without `--output`, the script replaces `data/external/subtlex_us/word_frequencies.json`.
+
+**Output:** A normalized JSON prior. The example uses a separate filename because feature construction verifies the exact processed-file hash in `configs/subtlex_us.lock.json`. Regeneration includes a creation timestamp, so even identical source counts can produce a different file hash. This tool does not update the lock manifest. Use the provided pinned prior for the normal workflow; a custom prior needs a matching manifest passed to the feature builder.
+
+### `build_ranker_features.py`
+
+**Purpose:** Read original messages and active split IDs, encode complete messages/questions and auxiliary dense spans with pinned EmbeddingGemma 2, and compute every feature in `ranker55.FEATURE_NAMES`. It also exports complete BM25/cosine rankings. It does not train a selector or call Qwen.
+
+```powershell
+# Default: all active V2 training questions, alpha 0.5.
+python scripts/build_ranker_features.py
+
+# Held-out V2 bundles and comparison datasets.
+python scripts/build_ranker_features.py --datasets v2 --splits val test
+python scripts/build_ranker_features.py --datasets v1 locomo
+
+# Small CPU build in its own output directory.
+python scripts/build_ranker_features.py --limit-questions 10 --device cpu --feature-workers 1 --output-root data/ranker55/smoke
+
+# Recalculate features using a completed matching embedding cache; no encoder loads.
+python scripts/build_ranker_features.py --datasets v2 --splits train --embedding-cache-root data/ranker55 --output-root data/ranker55/alpha_025 --alpha 0.25
+```
+
+**Inputs:** Raw sources, split IDs, the pinned SUBTLEX prior/manifest, and EmbeddingGemma weights unless using read-only embedding caches. Only V2 training loads exact reference targets. V2 accepts `train`, `val`, and `test`; V1 and LoCoMo accept only `comparison`. With no `--splits`, V2 uses `train` and the comparison datasets use `comparison`.
+
+**Outputs:** `data/ranker55/{dataset}/{split}/features.npz`, `statistics.json`, `report.json`, `embeddings/`, `bm25/`, `cosine/`, and, for V2 training, `reference_labels/`. The output root must stay under `data/ranker55/`. The NPZ contains the 55-column matrix, question group offsets, IDs, token lengths, labels, and recipe/provenance metadata.
+
+Useful controls:
+
+- `--alpha 0.5`: external/history mixture weight, from 0 to 1. Models must match the bundle's alpha and recipe.
+- `--device auto|cuda|cpu`: `auto` chooses CUDA when available.
+- `--batch-size 16`, `--batch-tokens 4800`: embedding batch limits.
+- `--feature-workers 4`: current CLI default for CPU feature processes; use 1 or 2 to reduce concurrency.
+- `--question-ids PATH`: export a JSON list of selected active IDs; `--limit-questions N` limits each split, with 0 meaning all.
+- `--split-root PATH`: alternative split directory.
+- `--subtlex-prior PATH`, `--subtlex-manifest PATH`: use a compatible custom pinned prior.
+- `--embedding-cache-root PATH`: read completed caches under `{dataset}/{split}/embeddings/`. Inputs, order, source hashes, and recipes must match exactly; partial caches are rejected.
+- `--rebuild-cache`: overwrite incompatible caches in a normal encoding build. It cannot be combined with read-only cache reuse.
+
+Normal encoding resumes matching interrupted embedding caches. Feature exports are recalculated and completed files are replaced; changing alpha at the same output root replaces the previous exports. Whole messages must fit the 1,200-token encoder limit; the builder raises an error instead of truncating them. A small build is useful for a smoke run, but the tuner and training retrieval diagnostics require the complete active training cohort.
+
+## 4. Ranker training and relevance labels
+
+### `ranker55.py`
+
+**Purpose:** Define the ordered 55 features and their construction, and fit one 300-tree CPU LightGBM LambdaRank model from an existing NPZ. It accepts training grades 0/1/2 with linear gains. It performs no hyperparameter search or held-out evaluation.
+
+```powershell
+# Print feature names, embedding recipe, and training parameters without fitting.
+python scripts/ranker55.py --describe
+
+# Fit from the standard training bundle.
+python scripts/ranker55.py --features data/ranker55/v2/train/features.npz --output models/subtlex_mix/alpha_0.5/ranker55.txt
+
+# Fit a separate model from a graded bundle.
+python scripts/ranker55.py --features data/ranker55/v2/train_graded_all/features.npz --output models/qwen_graded_all/ranker55.txt
+```
+
+**Inputs:** NPZ arrays `X`, `y`, `offsets`, `feature_names`, and compatible recipe metadata. The default question weighting also needs `question_ids` and active V2 training metadata. Validation/test bundles have unjudged targets and cannot serve as training inputs.
+
+**Outputs:** The model text file plus its `.txt.recipe.json` sidecar. Existing model outputs are replaced after successful fitting. Keep the sidecar with the weights.
+
+Defaults are `--min-child-samples 100`, `--num-leaves 31`, `--max-depth 5`, `--reg-lambda 5.0`, and `--forget-weight 0.5`. The last option gives `ask_to_forget` questions half weight; `--forget-weight 1` weights all questions equally. `feature_matrix()` is also imported by the feature builder.
+
+### `tune_ranker55.py`
+
+**Purpose:** Fit candidate parameter settings on V2 training data, measure reference retrieval on V2 validation, and select a saved ranker. Supplied training `y` can be binary or graded; validation annotations are used for measurement/selection, and test is not used.
+
+```powershell
+python scripts/tune_ranker55.py
+
+# Tune a separately saved graded model.
+python scripts/tune_ranker55.py --train-features data/ranker55/v2/train_graded_all/features.npz --output models/qwen_graded_all/ranker55.txt --output-root results/ranker55_tuning_graded_all/v2/val
+
+# A single-setting check, still requiring complete active training/validation bundles.
+python scripts/tune_ranker55.py --min-child-samples 100 --tree-shapes 31:5 --reg-lambda 5 --output models/tuning_smoke/ranker55.txt --output-root results/tuning_smoke/v2/val
+```
+
+**Inputs:** By default, `data/ranker55/v2/{train,val}/features.npz`, matching recipe/statistics metadata, all active training questions, and disjoint training/validation personas. Use `--train-features` and `--val-features` to override paths. If the standard validation bundle is missing, the CLI builds it automatically with matching alpha, which can load EmbeddingGemma and use a GPU. Build validation explicitly first to keep tuning CPU-only.
+
+The default grid has 27 unique settings: minimum child samples 50/100/200, paired leaves/depth shapes `15:4`, `31:5`, `63:6`, and L2 penalties 1/5/10. The default setting is evaluated first. Adoption requires non-forget type-macro Hit@10 to improve by **more than** `--adoption-threshold` (default 0.01, or one percentage point) without lower NDCG@10. `--forget-weight` defaults to 0.5.
+
+**Outputs:** Selected model and recipe sidecar, trial weights in `ranker55_trials/` beside the model, and `report.json`, `trials.csv`, `per_question.jsonl`, and `REPORT.md` under `results/ranker55_tuning/v2/val/` by default. Model destinations must be under `models/`; reports must be under `results/`. Use separate destinations to preserve earlier experiments.
+
+### `select_label_candidates.py`
+
+**Purpose:** Use an existing saved selector to choose **20 distinct non-reference messages per V2 training question** for Qwen labeling: 12 ranker picks, three weighted-BM25 picks, three dense-chunk picks, and two random picks. Exact references remain grade 2 outside that budget. This step uses CPU prediction and does not call Qwen or retrain the ranker.
+
+```powershell
+python scripts/select_label_candidates.py --features data/ranker55/v2/train/features.npz
+
+# Pilot in a separate directory, with optional soft diversity.
+python scripts/select_label_candidates.py --features data/ranker55/v2/train/features.npz --limit-questions 100 --diversity-weight 0.1 --output-root data/label_candidates/pilot/v2
+```
+
+**Inputs:** A complete-visible-pool NPZ, active raw training histories/references, saved weights, and the matching recipe sidecar. `--features` is required; the default model is `models/subtlex_mix/alpha_0.5/ranker55.txt`. Selected non-references remain unjudged until the Qwen stage; cached `y` is ignored.
+
+**Outputs:** `train.jsonl` and `report.json` under `data/label_candidates/v2/` by default. `--output-root` is the final directory and must be under `data/label_candidates/`. Rerunning replaces the candidate export. `--limit-questions 0` (the default) selects all cached training questions; `--seed` defaults to 271.
+
+Optional `--diversity-weight` (0 to 1, default 0) uses complete-message embedding caches to encourage variety within lexical/dense allocations. `--embedding-root` overrides the bundle's recorded cache location. `--model PATH` selects other compatible weights. Alternatively, `--fold-manifest PATH` routes questions to saved persona-held-out models; it is mutually exclusive with `--model` and does not train folds. Its JSON `models` entries declare `path`, `sha256`, `training_persona_ids`, and `held_out_persona_ids`, with IDs such as `v2:7`.
+
+### `label_reference_messages.py`
+
+**Purpose:** Support two separate labeling operations.
+
+**Exact-reference mode:** Match the original `(role, content)` pairs from V2 reference snippets to visible complete messages. Every exact matching occurrence gets 2; other messages get 0, meaning annotation non-membership rather than verified irrelevance.
+
+```powershell
+python scripts/label_reference_messages.py --splits train
+```
+
+This mode needs raw data and active IDs, with no model or rankings. It writes `data/reference_labels/v2/train.jsonl` and `report.json`. `--splits` also accepts `val` and `test`, but unmatched references raise an error; the current held-out splits retain a few incomplete references, so do not assume exact-label exports will succeed for them. `--split-root` (alias `--input-root`) changes the split directory. `--output-root` must stay under `data/reference_labels/` and has `/v2` appended.
+
+**Qwen judge mode:** Score selected non-reference candidates using raw a/b label probabilities: useful is 1, not useful is 0, references remain 2, and unselected messages remain -1 in the memory label array.
+
+```powershell
+# Small pilot using one process and one request slot.
+python scripts/label_reference_messages.py --judge --candidates data/label_candidates/pilot/v2/train.jsonl --limit-questions 100 --replicas 1 --parallel 1 --output-root data/qwen_labels/pilot
+
+# Full candidate export, using the same conservative concurrency.
+python scripts/label_reference_messages.py --judge --replicas 1 --parallel 1
+```
+
+Judge mode requires Qwen/runtime assets and a candidate export. It always uses active V2 training data; exact-mode `--splits` and `--split-root` do not change the judge cohort. The default candidate file is `data/label_candidates/v2/train.jsonl`. The default output is `data/qwen_labels/v2/`; a custom `--output-root` must stay under `data/qwen_labels/` and has `/v2` appended. Outputs include `train.jsonl`, `protocol.json`, `report.json`, and logs under `servers/`.
+
+Completed questions resume on rerun with compatible inputs/model/prompt/plan. `--limit-questions 0` means all candidate questions. The actual defaults are three server replicas and four slots per replica, which require substantially more VRAM than the examples above. Ports start at the configured port and increase for each replica. The judge reduces concurrency on GPU-memory errors. Optional `--candidate-plan "ranker=12,qweight_bm25=3,dense_chunk=3,random=2"` restricts each allocation to its first N candidates; use a separate output root when changing plans or inputs.
+
+### `build_graded_training.py`
+
+**Purpose:** Join existing Qwen judgments to V2 training feature rows, validate message identities and grades, and create an NPZ for graded ranking. This step performs no inference or training.
+
+```powershell
+python scripts/build_graded_training.py --all-rows
+
+# Join a partial pilot for a ranker55.py smoke fit.
+python scripts/build_graded_training.py --features data/ranker55/v2/train/features.npz --labels data/qwen_labels/pilot/v2/train.jsonl --allow-partial --all-rows --output-root data/ranker55/v2/pilot_graded
+```
+
+**Default inputs:** `data/ranker55/v2/train/features.npz` and `data/qwen_labels/v2/train.jsonl`; override with `--features` and `--labels`.
+
+- Without `--all-rows`, unjudged rows are dropped and offsets rebuilt; output is `data/ranker55/v2/train_graded/`.
+- With `--all-rows`, every row is retained. Unjudged rows get training `y=0`, while `judged_labels=-1` preserves their unknown status; output is `data/ranker55/v2/train_graded_all/`. The source documents poorer retrieval from judged-only training, so this is the full-history training variant used in the examples.
+- Every source question must be judged unless `--allow-partial` is supplied. Partial outputs can be fitted by `ranker55.py`; the tuner requires every active training question.
+
+**Outputs:** `features.npz`, a copied `statistics.json` when present, and `report.json`. A custom output must remain under `data/ranker55/` and separate from the source bundle. These are new training inputs; fit or tune a model afterward.
+
+## 5. Retrieval diagnostics
+
+### `diagnose_retrieval.py`
+
+**Purpose:** Fuse complete BM25/cosine rankings with reciprocal-rank fusion (RRF) and measure reference recall, Hit@k, full reference coverage, and positive-rank distributions. It reads full V2 training exports and needs no model or GPU.
+
+```powershell
+python scripts/diagnose_retrieval.py
+python scripts/diagnose_retrieval.py --feature-root data/ranker55/v2/train --rrf-constant 60 --k 5 10 20 30 50 --no-plot
+```
+
+**Inputs:** `bm25/`, `cosine/`, and `reference_labels/` exports and reports inside the feature bundle directory. `--feature-root` defaults to `data/ranker55/v2/train`. The separate exact-label export in `data/reference_labels/` is not required when the builder has produced these bundled labels. Limited training bundles are rejected because all active training questions must be present.
+
+**Outputs:** `data/rrf/v2/scores/train.jsonl` and reports under `results/selector_diagnostics_single_message/v2/train/`: `summary.json`, `REPORT.md`, `metrics.csv`, `per_question.jsonl`, `positive_ranks.jsonl`, and histogram CSV/PNG. `--no-plot` skips the PNG. `--output-root` has `/v2/train` appended and must stay under `results/selector_diagnostics_single_message/`; `--rrf-root` has `/v2/scores/train.jsonl` appended and must stay under `data/rrf/`.
+
+### `reference_hit_check.py`
+
+**Purpose:** Measure saved rankers against original V2 validation or test references on CPU. The headline is non-forget type-macro Hit@10, with NDCG@10 and per-type results. It does not tune or train a model; test annotations are read only for measurement.
+
+```powershell
+python scripts/reference_hit_check.py --split val --features data/ranker55/v2/val/features.npz
+python scripts/reference_hit_check.py --split test --features data/ranker55/v2/test/features.npz
+
+# Choose the models explicitly using label=path entries.
+python scripts/reference_hit_check.py --split val --features data/ranker55/v2/val/features.npz --models references_only=models/subtlex_mix/alpha_0.5/ranker55.txt
+```
+
+**Inputs:** The selected split's matching feature bundle, source annotations, weights, and recipe sidecars. The script's own default feature path is **`data/ranker55/subtlex/v2/{split}/features.npz`**, unlike the builder's standard output; the examples explicitly point to the standard path. Without `--models`, it compares `models/subtlex_mix/alpha_0.5/ranker55.txt` and `models/qwen_graded_all/ranker55.txt`, so both must exist and be compatible.
+
+**Output:** `results/reference_hit/v2/{split}/report.json`. `--tag NAME` changes the filename to `report_NAME.json` to preserve another measurement.
+
+## 6. Qwen inference and answer evaluation
+
+### `qwen_llamacpp_server.py`
+
+**Purpose:** Provide the native server lifecycle and API used by the evaluator and judge: startup/readiness, prompt rendering/tokenization, raw label scoring, retries, resource monitoring, and owned-process cleanup. It also exposes a standalone server command.
+
+```powershell
+# Inspect settings without loading weights or opening a port.
+python scripts/qwen_llamacpp_server.py --dataset v2 --print-settings
+python scripts/qwen_llamacpp_server.py --mode selector --memory-tokens 2048 --print-settings
+
+# Run a standalone server until stopped (Ctrl+C).
+python scripts/qwen_llamacpp_server.py --dataset v2
+```
+
+**Inputs:** `configs/qwen_server.json`, `models/llama.cpp/llama-server.exe` and its DLLs, and `models/Qwen3.5-4B-GGUF/Qwen3.5-4B-Q4_K_M.gguf`. The runtime uses native `/completion`, `/tokenize`, `/apply-template`, `/health`, and `/props` endpoints through `requests`.
+
+`--dataset` accepts `v2`, `v1`, or `locomo`. `--mode` accepts `full_history`, `no_memory`, `reference_only`, and `selector`; this selects launch settings, not a dataset evaluation. `--ctx-size` overrides the context capacity; `--port` overrides the port. The host is restricted to `127.0.0.1`.
+
+Current configured context capacities are 41,216 tokens for V2, 33,280 for V1, 32,256 for LoCoMo, and 4,096 for no-memory. Selector mode defaults to 2,048 memory tokens plus 1,000 context-overhead tokens. Generation settings come from the JSON config; the current `generation.top_k` is 40. Context shifting and automatic fit adjustment are disabled.
+
+**Output:** A running HTTP server; the standalone command does not create an evaluation report. Evaluator/judge callers write server logs in their own output folders. Leave the server port free when using those tools, because they launch their own server.
+
+### `evaluate_qwen.py`
+
+**Purpose:** Evaluate the frozen Qwen answer model with one of four memory inputs, select the answer by raw pre-sampling label probabilities, and write accuracy/NLL/resource reports. It reads original datasets directly and does not build embeddings or train weights.
+
+| Mode | Input to Qwen | Supported datasets |
+| --- | --- | --- |
+| `full_history` | All visible conversation messages, excluding source system/persona messages | V2, V1, LoCoMo |
+| `no_memory` | Instructions, question, and options only; source histories are not loaded | V2 |
+| `reference_only` | Original annotated reference snippets, an oracle baseline | V2 |
+| `selector` | Complete messages chosen by saved LightGBM scores and packed into a memory budget, or explicit top-k | V2, V1, LoCoMo |
+
+The CLI evaluates **V2 test** or the **full V1/LoCoMo comparison** split. It has no `--split` option. LoCoMo has ten answer labels; V1/V2 have four.
+
+```powershell
+# Validate data/settings without launching Qwen.
+python scripts/evaluate_qwen.py --dataset v2 --mode full_history --dry-run
+python scripts/evaluate_qwen.py --dataset v2 --mode selector --memory-tokens 2048 --dry-run
+
+# Ten-question inference pilot in a separate output folder.
+python scripts/evaluate_qwen.py --dataset v2 --mode selector --limit 10 --output results/selector_smoke
+
+# Full baseline or selector runs.
+python scripts/evaluate_qwen.py --dataset v2 --mode full_history
+python scripts/evaluate_qwen.py --dataset v2 --mode no_memory
+python scripts/evaluate_qwen.py --dataset v2 --mode reference_only
+python scripts/evaluate_qwen.py --dataset v2 --mode selector --memory-tokens 2048
+python scripts/evaluate_qwen.py --dataset v1 --mode selector
+python scripts/evaluate_qwen.py --dataset locomo --mode full_history
+
+# Explicit message-count selection instead of token packing.
+python scripts/evaluate_qwen.py --dataset v2 --mode selector --top-k 20
+
+# Stop packing when a candidate is more than 1.5 below the best score,
+# after first filling at least 1000 memory tokens when possible.
+python scripts/evaluate_qwen.py --dataset v2 --mode selector --memory-tokens 2048 --score-cutoff 1.5 --floor-tokens 1000
+```
+
+**Selector inputs:** By default, `models/subtlex_mix/alpha_0.5/ranker55.txt` and `data/ranker55/{dataset}/{split}/features.npz`, with compatible recipe/provenance and the model sidecar. Override using `--selector-model PATH` and `--selector-features PATH`. A selector dry run validates these inputs and does one CPU ranking, but exact token packing remains pending until the native tokenizer is running.
+
+`--memory-tokens` (alias `--token-budget`) defaults to 2,048 and is mutually exclusive with `--top-k`. `--score-cutoff` is a score gap from the best message, not an absolute relevance threshold; it only applies to token-budget selection. `--floor-tokens` requires a cutoff and cannot exceed the memory budget. Packing preserves whole messages, then restores chronological order. Token-budget context is the memory budget plus configured overhead; explicit top-k uses the dataset's full-history capacity. Complete prompts are checked before scoring and never truncated.
+
+**Outputs:** `predictions.jsonl`, `protocol.json`, `summary.json`, `REPORT.md`, and `qwen-server.log` in the run directory. Current default families are `results/qwen35_4b{mode}_raw/`, followed by `personamem_{dataset}/32k/` or `locomo_mc10/full/`, a `compact/` component where applicable, and a run name identifying split/limits/budget. `--output` chooses an explicit directory inside the project. Use distinct directories for distinct selector models/settings.
+
+**Resume:** Repeat the same command/output to resume compatible saved predictions. With no arguments (or only `--dry-run`), the script first searches for the latest compatible unfinished run for the current model; if none exists, the default is full-history V2 test. Supply explicit dataset/mode arguments to choose a particular evaluation. Changed data, answer ordering, model identity, memory inputs, or selector settings can make a saved run incompatible.
+
+### `option_rotation_pilot.py`
+
+**Purpose:** Check whether answer positions affect Qwen predictions. For each sampled V2 question, keep the selected memory fixed, score every cyclic answer-option rotation, map scores back to answer texts, and compare one-pass accuracy with combined rotation scores.
+
+```powershell
+python scripts/option_rotation_pilot.py --split val --questions 200 --features data/ranker55/v2/val/features.npz
+
+# Compare another selector, keeping its predictions in a separate label folder.
+python scripts/option_rotation_pilot.py --split val --questions 200 --features data/ranker55/v2/val/features.npz --label qwen_graded --model models/qwen_graded_all/ranker55.txt
+
+# Recompute a saved pilot's summary without loading Qwen.
+python scripts/option_rotation_pilot.py --split val --label references_only --summarize-only
+```
+
+**Inputs:** Raw V2 validation (default) or test data, a selector model/sidecar, and its matching feature bundle. `--questions` defaults to 200; 0 uses the entire split. `--seed` defaults to 271 and `--memory-tokens` to 2,048. As with `reference_hit_check.py`, the default feature path is `data/ranker55/subtlex/v2/{split}/features.npz`; the examples override it explicitly.
+
+**Outputs:** `results/option_rotation/v2/{split}/{label}/predictions.jsonl`, `report.json`, and a server log for inference runs. `--output-root` changes the prefix. Existing question IDs are skipped on rerun. Use a new label or output root when changing the model, inputs, seed, or budget: this pilot resumes by question ID and does not apply the main evaluator's full protocol compatibility checks. The default label `references_only` names the reference-trained selector; it does not activate oracle reference-only memory. `--summarize-only` requires existing predictions and rewrites the report.
+
+## 7. Compare runs and maintain evaluation splits
+
+### `compare_selector_runs.py`
+
+**Purpose:** Read completed Qwen `predictions.jsonl` files and compare paired accuracy differences, gained/lost questions, and 95% bootstrap intervals clustered by persona/conversation. It also reports equal-dataset macro accuracy and pooled question accuracy. It performs no inference.
+
+Create a JSON mapping with the same run labels for each dataset, using actual run directories. For example, save the following as `results/run_comparison.json` after producing the named runs:
+
+```json
+{
+  "v2": {
+    "references_only": "results/eval_refs_v2",
+    "qwen_graded": "results/eval_graded_v2"
+  },
+  "v1": {
+    "references_only": "results/eval_refs_v1",
+    "qwen_graded": "results/eval_graded_v1"
+  }
+}
+```
+
+```powershell
+python scripts/compare_selector_runs.py --runs results/run_comparison.json --output results/run_comparison_report.json --active-only
+```
+
+`--runs` and `--output` are required. Every mapped directory must contain predictions for the same question set as the other runs within that dataset. `--active-only` filters out IDs no longer present in the active split files, useful for historical V2 results saved before exclusions. `--draws` defaults to 5,000 and `--seed` to 271. Use at least two consistently named runs to obtain paired comparisons.
+
+**Outputs:** The requested JSON report and printed comparisons. Existing output files are replaced. Paths in the mapping are resolved from the repository root; the command's argument paths follow the current working directory.
+
+### `exclude_eval_questions.py`
+
+**Purpose:** Perform the one-time removal of a question type (default `sensitive_info`) from V2 validation/test IDs and filter feature/score exports under selected roots. It preserves retained feature values and backs up the original NPZ. This is split maintenance, not a normal training step.
+
+```powershell
+# Inspect proposed changes on a checkout where exclusion has not been applied.
+python scripts/exclude_eval_questions.py
+
+# Apply to splits and the explicitly selected feature root.
+python scripts/exclude_eval_questions.py --bundle-root data/ranker55 --apply
+```
+
+**Current checkout:** `data/splits/v2/evaluation_exclusions.json` already exists, so the script refuses to run again, including in dry-run mode. The examples describe its use before that exclusion has been applied; no repeat is needed here.
+
+`--question-type` changes the removed type. `--bundle-root` accepts roots containing `v2/{val,test}/features.npz`; its default is **`data/ranker55/subtlex`**, so pass the intended roots explicitly. Without `--apply`, the script only reports planned changes.
+
+**Changes with `--apply`:** Rewrites V2 `val_ids.json`, `test_ids.json`, and `persona_split.json`; writes `evaluation_exclusions.json`; filters matching NPZ/BM25/cosine outputs and updates their reports. Original bundles become `features_before_exclusion.npz`, and removed score rows become `{split}_excluded.jsonl`. Existing backups are not overwritten. Training, raw sources, saved Qwen predictions, and embedding caches are unchanged. Embedding cache provenance can become stale after split changes; rebuild caches as needed, and use `--active-only` when comparing older predictions.
+
+## 8. Shared modules: import them from Python
+
+These four files are helpers for the command-line scripts. Running them directly produces no task output; they have no `main()` entry point. Because sibling imports use the `scripts/` directory, add it to `sys.path` when importing helpers from a root-level Python session or notebook:
+
+```python
+import sys
+sys.path.insert(0, "scripts")
+```
+
+### `raw_datasets.py`
+
+**Purpose:** Read PersonaMem V2, PersonaMem V1, and LoCoMo-MC10 directly from their source files and preserved split IDs. It supplies deterministic answer options, answer targets, original histories, source hashes, and message IDs. Visibility helpers preserve the original V1 cutoff, including negative Python slice indices. Complete nonempty user/assistant messages form retrieval memories.
+
+Example after the import setup above:
+
+```python
+from raw_datasets import load_dataset, memories_for_question
+
+questions, contexts, targets, sources = load_dataset("v2", ["val"])
+first_question = questions[0]
+visible_memories = memories_for_question(first_question, contexts)
+print(first_question["example_id"], len(visible_memories))
+```
+
+`include_answers=False` avoids parsing answers/options for retrieval; `include_contexts=False` avoids loading histories when they are not needed. This module writes no files. Expected source locations include `data/raw/personamem_v2/benchmark/text/{train,val,benchmark}.csv` and its linked histories, V1 `questions_32k.csv`/`shared_contexts_32k.jsonl`, and the JSONL-formatted `data/raw/locomo/locomo_mc10.json`.
+
+### `message_dataset.py`
+
+**Purpose:** Wrap the raw loader for retrieval, without reading answers. It attaches each question's visible `memory_ids`, deduplicates memory records by source ID, and returns questions, memories, and source hashes. Memory text stays exactly as in the original complete message. It also provides temporary-file-and-replace JSON/JSONL writers used by other scripts.
+
+```python
+from message_dataset import load_message_dataset
+
+questions, memories, sources = load_message_dataset("v2", ["val"])
+first_memory = memories[questions[0]["memory_ids"][0]]
+print(first_memory["role"], first_memory["message_id"])
+```
+
+The loader creates no prepared dataset or intermediate manifest. It excludes system/persona, empty, and non-text turns from retrieval memories while preserving original indices and source message metadata.
+
+### `subtlex_mixture.py`
+
+**Purpose:** Validate the pinned prior and lexical configuration, tokenize consistently, and mix external token probabilities with counts from the current question's complete visible history. The mixture generates bounded lexical weights and caches a limited number of history-specific priors. It fits no training-corpus statistics and writes no files.
+
+```python
+from subtlex_mixture import ROOT, configuration, load_prior
+
+counts, total, lock = load_prior(
+    ROOT / "data/external/subtlex_us/word_frequencies.json",
+    ROOT / "configs/subtlex_us.lock.json",
+)
+recipe = configuration(0.5, lock)
+print(recipe["name"], total)
+```
+
+The builder uses `Mixture` and `HistoryPrior` to obtain history-local weights. Alpha 0 uses history probabilities; alpha 1 uses the smoothed external distribution. The normal CLI entry point for this functionality is `build_ranker_features.py --alpha VALUE`.
+
+### `feature_contract.py`
+
+**Purpose:** Read and validate a bundle's SUBTLEX recipe, locate embedding caches, and save/check the `.recipe.json` sidecar binding weights to their own hash and exact lexical recipe. Matching column names alone do not establish compatibility.
+
+```python
+from feature_contract import bundle_recipe, check_model_recipe
+
+recipe = bundle_recipe("data/ranker55/v2/train/features.npz")
+sidecar = check_model_recipe(
+    "models/subtlex_mix/alpha_0.5/ranker55.txt", recipe
+)
+print(sidecar)
+```
+
+The check raises an error for a missing/stale sidecar, changed model hash, different alpha/source hashes, or incompatible recipe. Training scripts call `save_model_recipe()` when producing weights; keep those generated sidecars beside their models.
+
+## 9. Supporting files and checks
+
+| File or directory | Role |
+| --- | --- |
+| `configs/assets.lock.json` | Pinned model/runtime revisions, paths, sizes, and hashes; also records dataset assets |
+| `configs/subtlex_us.lock.json` | Exact processed/raw SUBTLEX hashes and normalization contract |
+| `configs/qwen_server.json` | Active native Qwen model/runtime paths, context capacities, port, and generation settings |
+| `configs/evaluate_qwen.json` | Shared answer prompt, labels, grading policy, bootstrap settings, and model identity |
+| `configs/project.json` | Project design/settings overview; individual CLI defaults and active runtime configs govern execution |
+| `requirements.lock.txt` | Pinned Python dependencies; install LightGBM separately as described above |
+| `data/raw/`, `data/splits/` | Original datasets and active cohort membership |
+| `data/ranker55/` | Generated feature bundles, embeddings, and recipe manifests |
+| `data/reference_labels/`, `data/label_candidates/`, `data/qwen_labels/` | Exact labels, selected candidate exports, and Qwen judgments respectively |
+| `models/` | Pretrained assets, trained rankers, trial models, and recipe sidecars |
+| `results/` | Evaluation predictions, diagnostics, and experiment reports |
+| `tests/` | Unit tests and synthetic fixtures for loaders, features, labels, packing, runtime interfaces, and evaluation |
+| `README.md`, `PROJECT_PLAN.md`, `PLAN_REVIEW.md` | Project overview, research plan, and plan review |
+
+Quick checks without training or loading model weights:
+
+```powershell
+python scripts/ranker55.py --describe
+python scripts/qwen_llamacpp_server.py --print-settings
+python scripts/evaluate_qwen.py --dataset v2 --mode full_history --dry-run
+```
+
+To run the existing test suite:
+
+```powershell
+python -m unittest discover -s tests
+```
+
+For this guide, all 19 Python files were parsed, all 15 CLI `--help` entry points returned successfully, and the documented script flags and Python/JSON examples were checked. The ranker description, server-settings preview, full-history dry run, and selector dry run with the existing SUBTLEX test bundle passed. The default selector dry run exposed the older bundle mismatch documented above. Feature generation, training, downloads, and GPU inference were not executed as part of documentation verification.

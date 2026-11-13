@@ -97,12 +97,15 @@ def parameter_grid(minimums, shapes, penalties):
     return trials
 
 
-def validation_targets(bundle, root):
-    """Bind every visible row to raw annotations, retaining incomplete questions."""
-    questions, memories, sources = load_message_dataset('v2', ['val'], root=root)
+def validation_targets(bundle, root, split='val'):
+    """Bind every visible row to raw annotations, retaining incomplete questions.
+
+    split='test' gives the same targets for the test bundle (measurement only; tuning uses val).
+    """
+    questions, memories, sources = load_message_dataset('v2', [split], root=root)
     metadata = bundle.metadata
-    if (metadata.get('dataset'), metadata.get('split'), metadata.get('memory_unit')) != ('v2', 'val', 'single_message'):
-        raise ValueError('Validation bundle must be V2 val with single-message features')
+    if (metadata.get('dataset'), metadata.get('split'), metadata.get('memory_unit')) != ('v2', split, 'single_message'):
+        raise ValueError(f'Validation bundle must be V2 {split} with single-message features')
     if any(metadata.get('source_sha256', {}).get(k) != v for k, v in sources.items()):
         raise ValueError('Validation features differ from current raw sources/splits')
     qids = bundle.read('question_ids').tolist()

@@ -1,0 +1,122 @@
+{
+  "split": "val",
+  "ranker": "references_only",
+  "model": "C:\\Users\\jaden\\Code\\ECS271\\models\\subtlex_mix\\alpha_0.5\\ranker55.txt",
+  "memory_tokens": 2048,
+  "seed": 271,
+  "questions": 200,
+  "personas": 40,
+  "accuracy": {
+    "one_pass": 0.395,
+    "rotation_sum_logprob": 0.41,
+    "rotation_mean_prob": 0.41,
+    "one_pass_letter_balanced": 0.38
+  },
+  "accuracy_of_each_single_order": [
+    0.395,
+    0.36,
+    0.385,
+    0.415
+  ],
+  "letter_share_per_order": [
+    {
+      "a": 0.05,
+      "b": 0.2,
+      "c": 0.295,
+      "d": 0.455
+    },
+    {
+      "a": 0.015,
+      "b": 0.185,
+      "c": 0.24,
+      "d": 0.56
+    },
+    {
+      "a": 0.045,
+      "b": 0.165,
+      "c": 0.255,
+      "d": 0.535
+    },
+    {
+      "a": 0.02,
+      "b": 0.195,
+      "c": 0.255,
+      "d": 0.53
+    }
+  ],
+  "letter_share_all_orders": {
+    "a": 0.0325,
+    "b": 0.18625,
+    "c": 0.26125,
+    "d": 0.52
+  },
+  "correct_letter_share_one_pass": {
+    "a": 0.24,
+    "b": 0.265,
+    "c": 0.285,
+    "d": 0.21
+  },
+  "same_answer_in_all_orders": 0.09,
+  "one_pass_changed_by_rotation": 0.37,
+  "rotation_agrees_with_letter_balanced": 0.7,
+  "rotation_minus_one_pass": {
+    "difference": 0.014999999999999958,
+    "ci95_persona_bootstrap": [
+      -0.049021796218487394,
+      0.07778455284552836
+    ],
+    "gained": 27,
+    "lost": 24
+  },
+  "accuracy_by_type": {
+    "anti_stereotypical_pref": {
+      "questions": 34,
+      "one_pass": 0.47058823529411764,
+      "rotation": 0.4411764705882353
+    },
+    "ask_to_forget": {
+      "questions": 43,
+      "one_pass": 0.27906976744186046,
+      "rotation": 0.2558139534883721
+    },
+    "health_and_medical_conditions": {
+      "questions": 23,
+      "one_pass": 0.30434782608695654,
+      "rotation": 0.391304347826087
+    },
+    "neutral_preferences": {
+      "questions": 39,
+      "one_pass": 0.5128205128205128,
+      "rotation": 0.5128205128205128
+    },
+    "stereotypical_pref": {
+      "questions": 30,
+      "one_pass": 0.43333333333333335,
+      "rotation": 0.5333333333333333
+    },
+    "therapy_background": {
+      "questions": 31,
+      "one_pass": 0.3548387096774194,
+      "rotation": 0.3548387096774194
+    }
+  },
+  "seconds_per_order": [
+    1.6324374940000508,
+    0.4147786355000517,
+    0.44650325999995405,
+    0.45257162550006796
+  ],
+  "cached_prompt_tokens_per_order": [
+    0.0,
+    1878.575,
+    1878.575,
+    1878.575
+  ],
+  "evaluated_prompt_tokens_per_order": [
+    2394.575,
+    516.0,
+    516.0,
+    516.0
+  ],
+  "mean_prompt_tokens": 2394.575
+}
