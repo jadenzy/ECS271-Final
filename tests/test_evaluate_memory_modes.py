@@ -144,14 +144,18 @@ class MemoryModeTests(unittest.TestCase):
         questions, contexts, sources = self.inputs('v2')
         inputs = evaluation.ReferenceHistories(questions, contexts, sources, root=self.root)
         history, source = inputs.get(questions[0])
-        self.assertEqual(history, [{'role': 'user', 'content': 'I prefer tea.'}])
+        self.assertEqual(history, [{'role': 'user', 'content': 'I prefer tea.', 'source_message_index': 1}])
         self.assertEqual(source['reference_label'], 2)
         self.assertEqual(source['reference_messages_missing_from_visible_history'], 0)
         self.assertEqual(inputs.provenance['included_labels'], [2])
         self.assertFalse(inputs.provenance['qwen_generated_labels_used'])
         prompt = evaluation.build_messages(questions[0], evaluation.evaluation_config('v2', 'reference_only'), history)
         self.assertIn('I prefer tea.', prompt[1]['content'])
-        for excluded in ('Tea remembered.', 'Forget my old preference.', 'SECRET PERSONA', 'all visible source messages'):
+        # The oracle shares the selector's heading and source-position labels.
+        self.assertTrue(prompt[1]['content'].startswith('Selected conversation messages (in chronological source order):'))
+        self.assertIn('[Message 1 | role: user]', prompt[1]['content'])
+        for excluded in ('Tea remembered.', 'Forget my old preference.', 'SECRET PERSONA', 'all visible source messages',
+                         'Reference message'):
             self.assertNotIn(excluded, prompt[1]['content'])
 
     def test_missing_annotated_reference_is_preserved_and_reported_as_oracle(self):

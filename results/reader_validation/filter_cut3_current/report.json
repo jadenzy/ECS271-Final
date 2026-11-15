@@ -1,0 +1,118 @@
+{
+  "arm": "filter_cut3_current",
+  "questions": 500,
+  "personas": 23,
+  "accuracy": {
+    "one_pass": 0.474,
+    "rotation_sum_logprob": 0.522,
+    "rotation_mean_prob": 0.524,
+    "one_pass_letter_balanced": 0.502
+  },
+  "accuracy_of_each_single_order": [
+    0.474,
+    0.47,
+    0.396,
+    0.476
+  ],
+  "letter_share_per_order": [
+    {
+      "a": 0.058,
+      "b": 0.184,
+      "c": 0.242,
+      "d": 0.516
+    },
+    {
+      "a": 0.042,
+      "b": 0.19,
+      "c": 0.276,
+      "d": 0.492
+    },
+    {
+      "a": 0.066,
+      "b": 0.2,
+      "c": 0.21,
+      "d": 0.524
+    },
+    {
+      "a": 0.05,
+      "b": 0.186,
+      "c": 0.264,
+      "d": 0.5
+    }
+  ],
+  "letter_share_all_orders": {
+    "a": 0.054,
+    "b": 0.19,
+    "c": 0.248,
+    "d": 0.508
+  },
+  "correct_letter_share_one_pass": {
+    "a": 0.222,
+    "b": 0.238,
+    "c": 0.294,
+    "d": 0.246
+  },
+  "same_answer_in_all_orders": 0.154,
+  "one_pass_changed_by_rotation": 0.35,
+  "rotation_agrees_with_letter_balanced": 0.724,
+  "rotation_minus_one_pass": {
+    "difference": 0.04800000000000004,
+    "ci95_persona_bootstrap": [
+      0.011810443512832015,
+      0.0834916497221604
+    ],
+    "gained": 73,
+    "lost": 49
+  },
+  "accuracy_by_type": {
+    "anti_stereotypical_pref": {
+      "questions": 92,
+      "one_pass": 0.5434782608695652,
+      "rotation": 0.6304347826086957
+    },
+    "ask_to_forget": {
+      "questions": 104,
+      "one_pass": 0.4230769230769231,
+      "rotation": 0.5288461538461539
+    },
+    "health_and_medical_conditions": {
+      "questions": 62,
+      "one_pass": 0.45161290322580644,
+      "rotation": 0.4838709677419355
+    },
+    "neutral_preferences": {
+      "questions": 97,
+      "one_pass": 0.5567010309278351,
+      "rotation": 0.5670103092783505
+    },
+    "stereotypical_pref": {
+      "questions": 58,
+      "one_pass": 0.4827586206896552,
+      "rotation": 0.5172413793103449
+    },
+    "therapy_background": {
+      "questions": 87,
+      "one_pass": 0.3793103448275862,
+      "rotation": 0.3793103448275862
+    }
+  },
+  "seconds_per_order": [
+    0.23352906619998795,
+    0.09857581459999255,
+    0.09873189539997838,
+    0.0982000292000157
+  ],
+  "cached_prompt_tokens_per_order": [
+    35.464,
+    928.992,
+    928.992,
+    928.992
+  ],
+  "evaluated_prompt_tokens_per_order": [
+    1441.026,
+    547.498,
+    547.498,
+    547.498
+  ],
+  "mean_prompt_tokens": 1476.49
+}

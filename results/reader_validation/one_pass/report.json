@@ -1,0 +1,61 @@
+{
+  "dataset": "v2",
+  "split": "val",
+  "questions": 909,
+  "personas": 40,
+  "rotations": 1,
+  "prompt": "current",
+  "status": "complete",
+  "arms": {
+    "ranker_current": {
+      "correct": 394,
+      "accuracy": 0.43344334433443343,
+      "mean_messages": 16.96809680968097,
+      "mean_memory_tokens": 2040.6204620462047,
+      "mean_prompt_tokens": 2395.6974697469745
+    },
+    "ranker_top8_current": {
+      "correct": 406,
+      "accuracy": 0.44664466446644663,
+      "mean_messages": 7.995599559955996,
+      "mean_memory_tokens": 1154.965896589659,
+      "mean_prompt_tokens": 1510.042904290429
+    },
+    "filter_top8_current": {
+      "correct": 382,
+      "accuracy": 0.42024202420242024,
+      "mean_messages": 7.995599559955996,
+      "mean_memory_tokens": 1023.034103410341,
+      "mean_prompt_tokens": 1378.111111111111
+    }
+  },
+  "paired": {
+    "ranker_top8_current - ranker_current": {
+      "difference": 0.013201320132013201,
+      "ci95_persona_bootstrap": [
+        -0.011111729769858946,
+        0.03765238604929176
+      ],
+      "gained": 61,
+      "lost": 49
+    },
+    "filter_top8_current - ranker_current": {
+      "difference": -0.013201320132013201,
+      "ci95_persona_bootstrap": [
+        -0.03747358595358504,
+        0.011173809955770197
+      ],
+      "gained": 43,
+      "lost": 55
+    },
+    "filter_top8_current - ranker_top8_current": {
+      "difference": -0.026402640264026403,
+      "ci95_persona_bootstrap": [
+        -0.046709365678779674,
+        -0.006659267480577136
+      ],
+      "gained": 42,
+      "lost": 66
+    }
+  }
+}

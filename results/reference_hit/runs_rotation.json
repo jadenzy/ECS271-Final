@@ -1,0 +1,4 @@
+{
+ "personamem_v2_test": {"refs": "results/option_rotation/v2/test/references_only", "graded": "results/option_rotation/v2/test/qwen_graded", "full": "results/option_rotation/v2/test/full_history"},
+ "personamem_v1": {"refs": "results/option_rotation/v1/comparison/references_only", "graded": "results/option_rotation/v1/comparison/qwen_graded", "full": "results/option_rotation/v1/comparison/full_history"}
+}

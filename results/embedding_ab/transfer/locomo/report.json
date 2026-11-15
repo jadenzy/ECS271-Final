@@ -1,0 +1,20 @@
+{
+  "questions": 1986,
+  "personas": 10,
+  "accuracy": {
+    "one_pass": 0.6706948640483383
+  },
+  "ci95_persona_bootstrap": [
+    0.6482004294679201,
+    0.6909443254410982
+  ],
+  "mean_prompt_tokens": 2242.081067472306,
+  "status": "complete",
+  "dataset": "locomo",
+  "split": "comparison",
+  "rotations": 1,
+  "memory_tokens": 2048,
+  "redundancy_selection_used": false,
+  "mean_selected_messages": 38.171701913393754,
+  "mean_memory_tokens": 2040.5810674723061
+}

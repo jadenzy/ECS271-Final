@@ -1,0 +1,6 @@
+{
+  "v1": {
+    "baseline": "results/option_rotation/v1/comparison/references_only",
+    "new": "results/embedding_ab/transfer/v1"
+  }
+}

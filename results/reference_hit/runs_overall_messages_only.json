@@ -1,0 +1,5 @@
+{
+ "personamem_v2_test": {"refs": "results/qwen35_4bselector_raw/personamem_v2/32k/compact/test_memory_2048_references_only", "graded": "results/qwen35_4bselector_raw/personamem_v2/32k/compact/test_memory_2048_qwen_graded_all", "full": "results/option_rotation/v2/test/full_history"},
+ "personamem_v1": {"refs": "results/qwen35_4bselector_raw/personamem_v1/32k/comparison_memory_2048_references_only", "graded": "results/qwen35_4bselector_raw/personamem_v1/32k/comparison_memory_2048_qwen_graded_all", "full": "results/option_rotation/v1/comparison/full_history"},
+ "locomo_mc10": {"refs": "results/qwen35_4bselector_raw/locomo_mc10/full/comparison_memory_2048_references_only", "graded": "results/qwen35_4bselector_raw/locomo_mc10/full/comparison_memory_2048_qwen_graded_all", "full": "results/qwen35_4bfull_history_raw/locomo_mc10/full/comparison"}
+}

@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "questions": 909,
+  "personas": 40,
+  "policies": 3,
+  "answer_evaluations": 2727,
+  "answer_orders_per_policy_question": 1,
+  "complete_unique_cohorts": true,
+  "source_and_protocol_hashes_match": true,
+  "all_selection_scores_match_frozen_ranker": true,
+  "subset_choices_match_saved_judgments_and_ranker_order": true,
+  "answer_labels_and_scores_verified": true,
+  "native_memory_budget_verified": true,
+  "zero_truncations": true,
+  "paired_counts_verified": true,
+  "focused_tests_passed": 3,
+  "existing_transfer_tests_passed": 3,
+  "report_sha256": "b4a9252abc95ec5bf1e167aa3ffbb06bfcbf9e0f543970bf4d1046f19ce62b68",
+  "protocol_sha256": "d70a2e69d8962308df99cb35f6a1ab0d1717693e3c622d2eb372f4bc43bc15f6"
+}

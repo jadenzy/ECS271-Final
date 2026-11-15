@@ -1,0 +1,76 @@
+{
+  "datasets": {
+    "personamem_v2_test": {
+      "questions": 1119,
+      "groups": 50,
+      "accuracy": {
+        "messages_only": 0.34763181411974975,
+        "with_persona": 0.3717605004468275
+      },
+      "paired": {
+        "with_persona - messages_only": {
+          "difference": 0.024128686327077747,
+          "ci95": [
+            0.009550643128535569,
+            0.0390625
+          ],
+          "gained": 56,
+          "lost": 29,
+          "same_prediction": 0.8650580875781948
+        }
+      }
+    },
+    "personamem_v1": {
+      "questions": 589,
+      "groups": 20,
+      "accuracy": {
+        "messages_only": 0.634974533106961,
+        "with_persona": 0.6247877758913413
+      },
+      "paired": {
+        "with_persona - messages_only": {
+          "difference": -0.010186757215619695,
+          "ci95": [
+            -0.03436426116838488,
+            0.014128867094540995
+          ],
+          "gained": 15,
+          "lost": 21,
+          "same_prediction": 0.9219015280135824
+        }
+      }
+    }
+  },
+  "draws": 5000,
+  "active_only": true,
+  "macro": {
+    "accuracy": {
+      "messages_only": 0.49130317361335535,
+      "with_persona": 0.4982741381690844
+    },
+    "paired": {
+      "with_persona - messages_only": {
+        "difference": 0.006970964555729026,
+        "ci95": [
+          -0.006882091909528583,
+          0.021381576084257725
+        ]
+      }
+    }
+  },
+  "pooled": {
+    "accuracy": {
+      "messages_only": 0.44672131147540983,
+      "with_persona": 0.45901639344262296
+    },
+    "paired": {
+      "with_persona - messages_only": {
+        "difference": 0.012295081967213115,
+        "ci95": [
+          0.0,
+          0.025028822396393417
+        ]
+      }
+    }
+  }
+}

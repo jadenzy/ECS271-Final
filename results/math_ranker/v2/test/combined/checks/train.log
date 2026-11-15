@@ -1,0 +1,26 @@
+Fold 1/5: 14818 fit, 3714 held-out questions
+  epoch 1: loss 0.3740
+  epoch 2: loss 0.2882
+  epoch 3: loss 0.2606
+Fold 2/5: 14740 fit, 3792 held-out questions
+  epoch 1: loss 0.3792
+  epoch 2: loss 0.2909
+  epoch 3: loss 0.2632
+Fold 3/5: 14869 fit, 3663 held-out questions
+  epoch 1: loss 0.3716
+  epoch 2: loss 0.2903
+  epoch 3: loss 0.2597
+Fold 4/5: 14894 fit, 3638 held-out questions
+  epoch 1: loss 0.3755
+  epoch 2: loss 0.2857
+  epoch 3: loss 0.2629
+Fold 5/5: 14807 fit, 3725 held-out questions
+  epoch 1: loss 0.3682
+  epoch 2: loss 0.2835
+  epoch 3: loss 0.2582
+Training final adapter on every training persona
+  epoch 1: loss 0.3600
+  epoch 2: loss 0.2776
+  epoch 3: loss 0.2518
+Fitting 57-feature LightGBM on 4,273,942 rows
+Training complete in 126.5s

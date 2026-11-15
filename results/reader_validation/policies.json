@@ -1,0 +1,44 @@
+{
+  "ranker selection (no filter)": {
+    "questions": 909,
+    "every_reference": 0.8778877887788779,
+    "any_reference": 0.9570957095709571,
+    "messages": 16.96809680968097,
+    "share_that_are_references": 0.1719318850051286
+  },
+  "useful": {
+    "questions": 909,
+    "every_reference": 0.22112211221122113,
+    "any_reference": 0.7337733773377337,
+    "messages": 2.218921892189219,
+    "share_that_are_references": 0.6123592121116874
+  },
+  "top4": {
+    "questions": 909,
+    "every_reference": 0.22112211221122113,
+    "any_reference": 0.735973597359736,
+    "messages": 4.0,
+    "share_that_are_references": 0.356985698569857
+  },
+  "top6": {
+    "questions": 909,
+    "every_reference": 0.35753575357535755,
+    "any_reference": 0.8195819581958196,
+    "messages": 6.0,
+    "share_that_are_references": 0.3041804180418042
+  },
+  "top8": {
+    "questions": 909,
+    "every_reference": 0.46534653465346537,
+    "any_reference": 0.8734873487348734,
+    "messages": 7.995599559955996,
+    "share_that_are_references": 0.2622518204201372
+  },
+  "cut3": {
+    "questions": 909,
+    "every_reference": 0.8151815181518152,
+    "any_reference": 0.933993399339934,
+    "messages": 8.051705170517051,
+    "share_that_are_references": 0.4645503616262821
+  }
+}

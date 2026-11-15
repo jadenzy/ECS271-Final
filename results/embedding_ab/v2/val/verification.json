@@ -1,0 +1,41 @@
+{
+  "status": "experiment_checks_passed",
+  "a_personas": 400,
+  "b_personas": 400,
+  "actual_fine_tune_questions": 9000,
+  "ranker_questions_both_conditions": 9192,
+  "validation_questions": 909,
+  "validation_personas": 40,
+  "identical_fine_tuning_hyperparameters_to_prior_pilot": [
+    "epochs",
+    "batch_size",
+    "positives",
+    "hard_negatives",
+    "random_negatives",
+    "hard_pool",
+    "max_tokens",
+    "learning_rate",
+    "temperature",
+    "warmup",
+    "seed"
+  ],
+  "checkpoint_step": 750,
+  "encoder_identity": {
+    "repo": "local/embeddinggemma2-v2-half-a",
+    "revision": "2839e54fe60ef6334b2e45885410e7dd8c15e129c1df1bc037471f2441ae2cf1"
+  },
+  "persona_disjoint": true,
+  "mathematical_folds_disjoint": true,
+  "identical_b_folds_and_settings_both_conditions": true,
+  "fresh_saved_model_predictions_match_reported_scores": true,
+  "feature_count_both_rankers": 57,
+  "redundancy_selection_used": false,
+  "test_evaluation_used": false,
+  "new_tests_passed": 5,
+  "full_suite_tests": 185,
+  "full_suite_passed": 184,
+  "preexisting_failure": "test_qwen_judge.JudgeTests.test_deterministic_scoring_errors_are_not_retried",
+  "pipeline_sha256": "4be65de37662b57fb1fa50e89ea8cc913da182a6158e22f8dc9d4406bb38b0ec",
+  "finetune_script_sha256": "e6d48eac3d35d82d08c8a6247ba0738ab31dc0504ffc2eb6c0162bc20fe6bfb6",
+  "report_sha256": "c257ba817920d11d127d38a42500cd83988e0729f3e61f8c17188f0687711e2c"
+}

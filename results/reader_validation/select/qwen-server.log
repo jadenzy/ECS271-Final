@@ -1,0 +1,10 @@
+Command: C:\Users\jaden\ECS271-Final\models\llama.cpp\llama-server.exe --model C:\Users\jaden\ECS271-Final\models\Qwen3.5-4B-GGUF\Qwen3.5-4B-Q4_K_M.gguf --alias Qwen3.5-4B-Q4_K_M --ctx-size 3048 --n-gpu-layers -1 --flash-attn on --host 127.0.0.1 --port 8080 --parallel 1 --cache-prompt --reasoning off --jinja --chat-template-kwargs {\"enable_thinking\":false} --no-context-shift --fit off --temp 1.0 --top-p 1.0 --top-k 40 --min-p 0.0 --presence-penalty 2.0 --repeat-penalty 1.0
+0.00.118.946 W Setting 'enable_thinking' via --chat-template-kwargs is deprecated. Use --reasoning on / --reasoning off instead.
+0.00.119.154 I srv  llama_server: initializing ...
+0.00.119.160 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.119.464 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.132.639 I srv    load_model: loading model 'C:\Users\jaden\ECS271-Final\models\Qwen3.5-4B-GGUF\Qwen3.5-4B-Q4_K_M.gguf'
+0.01.863.291 I cmn          init: llama threadpool init, n_threads = 24
+0.02.058.311 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 3072, kv_unified = 'false'
+0.02.062.976 I srv  llama_server: model loaded
+0.02.062.981 I srv  llama_server: listening on http://127.0.0.1:8080

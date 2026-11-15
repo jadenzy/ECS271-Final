@@ -1,0 +1,57 @@
+{
+  "datasets": {
+    "v2_test": {
+      "questions": 1119,
+      "groups": 50,
+      "accuracy": {
+        "baseline": 0.42180518319928506,
+        "new": 0.484361036639857
+      },
+      "paired": {
+        "new - baseline": {
+          "difference": 0.06255585344057193,
+          "ci95": [
+            0.038316334823242586,
+            0.08707446875058644
+          ],
+          "gained": 130,
+          "lost": 60,
+          "same_prediction": 0.7837354781054513
+        }
+      }
+    }
+  },
+  "draws": 5000,
+  "active_only": true,
+  "rotation": true,
+  "macro": {
+    "accuracy": {
+      "baseline": 0.42180518319928506,
+      "new": 0.484361036639857
+    },
+    "paired": {
+      "new - baseline": {
+        "difference": 0.06255585344057193,
+        "ci95": [
+          0.038316334823242586,
+          0.08707446875058644
+        ]
+      }
+    }
+  },
+  "pooled": {
+    "accuracy": {
+      "baseline": 0.42180518319928506,
+      "new": 0.484361036639857
+    },
+    "paired": {
+      "new - baseline": {
+        "difference": 0.06255585344057193,
+        "ci95": [
+          0.038316334823242586,
+          0.08707446875058644
+        ]
+      }
+    }
+  }
+}

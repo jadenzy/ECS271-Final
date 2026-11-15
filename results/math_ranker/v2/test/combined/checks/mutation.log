@@ -1,0 +1,15 @@
+Mutation caught: True
+F
+======================================================================
+FAIL: test_mmr_selects_complementary_evidence_and_respects_availability (test_math_ranker.MathRankerTests.test_mmr_selects_complementary_evidence_and_respects_availability)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\jaden\ECS271-Final\tests\test_math_ranker.py", line 27, in test_mmr_selects_complementary_evidence_and_respects_availability
+    self.assertEqual(mmr_choice(relevance, redundancy, available, .1), 2)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 2
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)

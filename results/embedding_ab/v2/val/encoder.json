@@ -1,0 +1,51 @@
+{
+  "model": {
+    "repo": "local/embeddinggemma2-v2-half-a",
+    "revision": "2839e54fe60ef6334b2e45885410e7dd8c15e129c1df1bc037471f2441ae2cf1"
+  },
+  "files": {
+    "chat_template.jinja": "4b852efc0b9960283e735363331e6f325b33bc74bdbaa076f595bc4e9b94d85e",
+    "config.json": "63628c9855098a3703e88307aa051ead1de8d9b6133d981bdf2cb6a4ade7f4d8",
+    "model.safetensors": "b8c381256b48155c59343626377c748a2c77e118357a040d9e79e1703ae8c997",
+    "tokenizer.json": "8228146e873f0cf434e8ce247e13698a54e909a0de0eb46010aac6d7119d6029",
+    "tokenizer_config.json": "8d1db94afd472df603c9d9f88fed162dc420a44991eb1181dc35bcec00541310"
+  },
+  "partition_sha256": "7d8d01f763211b1f40c25cd5175faf94f10f97d10a0c20379dbe5d243cc46229",
+  "fine_tune_questions": 9000,
+  "elapsed_seconds": 1343.5460615000047,
+  "source_model": {
+    "repo": "google/embeddinggemma-2",
+    "revision": "914f7f89142e33e77833254d9c9b90c3cef7303b",
+    "dimensions": 768,
+    "maximum_complete_input_tokens": 1200,
+    "pooling": "attention_mask_mean_including_prefix_then_L2",
+    "prefixes": {
+      "memory": "title: none | text: ",
+      "question": "task: search result | query: "
+    }
+  },
+  "command": [
+    "C:\\Users\\jaden\\ECS271-Final\\.venv\\Scripts\\python.exe",
+    "-u",
+    "-B",
+    "C:\\Users\\jaden\\ECS271-Final\\scripts\\finetune_embedding_pilot.py",
+    "--train-questions",
+    "9000",
+    "--question-ids",
+    "C:\\Users\\jaden\\ECS271-Final\\results\\embedding_ab\\v2\\val\\a_finetune_ids.json",
+    "--batch-size",
+    "12",
+    "--epochs",
+    "1",
+    "--evaluate-every",
+    "0",
+    "--skip-evaluation",
+    "--label",
+    "ab_half_a",
+    "--save-model",
+    "C:\\Users\\jaden\\ECS271-Final\\models\\embedding_ab\\encoder_half_a",
+    "--checkpoint",
+    "C:\\Users\\jaden\\ECS271-Final\\.cache\\embedding_ab\\training.pt"
+  ],
+  "pilot_script_sha256": "e6d48eac3d35d82d08c8a6247ba0738ab31dc0504ffc2eb6c0162bc20fe6bfb6"
+}

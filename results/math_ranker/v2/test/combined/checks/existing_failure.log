@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_deterministic_scoring_errors_are_not_retried (test_qwen_judge.JudgeTests.test_deterministic_scoring_errors_are_not_retried)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\jaden\ECS271-Final\tests\test_qwen_judge.py", line 173, in test_deterministic_scoring_errors_are_not_retried
+    self.assertEqual(launch.call_count, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.070s
+
+FAILED (failures=1)

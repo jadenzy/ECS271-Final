@@ -1,0 +1,29 @@
+{
+  "v2": {
+    "questions": 1119,
+    "candidate_rows": 261206,
+    "base_columns": 55,
+    "mathematical_columns": 2,
+    "evaluation_labels_unjudged_in_features": true,
+    "frozen_models_match": true,
+    "cosine_alignment_max_error": 2.980232238769531e-07
+  },
+  "v1": {
+    "questions": 589,
+    "candidate_rows": 95361,
+    "base_columns": 55,
+    "mathematical_columns": 2,
+    "evaluation_labels_unjudged_in_features": true,
+    "frozen_models_match": true,
+    "cosine_alignment_max_error": 2.384185791015625e-07
+  },
+  "locomo": {
+    "questions": 1986,
+    "candidate_rows": 1194140,
+    "base_columns": 55,
+    "mathematical_columns": 2,
+    "evaluation_labels_unjudged_in_features": true,
+    "frozen_models_match": true,
+    "cosine_alignment_max_error": 2.384185791015625e-07
+  }
+}

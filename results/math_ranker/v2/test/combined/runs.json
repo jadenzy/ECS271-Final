@@ -1,0 +1,6 @@
+{
+  "v2": {
+    "baseline": "results/option_rotation/v2/test/references_only",
+    "combined": "results/math_ranker/v2/test/combined"
+  }
+}

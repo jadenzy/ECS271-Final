@@ -1,0 +1,125 @@
+{
+  "dataset": "v2",
+  "split": "test",
+  "mode": "selector",
+  "prompt_format": "reference",
+  "ranker": "references_only_reference_labels",
+  "model": "C:\\Users\\jaden\\ECS271-Final\\models\\subtlex_mix\\alpha_0.5\\ranker55.txt",
+  "memory_tokens": 2048,
+  "seed": 271,
+  "questions": 1119,
+  "personas": 50,
+  "accuracy": {
+    "one_pass": 0.3967828418230563,
+    "rotation_sum_logprob": 0.42448614834673815,
+    "rotation_mean_prob": 0.4226988382484361,
+    "one_pass_letter_balanced": 0.4066130473637176
+  },
+  "accuracy_of_each_single_order": [
+    0.3967828418230563,
+    0.3610366398570152,
+    0.39857015192135836,
+    0.3780160857908847
+  ],
+  "letter_share_per_order": [
+    {
+      "a": 0.05272564789991063,
+      "b": 0.1903485254691689,
+      "c": 0.2421805183199285,
+      "d": 0.514745308310992
+    },
+    {
+      "a": 0.05987488829311886,
+      "b": 0.17336907953529937,
+      "c": 0.25022341376228774,
+      "d": 0.516532618409294
+    },
+    {
+      "a": 0.05719392314566577,
+      "b": 0.18319928507596067,
+      "c": 0.25022341376228774,
+      "d": 0.5093833780160858
+    },
+    {
+      "a": 0.06881143878462913,
+      "b": 0.18588025022341376,
+      "c": 0.256478999106345,
+      "d": 0.48882931188561213
+    }
+  ],
+  "letter_share_all_orders": {
+    "a": 0.0596514745308311,
+    "b": 0.18319928507596067,
+    "c": 0.24977658623771223,
+    "d": 0.5073726541554959
+  },
+  "correct_letter_share_one_pass": {
+    "a": 0.22966934763181412,
+    "b": 0.26005361930294907,
+    "c": 0.256478999106345,
+    "d": 0.2537980339588919
+  },
+  "same_answer_in_all_orders": 0.13315460232350312,
+  "one_pass_changed_by_rotation": 0.3681858802502234,
+  "rotation_agrees_with_letter_balanced": 0.7256478999106345,
+  "rotation_minus_one_pass": {
+    "difference": 0.02770330652368186,
+    "ci95_persona_bootstrap": [
+      0.003580780790382402,
+      0.05316247161306209
+    ],
+    "gained": 143,
+    "lost": 112
+  },
+  "accuracy_by_type": {
+    "anti_stereotypical_pref": {
+      "questions": 226,
+      "one_pass": 0.4778761061946903,
+      "rotation": 0.46017699115044247
+    },
+    "ask_to_forget": {
+      "questions": 253,
+      "one_pass": 0.26877470355731226,
+      "rotation": 0.30434782608695654
+    },
+    "health_and_medical_conditions": {
+      "questions": 137,
+      "one_pass": 0.45985401459854014,
+      "rotation": 0.44525547445255476
+    },
+    "neutral_preferences": {
+      "questions": 213,
+      "one_pass": 0.4225352112676056,
+      "rotation": 0.47417840375586856
+    },
+    "stereotypical_pref": {
+      "questions": 142,
+      "one_pass": 0.45774647887323944,
+      "rotation": 0.5
+    },
+    "therapy_background": {
+      "questions": 148,
+      "one_pass": 0.33783783783783783,
+      "rotation": 0.41216216216216217
+    }
+  },
+  "seconds_per_order": [
+    0.3392917082217779,
+    0.10729780795348731,
+    0.10765491465571228,
+    0.10736476872239088
+  ],
+  "cached_prompt_tokens_per_order": [
+    0.0,
+    1848.8650580875783,
+    1848.8650580875783,
+    1848.8650580875783
+  ],
+  "evaluated_prompt_tokens_per_order": [
+    2394.08400357462,
+    545.218945487042,
+    545.218945487042,
+    545.218945487042
+  ],
+  "mean_prompt_tokens": 2394.08400357462
+}

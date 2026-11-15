@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "complete_questions": 1119,
+  "answer_orders": 4,
+  "persona_disjoint": true,
+  "all_fold_personas_disjoint": true,
+  "native_memory_tokens_max": 2048,
+  "models_and_scoring_code_match_frozen_hashes": true,
+  "source_message_truncations": 0,
+  "new_unit_tests_passed": 4,
+  "full_suite_tests": 180,
+  "full_suite_failures": 1,
+  "existing_failure": "test_qwen_judge.JudgeTests.test_deterministic_scoring_errors_are_not_retried",
+  "mutation_test": "Reversing the redundancy penalty was caught by the new selection test.",
+  "training_seconds": 126.51321449999523,
+  "evaluation_seconds": 1198.58171916008
+}

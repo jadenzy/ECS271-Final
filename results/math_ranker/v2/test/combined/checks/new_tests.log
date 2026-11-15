@@ -1,0 +1,35 @@
+  epoch 1: loss 20.0000
+  epoch 2: loss 19.6597
+  epoch 3: loss 18.5199
+  epoch 4: loss 16.4317
+  epoch 5: loss 13.3306
+  epoch 6: loss 9.1778
+  epoch 7: loss 3.9660
+  epoch 8: loss 0.0884
+  epoch 9: loss 0.0001
+  epoch 10: loss 0.0000
+  epoch 11: loss 0.0000
+  epoch 12: loss 0.0000
+  epoch 13: loss 0.0000
+  epoch 14: loss 0.0000
+  epoch 15: loss 0.0000
+  epoch 16: loss 0.0000
+  epoch 17: loss 0.0000
+  epoch 18: loss 0.0000
+  epoch 19: loss 0.0000
+  epoch 20: loss 0.0000
+  epoch 21: loss 0.0000
+  epoch 22: loss 0.0000
+  epoch 23: loss 0.0000
+  epoch 24: loss 0.0000
+  epoch 25: loss 0.0000
+  epoch 26: loss 0.0000
+  epoch 27: loss 0.0000
+  epoch 28: loss 0.0000
+  epoch 29: loss 0.0000
+  epoch 30: loss 0.0000
+....
+----------------------------------------------------------------------
+Ran 4 tests in 19.320s
+
+OK

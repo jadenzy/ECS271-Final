@@ -1,0 +1,183 @@
+{
+  "datasets": {
+    "personamem_v2_test": {
+      "questions": 1119,
+      "groups": 50,
+      "accuracy": {
+        "ranker": 0.42180518319928506,
+        "ranker_reference_labels": 0.42448614834673815,
+        "oracle": 0.6228775692582663,
+        "oracle_reference_labels": 0.5960679177837355
+      },
+      "paired": {
+        "ranker - oracle": {
+          "difference": -0.20107238605898123,
+          "ci95": [
+            -0.22506992234288467,
+            -0.17713762700724342
+          ],
+          "gained": 46,
+          "lost": 271,
+          "same_prediction": 0.6568364611260054
+        },
+        "ranker - oracle_reference_labels": {
+          "difference": -0.1742627345844504,
+          "ci95": [
+            -0.2032524013987871,
+            -0.14636282107748272
+          ],
+          "gained": 53,
+          "lost": 248,
+          "same_prediction": 0.6675603217158177
+        },
+        "ranker_reference_labels - ranker": {
+          "difference": 0.002680965147453083,
+          "ci95": [
+            -0.01141377136852695,
+            0.015740923009623792
+          ],
+          "gained": 35,
+          "lost": 32,
+          "same_prediction": 0.9186773905272565
+        },
+        "ranker_reference_labels - oracle": {
+          "difference": -0.19839142091152814,
+          "ci95": [
+            -0.22350871927112392,
+            -0.1736047999718101
+          ],
+          "gained": 44,
+          "lost": 266,
+          "same_prediction": 0.6648793565683646
+        },
+        "ranker_reference_labels - oracle_reference_labels": {
+          "difference": -0.17158176943699732,
+          "ci95": [
+            -0.20073379056300758,
+            -0.14397670345399077
+          ],
+          "gained": 49,
+          "lost": 241,
+          "same_prediction": 0.680071492403932
+        },
+        "oracle_reference_labels - oracle": {
+          "difference": -0.02680965147453083,
+          "ci95": [
+            -0.04097646033129904,
+            -0.01307090168821657
+          ],
+          "gained": 17,
+          "lost": 47,
+          "same_prediction": 0.9267202859696158
+        }
+      }
+    }
+  },
+  "draws": 5000,
+  "active_only": true,
+  "rotation": true,
+  "macro": {
+    "accuracy": {
+      "ranker": 0.42180518319928506,
+      "ranker_reference_labels": 0.42448614834673815,
+      "oracle": 0.6228775692582663,
+      "oracle_reference_labels": 0.5960679177837355
+    },
+    "paired": {
+      "ranker - oracle": {
+        "difference": -0.20107238605898123,
+        "ci95": [
+          -0.22506992234288467,
+          -0.17713762700724342
+        ]
+      },
+      "ranker - oracle_reference_labels": {
+        "difference": -0.1742627345844504,
+        "ci95": [
+          -0.2032524013987871,
+          -0.14636282107748272
+        ]
+      },
+      "ranker_reference_labels - ranker": {
+        "difference": 0.002680965147453083,
+        "ci95": [
+          -0.01141377136852695,
+          0.015740923009623792
+        ]
+      },
+      "ranker_reference_labels - oracle": {
+        "difference": -0.19839142091152814,
+        "ci95": [
+          -0.22350871927112392,
+          -0.1736047999718101
+        ]
+      },
+      "ranker_reference_labels - oracle_reference_labels": {
+        "difference": -0.17158176943699732,
+        "ci95": [
+          -0.20073379056300758,
+          -0.14397670345399077
+        ]
+      },
+      "oracle_reference_labels - oracle": {
+        "difference": -0.02680965147453083,
+        "ci95": [
+          -0.04097646033129904,
+          -0.01307090168821657
+        ]
+      }
+    }
+  },
+  "pooled": {
+    "accuracy": {
+      "ranker": 0.42180518319928506,
+      "ranker_reference_labels": 0.42448614834673815,
+      "oracle": 0.6228775692582663,
+      "oracle_reference_labels": 0.5960679177837355
+    },
+    "paired": {
+      "ranker - oracle": {
+        "difference": -0.20107238605898123,
+        "ci95": [
+          -0.22506992234288467,
+          -0.17713762700724342
+        ]
+      },
+      "ranker - oracle_reference_labels": {
+        "difference": -0.1742627345844504,
+        "ci95": [
+          -0.2032524013987871,
+          -0.14636282107748272
+        ]
+      },
+      "ranker_reference_labels - ranker": {
+        "difference": 0.002680965147453083,
+        "ci95": [
+          -0.01141377136852695,
+          0.015740923009623792
+        ]
+      },
+      "ranker_reference_labels - oracle": {
+        "difference": -0.19839142091152814,
+        "ci95": [
+          -0.22350871927112392,
+          -0.1736047999718101
+        ]
+      },
+      "ranker_reference_labels - oracle_reference_labels": {
+        "difference": -0.17158176943699732,
+        "ci95": [
+          -0.20073379056300758,
+          -0.14397670345399077
+        ]
+      },
+      "oracle_reference_labels - oracle": {
+        "difference": -0.02680965147453083,
+        "ci95": [
+          -0.04097646033129904,
+          -0.01307090168821657
+        ]
+      }
+    }
+  }
+}

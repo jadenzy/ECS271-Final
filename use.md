@@ -82,6 +82,10 @@ Use that same `--selector-features` option for inference with the existing test 
 | `evaluate_qwen.py` | Evaluate Qwen with full history, no memory, references, or selected memory | CLI; GPU inference |
 | `qwen_llamacpp_server.py` | Own native Qwen startup, HTTP scoring/tokenization, monitoring, and cleanup | CLI and library; GPU when started |
 | `option_rotation_pilot.py` | Measure the effect of rotating answer-option positions | CLI; GPU, or CPU summaries |
+| `finetune_embedding_pilot.py` | Fine-tune the embedding model on V2 training references and measure validation retrieval | CLI; GPU |
+| `reader_validation.py` | Reader-side tests on V2 validation: prompt wording, Qwen per-message filter, score cutoff | CLI; GPU |
+| `evaluate_embedding_ab_cutoff.py` | Score the frozen fine-tuned ranker with a relative score cutoff, four answer orders | CLI; GPU |
+| `evaluate_embedding_ab_mmr.py` | Score the frozen fine-tuned ranker with redundancy-aware (MMR) packing, four answer orders | CLI; GPU |
 | `compare_selector_runs.py` | Compare saved prediction accuracies with paired bootstrap intervals | CLI; CPU |
 | `exclude_eval_questions.py` | Remove a question type from V2 evaluation IDs and filter selected bundles | CLI; CPU; changes split files with `--apply` |
 | `raw_datasets.py` | Read raw benchmarks, answers, cutoffs, IDs, and source hashes | Importable module |
@@ -327,7 +331,7 @@ Current configured context capacities are 41,216 tokens for V2, 33,280 for V1, 3
 | --- | --- | --- |
 | `full_history` | All visible conversation messages, excluding source system/persona messages | V2, V1, LoCoMo |
 | `no_memory` | Instructions, question, and options only; source histories are not loaded | V2 |
-| `reference_only` | Original annotated reference snippets, an oracle baseline | V2 |
+| `reference_only` | Original annotated reference snippets, an oracle baseline, shown under the same heading and source-position labels as `selector` | V2 |
 | `selector` | Complete messages chosen by saved LightGBM scores and packed into a memory budget, or explicit top-k | V2, V1, LoCoMo |
 
 The CLI evaluates **V2 test** or the **full V1/LoCoMo comparison** split. It has no `--split` option. LoCoMo has ten answer labels; V1/V2 have four.
@@ -366,7 +370,7 @@ python scripts/evaluate_qwen.py --dataset v2 --mode selector --memory-tokens 204
 
 ### `option_rotation_pilot.py`
 
-**Purpose:** Check whether answer positions affect Qwen predictions. For each sampled V2 question, keep the selected memory fixed, score every cyclic answer-option rotation, map scores back to answer texts, and compare one-pass accuracy with combined rotation scores.
+**Purpose:** Check whether answer positions affect Qwen predictions. For each sampled V2 or V1 question, keep the memory fixed, score every cyclic answer-option rotation, map scores back to answer texts, and compare one-pass accuracy with combined rotation scores. The memory is the selected messages (`--mode selector`, default), every visible user and assistant message (`--mode full_history`, with source system/persona messages excluded as in the evaluator), or the annotated V2 reference snippets (`--mode reference_only`, the oracle). Rotation 0 sends exactly the evaluator's single-pass prompt. The selector and the oracle share one memory format, as in the evaluator: "Selected conversation messages (in chronological source order)" with each message labelled "Message" plus its source position. `--prompt-format reference` swaps in the oracle's earlier wording ("Dataset reference messages", "Reference message 0, 1, …") for either mode without changing the messages or their order (V2 snippet order is already chronological source order); it is kept to reproduce the label test.
 
 ```powershell
 python scripts/option_rotation_pilot.py --split val --questions 200 --features data/ranker55/v2/val/features.npz
@@ -374,13 +378,55 @@ python scripts/option_rotation_pilot.py --split val --questions 200 --features d
 # Compare another selector, keeping its predictions in a separate label folder.
 python scripts/option_rotation_pilot.py --split val --questions 200 --features data/ranker55/v2/val/features.npz --label qwen_graded --model models/qwen_graded_all/ranker55.txt
 
+# Full-history baselines with four rotations on all of V2 test and V1.
+python scripts/option_rotation_pilot.py --mode full_history --split test --questions 0
+python scripts/option_rotation_pilot.py --mode full_history --dataset v1 --questions 0
+
+# Label test on V2 test: the oracle, the oracle with its earlier wording, and the selection with that wording.
+python scripts/option_rotation_pilot.py --mode reference_only --split test --questions 0
+python scripts/option_rotation_pilot.py --mode reference_only --split test --questions 0 --prompt-format reference
+python scripts/option_rotation_pilot.py --split test --questions 0 --prompt-format reference --features data/ranker55/v2/test/features.npz
+
 # Recompute a saved pilot's summary without loading Qwen.
 python scripts/option_rotation_pilot.py --split val --label references_only --summarize-only
 ```
 
-**Inputs:** Raw V2 validation (default) or test data, a selector model/sidecar, and its matching feature bundle. `--questions` defaults to 200; 0 uses the entire split. `--seed` defaults to 271 and `--memory-tokens` to 2,048. As with `reference_hit_check.py`, the default feature path is `data/ranker55/subtlex/v2/{split}/features.npz`; the examples override it explicitly.
+**Inputs:** Raw V2 validation (default) or test data, or V1 with `--dataset v1` (its only split, `comparison`, is the default there). Selector mode also needs a selector model/sidecar and its matching feature bundle; full-history mode needs neither. `--questions` defaults to 200; 0 uses the entire split. `--seed` defaults to 271 and `--memory-tokens` to 2,048 (selector mode only). As with `reference_hit_check.py`, the default feature path is `data/ranker55/subtlex/{dataset}/{split}/features.npz`; the examples override it explicitly. Questions sharing a history are scored back to back, so the server's prompt cache carries the long shared prefix across questions and rotations.
 
-**Outputs:** `results/option_rotation/v2/{split}/{label}/predictions.jsonl`, `report.json`, and a server log for inference runs. `--output-root` changes the prefix. Existing question IDs are skipped on rerun. Use a new label or output root when changing the model, inputs, seed, or budget: this pilot resumes by question ID and does not apply the main evaluator's full protocol compatibility checks. The default label `references_only` names the reference-trained selector; it does not activate oracle reference-only memory. `--summarize-only` requires existing predictions and rewrites the report.
+**Outputs:** `results/option_rotation/{dataset}/{split}/{label}/predictions.jsonl`, `report.json`, and a server log for inference runs. Each prediction row's `predicted_label` and `correct` describe rotation 0, so the folder can also be listed as a one-pass run in `compare_selector_runs.py`. `--output-root` changes the prefix. Existing question IDs are skipped on rerun. Use a new label or output root when changing the model, inputs, seed, or budget: this pilot resumes by question ID and does not apply the main evaluator's full protocol compatibility checks. The default label is `references_only` in selector mode (the reference-trained selector; it does not activate oracle reference-only memory) and the mode name otherwise (`full_history`, `reference_only`), with `_reference_labels` appended for `--prompt-format reference`. Swapped-label runs keep their own mode's server settings (context size, selector budget check), so only the prompt text differs from the native run. `--summarize-only` requires existing predictions and rewrites the report.
+
+### `finetune_embedding_pilot.py`
+
+**Purpose:** Test whether contrastive fine-tuning of EmbeddingGemma 2 on V2 training references improves retrieval. Each training question is pulled toward its annotated reference messages and away from the non-reference messages of its own history that the unchanged model scores highest (read from the training bundle's `cosine` feature), plus the other messages in the batch. Messages whose text equals one of the question's references are never negatives. Inputs use the pipeline's own format (prefixes, masked mean pooling, L2 normalization); training truncates messages to `--max-tokens` (256), evaluation never truncates.
+
+```powershell
+python scripts/finetune_embedding_pilot.py --train-questions 6000 --batch-size 12 --evaluate-every 125
+python scripts/finetune_embedding_pilot.py --train-questions 0    # unchanged model only
+```
+
+**Measurement:** V2 validation, whole-message cosine alone (no ranker): the share of questions with every visible reference in the top 15, with any reference in the top 10 or top 5, reference recall at 15, and the median rank of each question's lowest reference. Validation personas are disjoint from training; the test split is not read. Validation is measured every `--evaluate-every` steps and at the end; nothing is chosen from it (no early stopping).
+
+**Outputs:** `results/embedding_finetune_pilot/{label}/report.json` (config, validation curve, training loss). Weights are kept only with `--save-model <folder>`; a saved model (about 1.2 GB) belongs in a git-ignored folder. One step holds `--batch-size` questions with up to `--positives` references and `--hard-negatives` plus `--random-negatives` other messages each, so GPU memory does not depend on `--train-questions`; batch 12 peaked at 10.3 GiB on the RTX 5080.
+
+### Reader-side experiments (`reader_validation.py`, `evaluate_embedding_ab_cutoff.py`, `evaluate_embedding_ab_mmr.py`)
+
+These change what Qwen reads from the frozen fine-tuned 57-feature ranker's 2,048-token selection; the ranker, its scores and the answer-order policy are unchanged. All three need the saved models and cached features from the persona-disjoint A/B experiment (`models/embedding_ab/`, `data/ranker55/embedding_ab/`) and a local Qwen server.
+
+```powershell
+# V2 validation, paired arms on one server (four orders; resumable). Arms: oracle|ranker|filter_<rule> + _current|_clean
+python scripts/reader_validation.py --arms ranker_current filter_cut3_current --limit 500
+python scripts/reader_validation.py --stage select      # save the ranker's selection per validation question
+python scripts/reader_validation.py --stage judge       # Qwen judges each selected message (question + message only)
+python scripts/reader_validation.py --stage policies    # reference coverage of each filter rule (CPU)
+
+# All of V1 with a score cutoff (keep messages within D of the top score), or MMR packing at penalty 0.1
+python scripts/evaluate_embedding_ab_cutoff.py --datasets v1 --cutoff 3.0
+python scripts/evaluate_embedding_ab_mmr.py --datasets v1
+```
+
+`reader_validation.py` reads V2 validation only (never test). Filter rules: `useful` (messages Qwen calls useful, at least 2), `top4`/`top6`/`top8` (Qwen's most useful by log-probability margin) and `cut3` (within 3.0 of the top score, no Qwen judgment). `_clean` removes the empty `Memories:` heading from the question message; `_current` keeps it. `--limit N` scores the first N questions in persona order, not a random sample. Outputs go to `results/reader_validation/{arm}/predictions.jsonl` (option-rotation row format, so `compare_selector_runs.py --rotation` applies), plus `selections.jsonl`, `judgments.jsonl` and `policies.json`.
+
+The two V1 scripts write `results/embedding_ab/transfer_cutoff/{dataset}_cut{D}/` and `results/embedding_ab/transfer_mmr/{dataset}/` with `predictions.jsonl`, `protocol.json` (a changed protocol refuses to resume), `report.json` and the server log; compare them with the unfiltered run in `results/embedding_ab/transfer/{dataset}/`. The cutoff distance and MMR penalty are fixed by flags and defaults, not tuned in these scripts.
 
 ## 7. Compare runs and maintain evaluation splits
 

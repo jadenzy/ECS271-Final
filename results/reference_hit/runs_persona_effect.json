@@ -1,0 +1,4 @@
+{
+ "personamem_v2_test": {"messages_only": "results/option_rotation/v2/test/full_history", "with_persona": "results/qwen35_4bfull_history_raw/personamem_v2/32k/compact/test"},
+ "personamem_v1": {"messages_only": "results/option_rotation/v1/comparison/full_history", "with_persona": "results/qwen35_4bfull_history_raw/personamem_v1/32k/comparison"}
+}

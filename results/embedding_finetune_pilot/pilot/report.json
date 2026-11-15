@@ -1,0 +1,83 @@
+{
+  "config": {
+    "train_questions": 6000,
+    "epochs": 1.0,
+    "batch_size": 12,
+    "positives": 2,
+    "hard_negatives": 5,
+    "random_negatives": 1,
+    "hard_pool": 30,
+    "max_tokens": 256,
+    "learning_rate": 2e-05,
+    "temperature": 0.05,
+    "warmup": 0.1,
+    "evaluate_every": 125,
+    "limit_steps": 0,
+    "skip_evaluation": false,
+    "seed": 271,
+    "label": "pilot",
+    "save_model": null
+  },
+  "model": "C:\\Users\\jaden\\ECS271-Final\\models\\embeddinggemma-2",
+  "validation": [
+    {
+      "step": 0,
+      "questions": 909,
+      "every_reference_top15": 0.22332233223322331,
+      "any_reference_top10": 0.45434543454345433,
+      "any_reference_top5": 0.34213421342134215,
+      "reference_recall_at_15": 0.37357902456912356,
+      "median_rank_of_lowest_reference": 64.0
+    },
+    {
+      "step": 125,
+      "training_questions_seen": 1500,
+      "mean_loss": 2.9376236820220947,
+      "questions": 909,
+      "every_reference_top15": 0.48184818481848185,
+      "any_reference_top10": 0.8745874587458746,
+      "any_reference_top5": 0.7799779977997799,
+      "reference_recall_at_15": 0.7175467546754676,
+      "median_rank_of_lowest_reference": 17.0
+    },
+    {
+      "step": 250,
+      "training_questions_seen": 3000,
+      "mean_loss": 2.132075922012329,
+      "questions": 909,
+      "every_reference_top15": 0.5775577557755776,
+      "any_reference_top10": 0.8921892189218922,
+      "any_reference_top5": 0.7986798679867987,
+      "reference_recall_at_15": 0.7703520352035204,
+      "median_rank_of_lowest_reference": 11.0
+    },
+    {
+      "step": 375,
+      "training_questions_seen": 4500,
+      "mean_loss": 1.9352639589309693,
+      "questions": 909,
+      "every_reference_top15": 0.5775577557755776,
+      "any_reference_top10": 0.9064906490649065,
+      "any_reference_top5": 0.8118811881188119,
+      "reference_recall_at_15": 0.7754858819215255,
+      "median_rank_of_lowest_reference": 10.0
+    },
+    {
+      "step": 500,
+      "training_questions_seen": 6000,
+      "mean_loss": 1.7878056898117065,
+      "questions": 909,
+      "every_reference_top15": 0.5973597359735974,
+      "any_reference_top10": 0.9152915291529153,
+      "any_reference_top5": 0.8338833883388339,
+      "reference_recall_at_15": 0.7967546754675467,
+      "median_rank_of_lowest_reference": 9.0
+    }
+  ],
+  "training": {
+    "questions": 6000,
+    "steps": 500,
+    "final_mean_loss": 1.8911701679229735
+  },
+  "seconds": 4597.725095272064
+}

@@ -1,0 +1,154 @@
+{
+  "baseline": {
+    "all_questions": {
+      "questions": 1119,
+      "hit_at_10": 0.7462019660411081,
+      "ndcg_at_10": 0.4846813920922621,
+      "incremental_hit_over_cosine": 0.2716711349419124,
+      "tail_rescue_over_cosine_at_10": 0.564625850340136
+    },
+    "nonforget": {
+      "questions": 866,
+      "hit_at_10": 0.6882217090069284,
+      "ndcg_at_10": 0.3954481116800557,
+      "incremental_hit_over_cosine": 0.36720554272517314,
+      "tail_rescue_over_cosine_at_10": 0.564625850340136
+    },
+    "by_type": {
+      "anti_stereotypical_pref": {
+        "questions": 226,
+        "hit_at_10": 0.7654867256637168,
+        "ndcg_at_10": 0.4648066507699635,
+        "incremental_hit_over_cosine": 0.3495575221238938,
+        "tail_rescue_over_cosine_at_10": 0.6287878787878788
+      },
+      "ask_to_forget": {
+        "questions": 253,
+        "hit_at_10": 0.9446640316205533,
+        "ndcg_at_10": 0.7901202096296954,
+        "incremental_hit_over_cosine": -0.055335968379446654,
+        "tail_rescue_over_cosine_at_10": null
+      },
+      "health_and_medical_conditions": {
+        "questions": 137,
+        "hit_at_10": 0.6715328467153284,
+        "ndcg_at_10": 0.38657615896555164,
+        "incremental_hit_over_cosine": 0.42335766423357657,
+        "tail_rescue_over_cosine_at_10": 0.5631067961165048
+      },
+      "neutral_preferences": {
+        "questions": 213,
+        "hit_at_10": 0.6384976525821596,
+        "ndcg_at_10": 0.3548733854424202,
+        "incremental_hit_over_cosine": 0.38497652582159625,
+        "tail_rescue_over_cosine_at_10": 0.5283018867924528
+      },
+      "stereotypical_pref": {
+        "questions": 142,
+        "hit_at_10": 0.7464788732394366,
+        "ndcg_at_10": 0.4327299416448789,
+        "incremental_hit_over_cosine": 0.36619718309859156,
+        "tail_rescue_over_cosine_at_10": 0.6477272727272727
+      },
+      "therapy_background": {
+        "questions": 148,
+        "hit_at_10": 0.6013513513513513,
+        "ndcg_at_10": 0.3203726016880243,
+        "incremental_hit_over_cosine": 0.31756756756756754,
+        "tail_rescue_over_cosine_at_10": 0.4716981132075472
+      }
+    },
+    "nonforget_type_macro": {
+      "questions": 866,
+      "hit_at_10": 0.6846694899103986,
+      "ndcg_at_10": 0.3918717477021677,
+      "incremental_hit_over_cosine": 0.3683312925690451,
+      "tail_rescue_over_cosine_at_10": 0.5679243895263312
+    },
+    "complete_reference_nonforget_type_macro": {
+      "questions": 866,
+      "hit_at_10": 0.6846694899103986,
+      "ndcg_at_10": 0.3918717477021677,
+      "incremental_hit_over_cosine": 0.3683312925690451,
+      "tail_rescue_over_cosine_at_10": 0.5679243895263312
+    }
+  },
+  "combined_ranker_before_mmr": {
+    "all_questions": {
+      "questions": 1119,
+      "hit_at_10": 0.837354781054513,
+      "ndcg_at_10": 0.5601949523675109,
+      "incremental_hit_over_cosine": 0.3628239499553173,
+      "tail_rescue_over_cosine_at_10": 0.7210884353741497
+    },
+    "nonforget": {
+      "questions": 866,
+      "hit_at_10": 0.8013856812933026,
+      "ndcg_at_10": 0.48392557657894003,
+      "incremental_hit_over_cosine": 0.48036951501154734,
+      "tail_rescue_over_cosine_at_10": 0.7210884353741497
+    },
+    "by_type": {
+      "anti_stereotypical_pref": {
+        "questions": 226,
+        "hit_at_10": 0.8539823008849557,
+        "ndcg_at_10": 0.544994401346382,
+        "incremental_hit_over_cosine": 0.43805309734513276,
+        "tail_rescue_over_cosine_at_10": 0.75
+      },
+      "ask_to_forget": {
+        "questions": 253,
+        "hit_at_10": 0.9604743083003953,
+        "ndcg_at_10": 0.8212592979521055,
+        "incremental_hit_over_cosine": -0.03952569169960474,
+        "tail_rescue_over_cosine_at_10": null
+      },
+      "health_and_medical_conditions": {
+        "questions": 137,
+        "hit_at_10": 0.781021897810219,
+        "ndcg_at_10": 0.46865051650676787,
+        "incremental_hit_over_cosine": 0.5328467153284672,
+        "tail_rescue_over_cosine_at_10": 0.7087378640776699
+      },
+      "neutral_preferences": {
+        "questions": 213,
+        "hit_at_10": 0.7089201877934272,
+        "ndcg_at_10": 0.43395485292712094,
+        "incremental_hit_over_cosine": 0.45539906103286387,
+        "tail_rescue_over_cosine_at_10": 0.6289308176100629
+      },
+      "stereotypical_pref": {
+        "questions": 142,
+        "hit_at_10": 0.8450704225352113,
+        "ndcg_at_10": 0.49311221322992255,
+        "incremental_hit_over_cosine": 0.4647887323943662,
+        "tail_rescue_over_cosine_at_10": 0.7840909090909091
+      },
+      "therapy_background": {
+        "questions": 148,
+        "hit_at_10": 0.831081081081081,
+        "ndcg_at_10": 0.4679147020238298,
+        "incremental_hit_over_cosine": 0.5472972972972973,
+        "tail_rescue_over_cosine_at_10": 0.7830188679245284
+      }
+    },
+    "nonforget_type_macro": {
+      "questions": 866,
+      "hit_at_10": 0.8040151780209788,
+      "ndcg_at_10": 0.48172533720680466,
+      "incremental_hit_over_cosine": 0.4876769806796254,
+      "tail_rescue_over_cosine_at_10": 0.7309556917406341
+    },
+    "complete_reference_nonforget_type_macro": {
+      "questions": 866,
+      "hit_at_10": 0.8040151780209788,
+      "ndcg_at_10": 0.48172533720680466,
+      "incremental_hit_over_cosine": 0.4876769806796254,
+      "tail_rescue_over_cosine_at_10": 0.7309556917406341
+    }
+  },
+  "combined_selection": {
+    "reference_recall": 0.7142920975360654,
+    "every_visible_reference": 0.5335120643431636
+  }
+}

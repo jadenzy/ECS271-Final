@@ -1,0 +1,270 @@
+A: 400 personas, 9340 questions; fine-tune 9000. B: 400 personas, 9192 questions
+W1114 20:30:30.801000 34152 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+
+Loading weights:   0%|          | 0/413 [00:00<?, ?it/s]
+Loading weights:  37%|###7      | 153/413 [00:00<00:00, 1497.87it/s]
+Loading weights:  99%|#########8| 407/413 [00:00<00:00, 2042.01it/s]
+Loading weights: 100%|##########| 413/413 [00:00<00:00, 1969.14it/s]
+9000 training questions, 750 steps of 12 questions
+step 25/750 loss 4.177 | peak GPU 10.3 GiB | 100s
+step 50/750 loss 3.423 | peak GPU 10.3 GiB | 142s
+step 75/750 loss 2.722 | peak GPU 10.3 GiB | 184s
+step 100/750 loss 2.538 | peak GPU 10.3 GiB | 226s
+step 125/750 loss 2.378 | peak GPU 10.3 GiB | 268s
+step 150/750 loss 2.374 | peak GPU 10.3 GiB | 313s
+step 175/750 loss 2.148 | peak GPU 10.3 GiB | 354s
+step 200/750 loss 2.284 | peak GPU 10.3 GiB | 396s
+step 225/750 loss 2.097 | peak GPU 10.3 GiB | 437s
+step 250/750 loss 2.053 | peak GPU 10.3 GiB | 480s
+step 275/750 loss 1.904 | peak GPU 10.3 GiB | 529s
+step 300/750 loss 1.886 | peak GPU 10.3 GiB | 571s
+step 325/750 loss 2.049 | peak GPU 10.3 GiB | 614s
+step 350/750 loss 1.916 | peak GPU 10.3 GiB | 657s
+step 375/750 loss 1.900 | peak GPU 10.3 GiB | 699s
+step 400/750 loss 1.779 | peak GPU 10.3 GiB | 744s
+step 425/750 loss 1.901 | peak GPU 10.3 GiB | 786s
+step 450/750 loss 1.897 | peak GPU 10.3 GiB | 828s
+step 475/750 loss 1.854 | peak GPU 10.3 GiB | 869s
+step 500/750 loss 1.718 | peak GPU 10.3 GiB | 911s
+step 525/750 loss 1.818 | peak GPU 10.3 GiB | 955s
+step 550/750 loss 1.751 | peak GPU 10.3 GiB | 997s
+step 575/750 loss 1.710 | peak GPU 10.3 GiB | 1039s
+step 600/750 loss 1.592 | peak GPU 10.3 GiB | 1081s
+step 625/750 loss 1.634 | peak GPU 10.3 GiB | 1123s
+step 650/750 loss 1.733 | peak GPU 10.3 GiB | 1168s
+step 675/750 loss 1.627 | peak GPU 10.3 GiB | 1211s
+step 700/750 loss 1.759 | peak GPU 10.3 GiB | 1252s
+step 725/750 loss 1.651 | peak GPU 10.3 GiB | 1294s
+step 750/750 loss 1.595 | peak GPU 10.3 GiB | 1336s
+
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]
+Writing model shards: 100%|##########| 1/1 [00:00<00:00,  1.33it/s]
+Writing model shards: 100%|##########| 1/1 [00:00<00:00,  1.33it/s]
+Saved results/embedding_finetune_pilot/ab_half_a/report.json after 1340s
+A: 400 personas, 9340 questions; fine-tune 9000. B: 400 personas, 9192 questions
+W1114 20:52:51.990000 27344 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+
+Loading weights:   0%|          | 0/413 [00:00<?, ?it/s]
+Loading weights:  29%|##9       | 120/413 [00:00<00:00, 1142.91it/s]
+Loading weights:  57%|#####7    | 237/413 [00:00<00:00, 1156.19it/s]
+Loading weights:  86%|########5 | 355/413 [00:00<00:00, 1152.46it/s]
+Loading weights: 100%|##########| 413/413 [00:00<00:00, 1122.51it/s]
+v2: loading original sources for ['train']
+v2: 18,532 questions, 184,159 visible source messages
+v2/train: checking original reference labels
+v2/train: 91,420 unique messages, 9,011 queries, 379,705 chunks
+memory: 0/91,420 embedded
+memory: 9,216/91,420; 459.6 inputs/s
+memory: 37,632/91,420; 930.3 inputs/s
+memory: 42,624/91,420; 701.7 inputs/s
+memory: 51,456/91,420; 636.4 inputs/s
+memory: 57,216/91,420; 563.8 inputs/s
+memory: 65,456/91,420; 538.0 inputs/s
+memory: 74,258/91,420; 524.1 inputs/s
+memory: 79,905/91,420; 494.0 inputs/s
+memory: 83,752/91,420; 460.5 inputs/s
+memory: 86,992/91,420; 430.9 inputs/s
+memory: 90,101/91,420; 405.9 inputs/s
+memory: 91,420/91,420; 394.0 inputs/s
+question: 0/9,011 embedded
+question: 9,011/9,011; 1980.5 inputs/s
+chunk: 0/379,705 embedded
+chunk: 36,992/379,705; 1846.6 inputs/s
+chunk: 69,248/379,705; 1726.5 inputs/s
+chunk: 96,256/379,705; 1600.0 inputs/s
+chunk: 122,368/379,705; 1526.4 inputs/s
+chunk: 147,584/379,705; 1472.9 inputs/s
+chunk: 171,776/379,705; 1428.7 inputs/s
+chunk: 195,840/379,705; 1396.0 inputs/s
+chunk: 219,648/379,705; 1370.3 inputs/s
+chunk: 243,328/379,705; 1349.5 inputs/s
+chunk: 266,752/379,705; 1331.4 inputs/s
+chunk: 290,048/379,705; 1315.6 inputs/s
+chunk: 313,600/379,705; 1303.6 inputs/s
+chunk: 336,640/379,705; 1291.6 inputs/s
+chunk: 358,912/379,705; 1278.6 inputs/s
+chunk: 379,136/379,705; 1260.8 inputs/s
+chunk: 379,705/379,705; 1259.2 inputs/s
+v2/train: calculating feature groups with 4 worker(s)
+v2/train: 100/9,192 feature groups
+v2/train: 200/9,192 feature groups
+v2/train: 300/9,192 feature groups
+v2/train: 400/9,192 feature groups
+v2/train: 500/9,192 feature groups
+v2/train: 600/9,192 feature groups
+v2/train: 700/9,192 feature groups
+v2/train: 800/9,192 feature groups
+v2/train: 900/9,192 feature groups
+v2/train: 1,000/9,192 feature groups
+v2/train: 1,100/9,192 feature groups
+v2/train: 1,200/9,192 feature groups
+v2/train: 1,300/9,192 feature groups
+v2/train: 1,400/9,192 feature groups
+v2/train: 1,500/9,192 feature groups
+v2/train: 1,600/9,192 feature groups
+v2/train: 1,700/9,192 feature groups
+v2/train: 1,800/9,192 feature groups
+v2/train: 1,900/9,192 feature groups
+v2/train: 2,000/9,192 feature groups
+v2/train: 2,100/9,192 feature groups
+v2/train: 2,200/9,192 feature groups
+v2/train: 2,300/9,192 feature groups
+v2/train: 2,400/9,192 feature groups
+v2/train: 2,500/9,192 feature groups
+v2/train: 2,600/9,192 feature groups
+v2/train: 2,700/9,192 feature groups
+v2/train: 2,800/9,192 feature groups
+v2/train: 2,900/9,192 feature groups
+v2/train: 3,000/9,192 feature groups
+v2/train: 3,100/9,192 feature groups
+v2/train: 3,200/9,192 feature groups
+v2/train: 3,300/9,192 feature groups
+v2/train: 3,400/9,192 feature groups
+v2/train: 3,500/9,192 feature groups
+v2/train: 3,600/9,192 feature groups
+v2/train: 3,700/9,192 feature groups
+v2/train: 3,800/9,192 feature groups
+v2/train: 3,900/9,192 feature groups
+v2/train: 4,000/9,192 feature groups
+v2/train: 4,100/9,192 feature groups
+v2/train: 4,200/9,192 feature groups
+v2/train: 4,300/9,192 feature groups
+v2/train: 4,400/9,192 feature groups
+v2/train: 4,500/9,192 feature groups
+v2/train: 4,600/9,192 feature groups
+v2/train: 4,700/9,192 feature groups
+v2/train: 4,800/9,192 feature groups
+v2/train: 4,900/9,192 feature groups
+v2/train: 5,000/9,192 feature groups
+v2/train: 5,100/9,192 feature groups
+v2/train: 5,200/9,192 feature groups
+v2/train: 5,300/9,192 feature groups
+v2/train: 5,400/9,192 feature groups
+v2/train: 5,500/9,192 feature groups
+v2/train: 5,600/9,192 feature groups
+v2/train: 5,700/9,192 feature groups
+v2/train: 5,800/9,192 feature groups
+v2/train: 5,900/9,192 feature groups
+v2/train: 6,000/9,192 feature groups
+v2/train: 6,100/9,192 feature groups
+v2/train: 6,200/9,192 feature groups
+v2/train: 6,300/9,192 feature groups
+v2/train: 6,400/9,192 feature groups
+v2/train: 6,500/9,192 feature groups
+v2/train: 6,600/9,192 feature groups
+v2/train: 6,700/9,192 feature groups
+v2/train: 6,800/9,192 feature groups
+v2/train: 6,900/9,192 feature groups
+v2/train: 7,000/9,192 feature groups
+v2/train: 7,100/9,192 feature groups
+v2/train: 7,200/9,192 feature groups
+v2/train: 7,300/9,192 feature groups
+v2/train: 7,400/9,192 feature groups
+v2/train: 7,500/9,192 feature groups
+v2/train: 7,600/9,192 feature groups
+v2/train: 7,700/9,192 feature groups
+v2/train: 7,800/9,192 feature groups
+v2/train: 7,900/9,192 feature groups
+v2/train: 8,000/9,192 feature groups
+v2/train: 8,100/9,192 feature groups
+v2/train: 8,200/9,192 feature groups
+v2/train: 8,300/9,192 feature groups
+v2/train: 8,400/9,192 feature groups
+v2/train: 8,500/9,192 feature groups
+v2/train: 8,600/9,192 feature groups
+v2/train: 8,700/9,192 feature groups
+v2/train: 8,800/9,192 feature groups
+v2/train: 8,900/9,192 feature groups
+v2/train: 9,000/9,192 feature groups
+v2/train: 9,100/9,192 feature groups
+v2/train: 9,192/9,192 feature groups
+v2: loading original sources for ['val']
+v2: 909 questions, 9,238 visible source messages
+v2/val: 9,215 unique messages, 907 queries, 37,979 chunks
+memory: 0/9,215 embedded
+memory: 9,215/9,215; 598.2 inputs/s
+question: 0/907 embedded
+question: 907/907; 1917.5 inputs/s
+chunk: 0/37,979 embedded
+chunk: 28,672/37,979; 1433.5 inputs/s
+chunk: 37,979/37,979; 1360.3 inputs/s
+v2/val: calculating feature groups with 4 worker(s)
+v2/val: 100/909 feature groups
+v2/val: 200/909 feature groups
+v2/val: 300/909 feature groups
+v2/val: 400/909 feature groups
+v2/val: 500/909 feature groups
+v2/val: 600/909 feature groups
+v2/val: 700/909 feature groups
+v2/val: 800/909 feature groups
+v2/val: 900/909 feature groups
+v2/val: 909/909 feature groups
+Fine-tuned B and validation features complete
+A: 400 personas, 9340 questions; fine-tune 9000. B: 400 personas, 9192 questions
+original: mathematical adapter fold 1/5 on B
+  epoch 1: loss 0.4240
+  epoch 2: loss 0.3203
+  epoch 3: loss 0.2864
+original: mathematical adapter fold 2/5 on B
+  epoch 1: loss 0.4339
+  epoch 2: loss 0.3287
+  epoch 3: loss 0.2956
+original: mathematical adapter fold 3/5 on B
+  epoch 1: loss 0.4306
+  epoch 2: loss 0.3184
+  epoch 3: loss 0.2891
+original: mathematical adapter fold 4/5 on B
+  epoch 1: loss 0.4323
+  epoch 2: loss 0.3185
+  epoch 3: loss 0.2865
+original: mathematical adapter fold 5/5 on B
+  epoch 1: loss 0.4327
+  epoch 2: loss 0.3163
+  epoch 3: loss 0.2917
+original: final mathematical adapter on all B personas
+  epoch 1: loss 0.4134
+  epoch 2: loss 0.3112
+  epoch 3: loss 0.2791
+original: fitting 57-feature ranker on 9192 B questions
+C:\Users\jaden\ECS271-Final\.venv\Lib\site-packages\sklearn\utils\validation.py:2830: UserWarning: X does not have valid feature names, but LGBMRanker was fitted with feature names
+  warnings.warn(
+finetuned: mathematical adapter fold 1/5 on B
+  epoch 1: loss 0.3975
+  epoch 2: loss 0.3630
+  epoch 3: loss 0.3440
+finetuned: mathematical adapter fold 2/5 on B
+  epoch 1: loss 0.3978
+  epoch 2: loss 0.3815
+  epoch 3: loss 0.3475
+finetuned: mathematical adapter fold 3/5 on B
+  epoch 1: loss 0.4096
+  epoch 2: loss 0.3832
+  epoch 3: loss 0.3510
+finetuned: mathematical adapter fold 4/5 on B
+  epoch 1: loss 0.4069
+  epoch 2: loss 0.3742
+  epoch 3: loss 0.3513
+finetuned: mathematical adapter fold 5/5 on B
+  epoch 1: loss 0.4126
+  epoch 2: loss 0.3656
+  epoch 3: loss 0.3511
+finetuned: final mathematical adapter on all B personas
+  epoch 1: loss 0.4069
+  epoch 2: loss 0.3638
+  epoch 3: loss 0.3418
+finetuned: fitting 57-feature ranker on 9192 B questions
+C:\Users\jaden\ECS271-Final\.venv\Lib\site-packages\sklearn\utils\validation.py:2830: UserWarning: X does not have valid feature names, but LGBMRanker was fitted with feature names
+  warnings.warn(
+# Persona-disjoint embedding/ranker comparison
+
+Fine-tune 9,000 questions from A; both 57-feature rankers train on B; evaluate on 909 validation questions. No test run.
+Both rankers include learned question/message similarity and generic-message correction, with five persona-held-out folds inside B. Redundancy-aware selection is deferred.
+
+| Method | Hit@10 | NDCG@10 | Recall@15 | Every visible reference@15 | Non-forget type-macro Hit@10 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| original_cosine | 45.21% | 25.35% | 37.19% | 22.33% | 30.65% |
+| original_ranker | 79.98% | 51.82% | 69.03% | 52.70% | 76.10% |
+| finetuned_cosine | 92.74% | 65.73% | 80.87% | 61.83% | 91.45% |
+| finetuned_ranker | 93.73% | 77.70% | 93.28% | 87.90% | 92.29% |
+
+COMPLETE: saved encoder and both 57-feature rankers; 909 validation questions; integrity checks passed. MMR deferred.

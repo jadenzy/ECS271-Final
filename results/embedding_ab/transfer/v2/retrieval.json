@@ -1,0 +1,64 @@
+{
+  "ranker": {
+    "all_questions": {
+      "questions": 1119,
+      "hit_at_10": 0.9553172475424486,
+      "ndcg_at_10": 0.8092974300032548
+    },
+    "nonforget": {
+      "questions": 866,
+      "hit_at_10": 0.9468822170900693,
+      "ndcg_at_10": 0.7790873015181702
+    },
+    "by_type": {
+      "anti_stereotypical_pref": {
+        "questions": 226,
+        "hit_at_10": 0.9557522123893806,
+        "ndcg_at_10": 0.7987134399526751
+      },
+      "ask_to_forget": {
+        "questions": 253,
+        "hit_at_10": 0.9841897233201581,
+        "ndcg_at_10": 0.9127044310628721
+      },
+      "health_and_medical_conditions": {
+        "questions": 137,
+        "hit_at_10": 0.9416058394160584,
+        "ndcg_at_10": 0.7634744927956634
+      },
+      "neutral_preferences": {
+        "questions": 213,
+        "hit_at_10": 0.9295774647887324,
+        "ndcg_at_10": 0.7862405651031017
+      },
+      "stereotypical_pref": {
+        "questions": 142,
+        "hit_at_10": 0.9507042253521126,
+        "ndcg_at_10": 0.7715817303254353
+      },
+      "therapy_background": {
+        "questions": 148,
+        "hit_at_10": 0.9594594594594594,
+        "ndcg_at_10": 0.7604764466165709
+      }
+    },
+    "nonforget_type_macro": {
+      "questions": 866,
+      "hit_at_10": 0.9474198402811487,
+      "ndcg_at_10": 0.7760973349586893
+    },
+    "complete_reference_nonforget_type_macro": {
+      "questions": 866,
+      "hit_at_10": 0.9474198402811487,
+      "ndcg_at_10": 0.7760973349586893
+    },
+    "reference_recall_at_15": 0.9491340057023705,
+    "every_visible_reference_top15": 0.9151027703306523,
+    "median_lowest_reference_rank": 4.0
+  },
+  "selected_qwen_memory": {
+    "reference_recall": 0.9491403889527215,
+    "every_visible_reference": 0.9142091152815014
+  },
+  "measurement_only_after_answer_inference": true
+}

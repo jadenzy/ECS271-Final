@@ -1,0 +1,3 @@
+{
+ "personamem_v2_test": {"no_memory": "results/qwen35_4bno_memory_raw/personamem_v2/32k/compact/test", "refs": "results/qwen35_4bselector_raw/personamem_v2/32k/compact/test_memory_2048_references_only", "graded": "results/qwen35_4bselector_raw/personamem_v2/32k/compact/test_memory_2048_qwen_graded_all", "full": "results/option_rotation/v2/test/full_history", "reference_only": "results/qwen35_4breference_only_raw/personamem_v2/32k/compact/test_selection_labels"}
+}

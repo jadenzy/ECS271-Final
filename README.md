@@ -262,7 +262,7 @@ On PersonaMem V1 (589 comparison questions, 20 personas, same settings), the ord
 | References only (current model) | 60.95% | 56.79% to 65.34% | `results/qwen35_4bselector_raw/personamem_v1/32k/comparison_memory_2048_references_only` |
 | Qwen grades, best of 27 settings | 62.65% | 59.48% to 65.78% | `.../comparison_memory_2048_qwen_graded_all` |
 
-Paired by question this is +1.70 points (persona bootstrap −1.37 to +4.51). The Qwen-graded ranker gets 27 questions right that the other misses and 17 the other way; it is equal or higher on every V1 question type, most on `track_full_preference_evolution` (+3.6). The rankers share 61% of their selected messages. For reference, Qwen with the full V1 history scores 62.48% (measured with the persona messages still in the history).
+Paired by question this is +1.70 points (persona bootstrap −1.37 to +4.51). The Qwen-graded ranker gets 27 questions right that the other misses and 17 the other way; it is equal or higher on every V1 question type, most on `track_full_preference_evolution` (+3.6). The rankers share 61% of their selected messages. For reference, Qwen with the full V1 history scores 63.50% (62.48% when the persona messages were still in the history).
 
 On LoCoMo-MC10 (1,986 questions, 10 conversations, same settings), the Qwen-graded ranker is much better:
 
@@ -277,15 +277,107 @@ Paired by question this is +7.55 points (conversation bootstrap +5.17 to +10.28;
 
 | Dataset | Questions | Full history | References-only ranker | Qwen-graded ranker | Qwen grades − references only (paired 95%) |
 | --- | ---: | ---: | ---: | ---: | --- |
-| PersonaMem V2 test | 1,119 | 37.18%† | **39.41%** | 37.27% | −2.14 (−3.61 to −0.61) |
-| PersonaMem V1 | 589 | 62.48%† | 60.95% | **62.65%** | +1.70 (−1.21 to +4.66) |
+| PersonaMem V2 test | 1,119 | 34.76% | **39.41%** | 37.27% | −2.14 (−3.61 to −0.61) |
+| PersonaMem V1 | 589 | **63.50%** | 60.95% | 62.65% | +1.70 (−1.21 to +4.66) |
 | LoCoMo-MC10 | 1,986 | **68.83%** | 60.42% | 67.98% | +7.55 (+5.22 to +10.40) |
-| **Macro average** (each dataset equal) | 3,694 | **56.16%** | 53.59% | 55.96% | **+2.37** (+0.94 to +3.81) |
-| **Pooled** (all questions) | 3,694 | **58.23%** | 54.14% | 57.82% | **+3.68** (+2.17 to +5.40) |
+| **Macro average** (each dataset equal) | 3,694 | 55.70% | 53.59% | **55.96%** | **+2.37** (+0.94 to +3.81) |
+| **Pooled** (all questions) | 3,694 | 57.66% | 54.14% | **57.82%** | **+3.68** (+2.17 to +5.40) |
 
-Intervals resample each dataset's groups (personas or conversations) within that dataset, 5,000 draws. Across datasets the Qwen-graded ranker is better on both averages, with intervals above zero; it loses only on PersonaMem V2, the dataset the rankers were selected on. Full history is level with the Qwen-graded ranker on average (macro +0.20 points, −1.48 to +1.99) but uses the whole context, up to 38k tokens per prompt instead of 2,048. The pooled average is more than half LoCoMo. The reference-only model remains the default in the scripts.
+Intervals resample each dataset's groups (personas or conversations) within that dataset, 5,000 draws. Full history here is every visible user and assistant message, without the persona (system) messages, as in every other mode (`results/reference_hit/overall_messages_only.json`). Across datasets the Qwen-graded ranker is better than the reference-only ranker on both averages, with intervals above zero; it loses only on PersonaMem V2, the dataset the rankers were selected on. The Qwen-graded ranker is level with full history on average (macro +0.27 points, −1.40 to +1.89) while reading about 2,400 prompt tokens instead of 27k to 35k. On V2 both rankers beat full history (reference only +4.65, +2.42 to +6.81; Qwen grades +2.50, +0.27 to +4.73). The pooled average is more than half LoCoMo. The reference-only model remains the default in the scripts.
 
-† Scored with the dataset's persona (system) messages still in the history. Full history no longer includes them (see [Qwen evaluation](#qwen-evaluation)), and these two baselines have not been rerun without them.
+With the persona messages in the history, full history scored 37.18% on V2 and 62.48% on V1 (`results/reference_hit/overall.json`, macro 56.16%). Removing them costs 2.41 points on V2 (+0.96 to +3.91; the profile states preferences the questions ask about) and changes V1 by +1.02 (−1.41 to +3.44) (`results/reference_hit/persona_effect.json`).
+
+**V2 test baselines** (1,119 questions; `results/reference_hit/v2_baselines.json`):
+
+| Input to Qwen | Prompt tokens | Accuracy | Persona 95% CI of the difference from the reference-only ranker |
+| --- | ---: | ---: | --- |
+| No memory (question and options only)‡ | ~250 | 29.40% | −10.01 (−12.85 to −7.20) |
+| Full history | ~34,900 | 34.76% | −4.65 (−6.81 to −2.42) |
+| Qwen-graded ranker | ~2,400 | 37.27% | −2.14 (−3.61 to −0.61) |
+| **Reference-only ranker** | ~2,400 | **39.41%** | — |
+| Annotated reference snippets (oracle) | ~780 | 54.42% | +15.01 (+12.84 to +17.12) |
+
+‡ Run on the RTX 3060 laptop; every other run here is from the RTX 5080 desktop. The oracle row is the current prompt format, the selector's heading and source-position labels (`results/qwen35_4breference_only_raw/personamem_v2/32k/compact/test_selection_labels`; see [Why the oracle beats the ranker on V2](#why-the-oracle-beats-the-ranker-on-v2)). With its earlier wording it scored 53.53% on the same 1,119 questions (`.../compact/test_after_exclusion`); those prompts were byte-identical to the earlier laptop run, which scored 54.07%: 1,076 of 1,119 answers agree, the rest are GPU numeric differences on near-ties.
+
+### Answer-order rotation
+
+Qwen prefers later answer letters: across every order it picks `d` 39–54% of the time, although rotation puts each answer under each letter equally often. `scripts/option_rotation_pilot.py` scores every question once per cyclic order of its four options and adds each answer text's log-probability across the four orders, so a letter preference cancels. The memory part of the prompt is the same in all orders, so the prompt cache re-reads only the question and options; four orders cost about twice the Qwen time of one pass. Order 0 reproduces the saved one-pass runs exactly (identical selections, answers and log-probabilities).
+
+```powershell
+python scripts/option_rotation_pilot.py --mode full_history --split test --questions 0
+python scripts/option_rotation_pilot.py --mode full_history --dataset v1 --questions 0
+python scripts/option_rotation_pilot.py --split test --questions 0 --features data/ranker55/v2/test/features.npz
+python scripts/option_rotation_pilot.py --split test --questions 0 --features data/ranker55/v2/test/features.npz --label qwen_graded --model models/qwen_graded_all/ranker55.txt
+python scripts/compare_selector_runs.py --runs results/reference_hit/runs_rotation.json --output results/reference_hit/rotation.json --active-only --rotation
+```
+
+(The V1 selector runs add `--dataset v1 --features data/ranker55/v1/comparison/features.npz`.) LoCoMo has ten options and was not rotated.
+
+| Dataset | Method | One pass | Four orders | Four orders − one pass (persona 95%) |
+| --- | --- | ---: | ---: | --- |
+| V2 test | Full history | 34.76% | 36.37% | +1.61 (−0.87 to +4.16) |
+| V2 test | Reference-only ranker | 39.41% | **42.18%** | **+2.77** (+0.18 to +5.52) |
+| V2 test | Qwen-graded ranker | 37.27% | 41.73% | **+4.47** (+1.54 to +7.53) |
+| V1 | Full history | 63.50% | 67.74% | **+4.24** (+0.88 to +7.86) |
+| V1 | Reference-only ranker | 60.95% | **68.25%** | **+7.30** (+3.47 to +11.24) |
+| V1 | Qwen-graded ranker | 62.65% | 65.03% | +2.38 (−1.72 to +6.57) |
+| **V2 + V1 macro** | Full history | 49.13% | 52.06% | |
+| **V2 + V1 macro** | Reference-only ranker | 50.18% | **55.22%** | |
+| **V2 + V1 macro** | Qwen-graded ranker | 49.96% | 53.38% | |
+
+Paired comparisons with four orders (`results/reference_hit/rotation.json`; the same runs scored by order 0 alone are in `rotation_one_pass.json`):
+
+| Comparison | V2 test | V1 | V2 + V1 macro |
+| --- | --- | --- | --- |
+| Reference only − Qwen grades | +0.45 (−1.45 to +2.30) | **+3.23** (+1.09 to +5.56) | **+1.84** (+0.44 to +3.28) |
+| Reference only − full history | **+5.81** (+3.07 to +8.72) | +0.51 (−3.09 to +4.04) | **+3.16** (+0.85 to +5.45) |
+| Qwen grades − full history | **+5.36** (+2.31 to +8.54) | −2.72 (−6.72 to +1.05) | +1.32 (−1.22 to +3.76) |
+
+Four orders raise every method, by 1.6 to 7.3 points, and change the comparison between rankers: with one pass the Qwen-graded ranker was ahead on V1 (+1.70, not significant); with four orders the reference-only ranker is ahead on both PersonaMem datasets and beats full history on their average. How the rankers compare on LoCoMo with rotation is not measured; with one pass the Qwen-graded ranker leads there by 7.55 points.
+
+### Why the oracle beats the ranker on V2
+
+The oracle shows Qwen about 3 annotated reference messages (~780 prompt tokens); the reference-only ranker shows about 15 selected messages (~2,400 tokens) that contain 64% of the visible references. Splitting V2 test by how many visible references the ranker's 2,048-token selection contains (one pass):
+
+| Ranker's selection contains | Questions | No memory | Reference-only ranker | Oracle |
+| --- | ---: | ---: | ---: | ---: |
+| Every visible reference | 532 | 25.38% | 37.78% | 53.01% |
+| Some references | 360 | 30.56% | 42.78% | 53.89% |
+| No reference | 227 | 37.00% | 37.89% | 58.59% |
+
+Missing references cost little: without any, the ranker is no better than no memory, but these are only a fifth of the questions. Most of the 15-point gap remains when every reference is in the selection: the ranker then gains 12.4 points over no memory and the oracle 27.6. V2 snippet order is chronological source order, so the two inputs differ only in the extra messages and, until November 14, in the heading and labels: the oracle was shown as "Dataset reference messages (in original snippet order)" with "Reference message 0, 1, …", a selection as "Selected conversation messages (in chronological source order)" with "Message <source index>". The label test swapped the wording without changing the messages:
+
+```powershell
+python scripts/option_rotation_pilot.py --mode reference_only --split test --questions 0
+python scripts/option_rotation_pilot.py --mode reference_only --split test --questions 0 --prompt-format reference
+python scripts/option_rotation_pilot.py --split test --questions 0 --prompt-format reference --features data/ranker55/v2/test/features.npz
+python scripts/compare_selector_runs.py --runs results/reference_hit/runs_labels.json --output results/reference_hit/labels.json --active-only --rotation
+```
+
+| Messages | Heading and labels | One pass | Four orders |
+| --- | --- | ---: | ---: |
+| Ranker's selection | Selection (current) | 39.41% | 42.18% |
+| Ranker's selection | Earlier oracle wording | 39.68% | 42.45% |
+| Oracle snippets | Selection (current) | **54.42%** | **62.29%** |
+| Oracle snippets | Earlier oracle wording | 53.53% | 59.61% |
+
+The earlier oracle wording adds +0.27 points to the ranker's selection (−1.29 to +1.82 one pass; −1.14 to +1.57 four orders) and costs the oracle 0.89 points (−2.58 to +0.86) and **2.68** with four orders (−4.10 to −1.31) (`results/reference_hit/labels.json`, `labels_one_pass.json`). With every reference selected and labelled as references, the ranker still scores 38.53%. The labels do not explain the gap. The remaining difference between the two inputs is the roughly twelve extra messages around the references, which this test does not isolate.
+
+Since the selection wording is never worse, `evaluate_qwen.py` now shows the oracle under the selector's heading and labels; each snippet message is numbered by its source position (the next matching visible message, so a repeated message text takes the occurrence inside the snippet), and a snippet message absent from the visible history (7 questions have one) is numbered by its place in the snippet list. Its evaluator run, `results/qwen35_4breference_only_raw/personamem_v2/32k/compact/test_selection_labels`, reproduces order 0 of the label-test run. `--prompt-format reference` keeps the earlier wording for reproducing the test. Labelled selector runs keep the selector's server settings; the earlier wording makes the packed selection up to a token longer, so that run skips only the 2,048-token memory check (the context check stays).
+
+### Fine-tuned embedding pilot
+
+The ranker fits its own training questions no better than test (every reference in its top 15: 50.4% on a training sample, 48.4% validation, 47.5% test), so its limit is the information in its 55 features rather than overfitting. Half its feature importance (LightGBM split gain) is on EmbeddingGemma 2 chunk-similarity features, from a model never trained on this task. `scripts/finetune_embedding_pilot.py` fine-tunes that model contrastively on V2 training references, using hard negatives from the same history, and measures V2 validation with whole-message cosine alone:
+
+| V2 validation (909 questions) | Unchanged embedding | Fine-tuned, 6,000 questions | Current ranker |
+| --- | ---: | ---: | ---: |
+| Every reference in the top 15 | 22.3% | **59.7%** | 48.4% |
+| Any reference in the top 10 | 45.4% | **91.5%** | 72.8% |
+| Any reference in the top 5 | 34.2% | **83.4%** | — |
+| Reference recall at 15 | 37.4% | **79.7%** | 63.5% |
+| Median rank of the lowest reference | 64 | **9** | 17 |
+
+One pass, 500 steps of 12 questions, about 77 minutes on the RTX 5080; validation rose at every check (steps 125, 250, 375, 500), and training and validation share no personas (`results/embedding_finetune_pilot/pilot/report.json`). The weights were not kept. Not yet measured: the ranker rebuilt on the fine-tuned embedding, test retrieval, Qwen accuracy, and transfer to V1 and LoCoMo, which have no training references.
 
 For a one-question runtime/sample check:
 
@@ -322,6 +414,18 @@ Training gives `ask_to_forget` questions weight **0.5** and every other question
 | 0 (forget dropped) | 69.0% | 40.8% | 43.98% | 63.81% |
 
 The weight was chosen on validation, so these are development results. Rows 0.25, 0.1 and 0, and the logistic-regression and no-role figures below, were not saved at full precision: they are the earlier six-type figures multiplied by 6/5 and shown to one decimal. The question type is used only for training weights, never as a ranking input. In the same experiments, larger trees (127/7, 255/8), 600 rounds, `max_bin` 255, type-balanced weights, logistic regression on the same 55 features (42.6%), and an extra message-specificity feature did not improve Hit@10. Role matters only together with other features: references are 50.0% assistant messages, the same as all messages (49.8%), yet setting `role_assistant` to 0 in training and validation lowers Hit@10 by about 1.2 points for this model (67.20% → 66.0%, persona bootstrap −3.2 to +0.8) and by 2.2 for the all-rows Qwen-graded model (64.19% → 62.0%, −3.7 to −0.7), whose useful labels are 67.7% assistant messages. `models/subtlex_mix/alpha_0.5/ranker55.txt` is the weighted refit; the previous model remains as `ranker55_trials/trial_17.txt`, and the comparison is in `results/ranker55_forget_weight/v2/val/report.json`.
+
+### Combined mathematical pilot (V2 test only)
+
+A separate experiment adds learned rank-16 bilinear question/message similarity and background-corrected cosine to the 55 original features, then applies redundancy-aware MMR packing. Both new training features use five persona-held-out folds; the final adapters and 57-feature ranker fit training only. One configuration was fixed before test inference, with no validation run or test tuning. On all 1,119 active V2 test questions, four-order Qwen accuracy rises **42.18% → 45.49%**, a paired **+3.31 points** (persona-bootstrap 95% **+1.16 to +5.62**). Single-pass accuracy changes **39.41% → 40.04%** (+0.63, interval −1.25 to +2.53). The combined run does not isolate component effects. See the [experiment report and reproduction commands](results/math_ranker/v2/test/combined/README.md). Training took 2.1 minutes and test evaluation about 20 minutes on the RTX 5080.
+
+### Persona-disjoint embedding fine-tuning (V2 validation)
+
+The saved A/B experiment fine-tunes the encoder on exactly **9,000 questions from 400 training personas in A**. Both comparison rankers fit the same **9,192 questions from the other 400 personas in B**, with learned question/message similarity and generic-message correction included as two additional features. Their mathematical training features use five persona-held-out folds within B. On all **909 validation questions**, original cosine / original + 57-feature ranker / fine-tuned cosine / fine-tuned + 57-feature ranker score **45.21% / 79.98% / 92.74% / 93.73% Hit@10**. All-visible-reference coverage@15 is **22.33% / 52.70% / 61.83% / 87.90%**. The fine-tuned ranker beats the matched original ranker by **13.75 Hit@10 points** (persona 95% **+11.02 to +16.54**). This is a retrieval comparison on validation with fixed settings; redundancy-aware selection is deferred. The encoder is saved under `models/embedding_ab/encoder_half_a/`. [Full results, protocol and reproduction commands](results/embedding_ab/v2/val/README.md).
+
+### Fine-tuned ranker transfer tests
+
+The saved fine-tuned **57-feature ranker**, including learned similarity and generic-message correction, was evaluated with the existing 2,048-token score-based packing and Qwen prompt. With four answer orders, V2 test accuracy is **48.44%** versus **42.18%** for the original reference-55 baseline (+6.26 points, paired persona 95% +3.83 to +8.71); V1 is **65.37%** versus **68.25%** (−2.89, −5.89 to 0.00). On LoCoMo with one pass, it scores **67.07%** versus **60.42%** (+6.65, conversation 95% +4.46 to +9.23). The requested mixed-protocol macro is **60.29%** versus **56.95%** (+3.34, +1.85 to +4.86). LoCoMo remains below the full-history baseline (68.83%). These are answer accuracies; V2 reference retrieval is **95.53% Hit@10**. No weights or settings were retuned, and redundancy-aware selection remains deferred. [Full comparison, integrity checks and reproduction commands](results/embedding_ab/transfer/README.md).
 
 ## Tests
 
@@ -368,9 +472,9 @@ python scripts/evaluate_qwen.py --dataset locomo --mode selector --dry-run
 
 There are no `--split` or `--subset` arguments. V2 always uses the active test IDs in `data/splits/v2/test_ids.json`; their existing compact/full provenance remains report metadata. V1 and LoCoMo use all comparison IDs. `--limit` remains available for small smoke tests. Automatic resume follows the same dataset rules.
 
-`full_history` passes every visible user and assistant message and nothing else. The datasets' own system messages are left out: in V2 the JSON persona profile at the head of each history (about 1,080 Qwen tokens), in V1 the persona description that opens each session (4 to 7 per history, about 890 tokens in all). The selector and the oracle never saw these messages, because retrieval memories are user and assistant messages only, so with them in, full history read evidence no ranker could select. The remaining messages keep their source index labels. LoCoMo has no system messages and its prompts are unchanged. This departs from the official PersonaMem setup, which keeps the profile in the context, so full-history results here are not comparable with published ones. New V1 and V2 full-history runs write to `comparison_messages_only` and `test_messages_only`. The saved runs in `comparison` and `test` (62.48% and 37.18%) were scored with the persona messages and have not been rerun; the evaluator refuses to resume them.
+`full_history` passes every visible user and assistant message and nothing else. The datasets' own system messages are left out: in V2 the JSON persona profile at the head of each history (about 1,080 Qwen tokens), in V1 the persona description that opens each session (4 to 7 per history, about 890 tokens in all). The selector and the oracle never saw these messages, because retrieval memories are user and assistant messages only, so with them in, full history read evidence no ranker could select. The remaining messages keep their source index labels. LoCoMo has no system messages and its prompts are unchanged. This departs from the official PersonaMem setup, which keeps the profile in the context, so full-history results here are not comparable with published ones. New V1 and V2 full-history runs write to `comparison_messages_only` and `test_messages_only`. The saved runs in `comparison` and `test` (62.48% and 37.18%) were scored with the persona messages; the evaluator refuses to resume them. The persona-free baselines (V2 34.76%, V1 63.50%) were scored by `scripts/option_rotation_pilot.py --mode full_history`, whose first option order is exactly this evaluator's single pass, under `results/option_rotation/{v2/test,v1/comparison}/full_history/`.
 
-`reference_only` reads only the original `related_conversation_snippet` annotation, corresponding to reference label **2**. It never reads Qwen-generated labels or adds label **1** messages. This is an oracle baseline, with reference messages preserved verbatim in original snippet order. If an annotated message is absent from the visible history, it is still included and the discrepancy is counted in predictions and the report.
+`reference_only` reads only the original `related_conversation_snippet` annotation, corresponding to reference label **2**. It never reads Qwen-generated labels or adds label **1** messages. This is an oracle baseline, with reference messages preserved verbatim in original snippet order (chronological source order in V2), shown under the selector's heading and source-position message labels. Runs before November 14 used the heading "Dataset reference messages" and labels "Reference message 0, 1, …". If an annotated message is absent from the visible history, it is still included and the discrepancy is counted in predictions and the report.
 
 `selector` loads `models/subtlex_mix/alpha_0.5/ranker55.txt` and `data/ranker55/{dataset}/{split}/features.npz` by default (`split=test` for V2, `comparison` otherwise). Override those paths with `--selector-model` and `--selector-features`. The default is a **2,048 Qwen-token memory budget** on every dataset. Use `--memory-tokens 1024` or `--memory-tokens 4096` to change it (`--token-budget` is an alias). The selector scores the complete visible message pool, considers messages in descending score order, and skips messages that do not fit so smaller lower-ranked messages can still be included. Ties favor earlier source indices. Accepted messages stay whole and are presented chronologically with their original roles and LoCoMo session/timestamp metadata.
 

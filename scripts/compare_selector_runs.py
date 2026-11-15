@@ -6,6 +6,8 @@ predictions.jsonl. Intervals resample each dataset's groups (persona_id: persona
 conversations) with 5,000 draws; macro averages datasets equally.
 --active-only keeps only questions still listed under data/splits, so runs saved before
 questions were removed from a split (V2 test sensitive_info) compare on the current set.
+--rotation scores option_rotation_pilot.py runs by their four-order answer (the answer text
+with the highest log-probability summed over every option order) instead of the one pass.
 """
 import argparse
 import json
@@ -16,12 +18,20 @@ import numpy as np
 from raw_datasets import ROOT
 
 
-def load(run, active=None):
+def load(run, active=None, rotation=False):
     rows = {}
     for line in (ROOT / run / 'predictions.jsonl').read_text(encoding='utf-8').splitlines():
         if line.strip():
             r = json.loads(line)
-            if active is None or r['example_id'] in active:
+            if active is not None and r['example_id'] not in active:
+                continue
+            if rotation:
+                if 'shifts' not in r:
+                    raise ValueError(f'{run}: --rotation needs option_rotation_pilot.py predictions')
+                # Predicted answer index (not letter): letters move with the order.
+                pick = int(np.sum([s['answer_logprobs'] for s in r['shifts']], axis=0).argmax())
+                rows[r['example_id']] = (r['persona_id'], int(pick == r['gold_index']), pick)
+            else:
                 rows[r['example_id']] = (r['persona_id'], int(r['correct']), r['predicted_label'])
     return rows
 
@@ -33,6 +43,7 @@ def main(argv=None):
     parser.add_argument('--draws', type=int, default=5000)
     parser.add_argument('--seed', type=int, default=271)
     parser.add_argument('--active-only', action='store_true', help='drop questions no longer in data/splits')
+    parser.add_argument('--rotation', action='store_true', help='score rotation-pilot runs by their four-order answer')
     args = parser.parse_args(argv)
     spec = json.loads(args.runs.read_text(encoding='utf-8'))
     active = None
@@ -40,9 +51,9 @@ def main(argv=None):
         active = {i for path in (ROOT / 'data/splits').glob('*/*_ids.json') for i in json.loads(path.read_text(encoding='utf-8'))}
     labels = list(next(iter(spec.values())))
     rng = np.random.default_rng(args.seed)
-    data, report = {}, {'datasets': {}, 'draws': args.draws, 'active_only': args.active_only}
+    data, report = {}, {'datasets': {}, 'draws': args.draws, 'active_only': args.active_only, 'rotation': args.rotation}
     for dataset, runs in spec.items():
-        loaded = {label: load(path, active) for label, path in runs.items()}
+        loaded = {label: load(path, active, args.rotation) for label, path in runs.items()}
         ids = sorted(set.intersection(*(set(v) for v in loaded.values())))
         if any(len(v) != len(ids) for v in loaded.values()):
             raise ValueError(f'{dataset}: runs cover different questions')

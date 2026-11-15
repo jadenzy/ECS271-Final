@@ -1,0 +1,61 @@
+v2: loading original sources for ['train']
+v2: 2 questions, 50 visible source messages
+v2/train: checking original reference labels
+memory: 0/2 embedded
+memory: 1/2 embedded
+memory: 2/2; 1000.0 inputs/s
+memory: 0/2 embedded
+memory: 2/2; 2000.0 inputs/s
+memory: 0/2 embedded
+memory: 0/1 embedded
+memory: 1/1; 1000.0 inputs/s
+memory: 0/1 embedded
+memory: 1/1; 1000.0 inputs/s
+memory: 1/1 embedded
+  epoch 1: loss 20.0000
+  epoch 2: loss 19.6597
+  epoch 3: loss 18.5199
+  epoch 4: loss 16.4317
+  epoch 5: loss 13.3306
+  epoch 6: loss 9.1778
+  epoch 7: loss 3.9660
+  epoch 8: loss 0.0884
+  epoch 9: loss 0.0001
+  epoch 10: loss 0.0000
+  epoch 11: loss 0.0000
+  epoch 12: loss 0.0000
+  epoch 13: loss 0.0000
+  epoch 14: loss 0.0000
+  epoch 15: loss 0.0000
+  epoch 16: loss 0.0000
+  epoch 17: loss 0.0000
+  epoch 18: loss 0.0000
+  epoch 19: loss 0.0000
+  epoch 20: loss 0.0000
+  epoch 21: loss 0.0000
+  epoch 22: loss 0.0000
+  epoch 23: loss 0.0000
+  epoch 24: loss 0.0000
+  epoch 25: loss 0.0000
+  epoch 26: loss 0.0000
+  epoch 27: loss 0.0000
+  epoch 28: loss 0.0000
+  epoch 29: loss 0.0000
+  epoch 30: loss 0.0000
+v2: loading original sources for ['train']
+v2: 2 questions, 50 visible source messages
+v2/train: checking original reference labels
+..............................................................................................................F..........................................................................
+======================================================================
+FAIL: test_deterministic_scoring_errors_are_not_retried (test_qwen_judge.JudgeTests.test_deterministic_scoring_errors_are_not_retried)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\jaden\ECS271-Final\tests\test_qwen_judge.py", line 173, in test_deterministic_scoring_errors_are_not_retried
+    self.assertEqual(launch.call_count, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3 != 1
+
+----------------------------------------------------------------------
+Ran 185 tests in 41.050s
+
+FAILED (failures=1)

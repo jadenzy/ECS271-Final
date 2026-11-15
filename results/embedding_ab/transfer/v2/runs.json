@@ -1,0 +1,6 @@
+{
+  "v2_test": {
+    "baseline": "results/option_rotation/v2/test/references_only",
+    "new": "results/embedding_ab/transfer/v2"
+  }
+}

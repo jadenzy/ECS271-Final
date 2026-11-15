@@ -1,0 +1,8 @@
+{
+ "personamem_v2_test": {
+  "ranker": "results/option_rotation/v2/test/references_only",
+  "ranker_reference_labels": "results/option_rotation/v2/test/references_only_reference_labels",
+  "oracle": "results/option_rotation/v2/test/reference_only",
+  "oracle_reference_labels": "results/option_rotation/v2/test/reference_only_reference_labels"
+ }
+}

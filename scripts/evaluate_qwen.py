@@ -132,6 +132,20 @@ class VisibleHistories:
             messages = kept
         return (messages, source)
 
+def with_source_positions(history, visible):
+    """Label each snippet message with its source position: the next matching visible message
+    after the previous snippet message. A message absent from the visible history gets none and
+    is numbered by its place in the list, as message_block does for unlabelled messages."""
+    labelled, after = [], -1
+    for message in history:
+        matches = [i for i, v in enumerate(visible) if (v.get('role'), v.get('content')) == (message['role'], message['content'])]
+        later = [i for i in matches if i > after]
+        index = later[0] if later else (matches[0] if matches else None)
+        labelled.append(message if index is None else {**message, 'source_message_index': index})
+        after = after if index is None else index
+    return labelled
+
+
 class ReferenceHistories:
     """Oracle: verbatim annotated snippets, even when absent from visible history."""
 
@@ -145,8 +159,11 @@ class ReferenceHistories:
         self.provenance = {
             'oracle': True, 'source': 'original related_conversation_snippet field',
             'included_labels': [REFERENCE_LABEL], 'qwen_generated_labels_used': False,
-            'order': 'dataset snippet order', 'missing_reference_policy':
-                'Include the original annotated message and report its absence from visible history.',
+            'order': 'dataset snippet order (chronological source order in V2)',
+            'prompt_format': 'selector heading and source-position message labels',
+            'missing_reference_policy':
+                'Include the original annotated message and report its absence from visible history; '
+                'it has no source position and is numbered by its place in the snippet list.',
             'reference_loader_sha256': digest(Path(__file__).with_name('label_reference_messages.py')),
             'references_sha256': hashlib.sha256(json.dumps(self.references, sort_keys=True).encode()).hexdigest(),
         }
@@ -155,7 +172,7 @@ class ReferenceHistories:
         visible, source = self.visible.get(question)
         keys = {(m['role'], m.get('content', '')) for m in visible}
         refs = self.references[question['example_id']]
-        history = [{'role': role, 'content': text} for role, text in refs]
+        history = with_source_positions([{'role': role, 'content': text} for role, text in refs], visible)
         missing = sum(key not in keys for key in refs)
         return history, {**source, 'available_history_messages': len(visible),
                          'history_messages': len(history), 'reference_message_count': len(history),
@@ -374,16 +391,21 @@ def build_messages(question, config, history):
     if mode == 'selector' and not history:
         messages.append({'role': 'user', 'content': config['user_template'].format(question=question['question'], options=options)})
         return messages
+    # The oracle shares the selector's heading and labels: on V2 test the earlier oracle wording
+    # ("Dataset reference messages", "Reference message 0, 1, ...") scored no better on either input.
+    # memory_labels='reference' restores that wording for option_rotation_pilot's label test only.
+    legacy_reference = config.get('memory_labels') == 'reference'
     blocks = []
     previous_session = None
     for index, message in enumerate(history):
         if question['dataset'] == 'locomo' and message['session_id'] != previous_session:
             blocks.append(f"[Session {message['session_id']} | timestamp: {message['timestamp']}]")
             previous_session = message['session_id']
-        blocks.append(message_block(message, index, reference=mode == 'reference_only'))
-    heading = {'full_history': 'Conversation history (all visible source messages, in chronological order)',
-               'selector': 'Selected conversation messages (in chronological source order)',
-               'reference_only': 'Dataset reference messages (in original snippet order)'}[mode]
+        blocks.append(message_block(message, index, reference=legacy_reference))
+    heading = ('Dataset reference messages (in original snippet order)' if legacy_reference else
+               {'full_history': 'Conversation history (all visible source messages, in chronological order)',
+                'selector': 'Selected conversation messages (in chronological source order)',
+                'reference_only': 'Selected conversation messages (in chronological source order)'}[mode])
     messages.append({'role': 'user', 'content': heading + ':\n\n' + '\n\n'.join(blocks)})
     messages.append({'role': 'user', 'content': config['user_template'].format(question=question['question'], options=options)})
     return messages
@@ -432,7 +454,7 @@ def save_summary(out, rows, config, protocol, hardware=None, status='complete', 
     if no_memory:
         limitations += ['Qwen receives only the shared evaluation instructions, question, and answer options. No conversation, source persona profile, retrieved memory, or earlier evaluation answer is included.', 'This measures the question/options-only baseline on the same prepared V2 partition.']
     elif mode == 'reference_only':
-        limitations += ['Oracle baseline: only original dataset reference conversation snippets (label 2) are supplied in dataset snippet order. Qwen-generated label 1 messages are never loaded.', 'Annotated reference messages absent from visible history are retained verbatim and counted separately; this is not a deployable retrieval result.']
+        limitations += ['Oracle baseline: only original dataset reference conversation snippets (label 2) are supplied in dataset snippet order (chronological source order in V2) under the selector heading and source-position message labels. Qwen-generated label 1 messages are never loaded.', 'Annotated reference messages absent from visible history are retained verbatim and counted separately; this is not a deployable retrieval result.']
     elif mode == 'selector':
         limitations += ['The saved LightGBM model scores every visible nonempty user/assistant message using cached features. Whole messages are passed in chronological order; ties favor earlier messages. Reference labels and correct answers are not used for selection.', 'Model and feature hashes, feature order, and selection settings are recorded in the protocol. The feature bundle and model must use the same pinned SUBTLEX recipe and alpha.']
         if 'memory_tokens' in protocol['selector']:
@@ -524,7 +546,7 @@ def save_summary(out, rows, config, protocol, hardware=None, status='complete', 
     if no_memory:
         input_description = 'only the shared evaluation instructions, question, and all options; no conversation or persona profile'
     elif mode == 'reference_only':
-        input_description = 'only original dataset reference conversation snippets (label 2), in original snippet order, followed by the question and all options; Qwen-generated label 1 messages are excluded'
+        input_description = 'only original dataset reference conversation snippets (label 2), in original snippet order under the selector heading and source-position labels, followed by the question and all options; Qwen-generated label 1 messages are excluded'
     elif mode == 'selector':
         input_description = f"complete LightGBM-selected source messages within {limit}, in chronological order, followed by the question and all options"
     elif config['dataset'] == 'locomo':

@@ -1,0 +1,50 @@
+{
+  "status": "prediction_and_artifact_checks_passed",
+  "datasets": {
+    "v2": {
+      "questions": 1119,
+      "answer_orders": 4,
+      "correct": 542,
+      "accuracy": 0.484361036639857,
+      "groups": 50,
+      "unique_complete_questions": true,
+      "native_memory_budget_passed": true,
+      "selected_ids_within_visible_history": true,
+      "source_message_truncations": 0,
+      "frozen_model_and_protocol_hashes_match": true
+    },
+    "v1": {
+      "questions": 589,
+      "answer_orders": 4,
+      "correct": 385,
+      "accuracy": 0.6536502546689303,
+      "groups": 20,
+      "unique_complete_questions": true,
+      "native_memory_budget_passed": true,
+      "selected_ids_within_visible_history": true,
+      "source_message_truncations": 0,
+      "frozen_model_and_protocol_hashes_match": true
+    },
+    "locomo": {
+      "questions": 1986,
+      "answer_orders": 1,
+      "correct": 1332,
+      "accuracy": 0.6706948640483383,
+      "groups": 10,
+      "unique_complete_questions": true,
+      "native_memory_budget_passed": true,
+      "selected_ids_within_visible_history": true,
+      "source_message_truncations": 0,
+      "frozen_model_and_protocol_hashes_match": true
+    }
+  },
+  "total_questions": 3694,
+  "total_answer_orders": 8818,
+  "ranker_features": 57,
+  "redundancy_selection_used": false,
+  "new_tests_passed": 3,
+  "full_suite_tests": 188,
+  "full_suite_passed": 187,
+  "preexisting_failure": "test_qwen_judge.JudgeTests.test_deterministic_scoring_errors_are_not_retried",
+  "comparison_sha256": "88bb2c245dd67f66bbe1f3367ed727bde2f6b26bbd810ddeba512810b84a117d"
+}

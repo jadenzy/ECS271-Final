@@ -1,0 +1,26 @@
+{
+  "ranker_current": {
+    "questions": 909,
+    "every_reference": 0.8778877887788779,
+    "any_reference": 0.9570957095709571,
+    "reference_recall": 0.9237257059039238,
+    "mean_messages": 16.96809680968097,
+    "mean_reference_share": 0.17193188500512946
+  },
+  "ranker_top8_current": {
+    "questions": 909,
+    "every_reference": 0.7788778877887789,
+    "any_reference": 0.9163916391639164,
+    "reference_recall": 0.8562522918958563,
+    "mean_messages": 7.995599559955996,
+    "mean_reference_share": 0.327983393577453
+  },
+  "filter_top8_current": {
+    "questions": 909,
+    "every_reference": 0.46534653465346537,
+    "any_reference": 0.8734873487348734,
+    "reference_recall": 0.6913274660799413,
+    "mean_messages": 7.995599559955996,
+    "mean_reference_share": 0.2622518204201372
+  }
+}
