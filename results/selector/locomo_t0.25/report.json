@@ -1,0 +1,16 @@
+{
+  "questions": 1986,
+  "accuracy": {
+    "one_pass": 0.5720040281973817
+  },
+  "status": "complete",
+  "dataset": "locomo",
+  "split": "comparison",
+  "rotations": 1,
+  "memory_tokens": 8192,
+  "threshold": 0.25,
+  "mean_selected_messages": 3.783484390735146,
+  "mean_messages_passing_threshold": 3.783484390735146,
+  "mean_memory_tokens": 230.28197381671703,
+  "share_questions_capped": 0.0
+}

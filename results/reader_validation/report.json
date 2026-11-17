@@ -1,15 +1,15 @@
 {
-  "filter_cut3_current": {
+  "selector_current": {
     "questions": 500,
-    "one_pass": 0.474,
-    "four_orders": 0.522,
+    "one_pass": 0.496,
+    "four_orders": 0.538,
     "letter_share_all_orders": {
-      "a": 0.054,
-      "b": 0.19,
-      "c": 0.248,
-      "d": 0.508
+      "a": 0.073,
+      "b": 0.206,
+      "c": 0.261,
+      "d": 0.46
     },
-    "mean_prompt_tokens": 1476.49,
-    "mean_messages": 7.946
+    "mean_prompt_tokens": 791.07,
+    "mean_messages": 2.988
   }
 }

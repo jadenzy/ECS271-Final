@@ -84,8 +84,10 @@ Use that same `--selector-features` option for inference with the existing test 
 | `option_rotation_pilot.py` | Measure the effect of rotating answer-option positions | CLI; GPU, or CPU summaries |
 | `finetune_embedding_pilot.py` | Fine-tune the embedding model on V2 training references and measure validation retrieval | CLI; GPU |
 | `reader_validation.py` | Reader-side tests on V2 validation: prompt wording, Qwen per-message filter, score cutoff | CLI; GPU |
-| `evaluate_embedding_ab_cutoff.py` | Score the frozen fine-tuned ranker with a relative score cutoff, four answer orders | CLI; GPU |
+| `evaluate_embedding_ab_cutoff.py` | Score the frozen fine-tuned ranker with a relative score cutoff, optionally with a larger token cap | CLI; GPU |
 | `evaluate_embedding_ab_mmr.py` | Score the frozen fine-tuned ranker with redundancy-aware (MMR) packing, four answer orders | CLI; GPU |
+| `evaluate_selector.py` | Train a two-pass yes/no message selector on the 57 features (no ranker) and score it with Qwen | CLI; CPU training, GPU scoring |
+| `evaluate_graded_selector.py` | The same two-pass selector trained on Qwen-graded 0/1/2 labels, references first | CLI; CPU training, GPU scoring |
 | `compare_selector_runs.py` | Compare saved prediction accuracies with paired bootstrap intervals | CLI; CPU |
 | `exclude_eval_questions.py` | Remove a question type from V2 evaluation IDs and filter selected bundles | CLI; CPU; changes split files with `--apply` |
 | `raw_datasets.py` | Read raw benchmarks, answers, cutoffs, IDs, and source hashes | Importable module |
@@ -418,15 +420,92 @@ python scripts/reader_validation.py --arms ranker_current filter_cut3_current --
 python scripts/reader_validation.py --stage select      # save the ranker's selection per validation question
 python scripts/reader_validation.py --stage judge       # Qwen judges each selected message (question + message only)
 python scripts/reader_validation.py --stage policies    # reference coverage of each filter rule (CPU)
+python scripts/reader_validation.py --arms selector_current --limit 500   # graded selector's tight set (usefulness >= 0.4)
 
-# All of V1 with a score cutoff (keep messages within D of the top score), or MMR packing at penalty 0.1
+# A whole dataset (v2 test, v1, locomo) with a score cutoff (keep messages within D of the top score), or MMR packing at penalty 0.1
 python scripts/evaluate_embedding_ab_cutoff.py --datasets v1 --cutoff 3.0
+python scripts/evaluate_embedding_ab_cutoff.py --datasets v1 locomo --cutoff 3.0 --memory-tokens 8192   # cutoff decides the size, 8,192-token cap
+python scripts/evaluate_embedding_ab_cutoff.py --datasets v2 v1 locomo --cutoff 3.0 --memory-tokens 8192 --neighbour-margin 5.0   # plus neighbours
 python scripts/evaluate_embedding_ab_mmr.py --datasets v1
 ```
 
-`reader_validation.py` reads V2 validation only (never test). Filter rules: `useful` (messages Qwen calls useful, at least 2), `top4`/`top6`/`top8` (Qwen's most useful by log-probability margin) and `cut3` (within 3.0 of the top score, no Qwen judgment). `_clean` removes the empty `Memories:` heading from the question message; `_current` keeps it. `--limit N` scores the first N questions in persona order, not a random sample. Outputs go to `results/reader_validation/{arm}/predictions.jsonl` (option-rotation row format, so `compare_selector_runs.py --rotation` applies), plus `selections.jsonl`, `judgments.jsonl` and `policies.json`.
+With the default `--memory-tokens 2048` the cutoff filters the usual 2,048-token selection. With a larger cap, packing walks the whole visible pool in rank order and keeps every message within D of the top score that fits the cap, so the cutoff rather than the budget decides how much Qwen reads; the server context grows to the cap plus the selector overhead.
 
-The two V1 scripts write `results/embedding_ab/transfer_cutoff/{dataset}_cut{D}/` and `results/embedding_ab/transfer_mmr/{dataset}/` with `predictions.jsonl`, `protocol.json` (a changed protocol refuses to resume), `report.json` and the server log; compare them with the unfiltered run in `results/embedding_ab/transfer/{dataset}/`. The cutoff distance and MMR penalty are fixed by flags and defaults, not tuned in these scripts.
+`--neighbour-margin M` (capped path only) adds, after the cutoff packing, each kept message's chronological neighbours (message index ±1) whose own ranker score is within M of the top, then repacks the whole set under the same cap. Only ranker scores are used. Questions whose expanded set equals the plain cutoff set reuse that run's reads from `{dataset}_cut{D}_mem{cap}/predictions.jsonl`, so the comparison has no GPU drift there; the plain cutoff run must exist first. Rows record `neighbours_added`, `neighbour_candidates` and `reused_cutoff_read`. Outputs go to `{dataset}_cut{D}_mem{cap}_nb{M}/`.
+
+`reader_validation.py` reads V2 validation only (never test). Filter rules: `useful` (messages Qwen calls useful, at least 2), `top4`/`top6`/`top8` (Qwen's most useful by log-probability margin) and `cut3` (within 3.0 of the top score, no Qwen judgment). The `selector` memory source (arm `selector_current`) reads the graded selector's tight set instead: usefulness ≥ 0.4 plus the most useful message, packed by usefulness under the same 2,048-token cap. It uses the validation usefulness cache written by `evaluate_graded_selector.py --train`, checked against that run's training record. `_clean` removes the empty `Memories:` heading from the question message; `_current` keeps it. `--limit N` scores the first N questions in persona order, not a random sample. Outputs go to `results/reader_validation/{arm}/predictions.jsonl` (option-rotation row format, so `compare_selector_runs.py --rotation` applies), plus `selections.jsonl`, `judgments.jsonl` and `policies.json`.
+
+The two transfer scripts write `results/embedding_ab/transfer_cutoff/{dataset}_cut{D}/` (`{dataset}_cut{D}_mem{cap}/` with a larger cap) and `results/embedding_ab/transfer_mmr/{dataset}/` with `predictions.jsonl`, `protocol.json` (a changed protocol refuses to resume), `report.json` and the server log; compare them with the unfiltered run in `results/embedding_ab/transfer/{dataset}/`. The cutoff distance and MMR penalty are fixed by flags and defaults, not tuned in these scripts.
+
+### `evaluate_selector.py`
+
+A two-pass yes/no selector replaces the ranker. It is trained only on V2 persona half B (the ranker's 9,192 questions and 57 features); the ranker's scores are not used.
+
+- **Pass 1:** a LightGBM classifier marks each visible message as reference or not.
+- **Pass 2:** rescores pass 1's top 30 messages per question. It adds pool-relative features (rank, gaps, share of the pool's softmax mass), the scores of the messages just before and after, and the 57 features again. Its training inputs are out-of-fold pass 1 scores from five persona folds.
+
+```powershell
+python scripts/evaluate_selector.py --train                                   # CPU, about 2 minutes; prints V2 validation coverage per threshold
+python scripts/evaluate_selector.py --datasets v1 locomo v2 --threshold 0.25  # GPU; V2/V1 four orders, LoCoMo one pass
+python scripts/evaluate_selector.py --datasets v1 --threshold 0.25 --summarize-only
+```
+
+Scoring keeps every message with pass 2 probability at or above `--threshold`; the most probable message is always kept. Messages are packed by probability under `--memory-tokens` (default 8,192, so the threshold decides the size) and shown chronologically.
+
+0.25 was fixed on V2 validation before any test set was scored:
+1. Reader accuracy by selection outcome (every reference kept with 0, 1–2, 3–5 or 6+ extra messages; some references missing; none kept) was estimated from the saved `reader_validation` runs.
+2. Each threshold's validation selections were mapped onto those accuracies.
+3. The projection was flat from 0.2 to 0.4, and 0.25 sits in that range.
+
+Before scoring a dataset, the script checks its 57 inputs by reproducing the cached ranker scores exactly.
+
+**Outputs:**
+- Models: `models/embedding_ab/selector/pass{1,2}.txt` (git-ignored).
+- Training record and validation coverage: `results/selector/training.json`.
+- Probabilities: `selector_probabilities.npy` next to each dataset's cached features.
+- Runs: `results/selector/{dataset}_t{threshold}/`, with the same files as the cutoff runs.
+- Comparison lists: `results/selector/runs_{dataset}.json`.
+
+### `evaluate_graded_selector.py`
+
+This is the same two-pass design, but both passes are three-class LightGBM models trained on half B's Qwen-graded labels. It uses `build_graded_training.py`'s `--all-rows` policy:
+
+| Label | Meaning |
+|---|---|
+| 2 | annotated reference |
+| 1 | Qwen judged it useful (one of 20 judged candidates per question) |
+| 0 | Qwen judged it not useful, or it was never judged |
+
+Messages are kept and packed by expected usefulness, `u = P(2) + 0.5·P(1)`, which is the ranker's 0/1/2 gain scaled to 1. References come first and Qwen-useful messages next. Pass 2 also sees pass 1's P(1) and P(2).
+
+```powershell
+python scripts/evaluate_graded_selector.py --train                                   # CPU, a few minutes
+python scripts/evaluate_graded_selector.py --datasets v1 locomo v2 --threshold 0.07  # GPU, about 35 minutes for all three
+```
+
+Training prints two coverage tables per threshold:
+- **Half B, out of fold:** references fully kept, share of Qwen-useful messages kept, and messages kept. V2 validation has no Qwen grades, so half B is the only place grade-1 recall can be measured.
+- **V2 validation:** reference coverage and exact sets.
+
+The threshold 0.07 matches the 3.0 cutoff's V2 validation coverage. Half B's grades are cached as `graded_labels.npy`, read from `data/qwen_labels/v2/train.jsonl`.
+
+```powershell
+python scripts/evaluate_graded_selector.py --datasets v2 v1 locomo --threshold 0.4 --route-confidence 0.4   # routed: best V2 setting
+```
+
+`--route-confidence c` gives a question the selector's set only when the selector is confident that set holds every reference. Confidence is the product of 1 − P(2) over the messages it leaves out, and must be at least `c`. Otherwise the question gets the frozen ranker's 3.0-cutoff set under the same cap, packed exactly as by `evaluate_embedding_ab_cutoff.py`. Each prediction row records `route`, `route_confidence` and `selector_set_size`; `report.json` adds the share routed to the selector and mean messages per route. The 0.4/0.4 setting was chosen on V2 validation with a CPU projection from the saved `reader_validation` runs. Runs go to `results/selector_graded/{dataset}_routed_t{t}_c{c}/`. Pass 2's class probabilities are cached as `selector_graded_probabilities.npy` next to each dataset's features.
+
+```powershell
+python scripts/evaluate_graded_selector.py --datasets v2 --threshold 0.4 --route-confidence 0.4 --two-view   # tested; lost on V2 test
+```
+
+`--two-view` reads each cutoff-route question a second time with the selector's tight set. Its answer is the sum of both reads' renormalized letter log-probabilities per answer order, with equal weights. Reads the routed run already made are reused where the route and the selected messages (same order) match, so only the second view uses the GPU. Rows add `two_view`, `reused_routed_read`, `views` (both reads' shifts) and `selector_view`, and `shifts` holds the combined answer. Runs go to `results/selector_graded/{dataset}_twoview_t{t}_c{c}/`. It scored 55.41% on V2 test against the routed rule's 56.48%, so it is not the default.
+
+**Outputs:**
+- Models: `models/embedding_ab/selector_graded/` (git-ignored).
+- Training record: `results/selector_graded/training.json`.
+- Runs: `results/selector_graded/{dataset}_t{threshold}/`.
+- Comparisons: `results/selector_graded/{dataset}_comparison_{rotation,one_pass}.json`.
 
 ## 7. Compare runs and maintain evaluation splits
 

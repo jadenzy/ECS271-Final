@@ -1,0 +1,10 @@
+{
+ "locomo_mc10": {
+  "finetuned57": "results/embedding_ab/transfer/locomo",
+  "finetuned57_cut3": "results/embedding_ab/transfer_cutoff/locomo_cut3",
+  "reference55": "results/qwen35_4bselector_raw/locomo_mc10/full/comparison_memory_2048_references_only",
+  "graded55": "results/qwen35_4bselector_raw/locomo_mc10/full/comparison_memory_2048_qwen_graded_all",
+  "full_history": "results/qwen35_4bfull_history_raw/locomo_mc10/full/comparison",
+  "finetuned57_cut3_mem8192": "results/embedding_ab/transfer_cutoff/locomo_cut3_mem8192"
+ }
+}

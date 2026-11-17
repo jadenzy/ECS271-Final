@@ -1,0 +1,6 @@
+{
+ "locomo_mc10": {
+  "cut3_mem8192_nb5": "results/embedding_ab/transfer_cutoff/locomo_cut3_mem8192_nb5",
+  "cut3_mem8192": "results/embedding_ab/transfer_cutoff/locomo_cut3_mem8192"
+ }
+}

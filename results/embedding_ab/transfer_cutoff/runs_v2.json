@@ -1,0 +1,11 @@
+{
+ "personamem_v2": {
+  "finetuned57": "results/embedding_ab/transfer/v2",
+  "finetuned57_cut3": "results/embedding_ab/transfer_cutoff/v2_cut3",
+  "math57_mmr": "results/math_ranker/v2/test/combined",
+  "reference55": "results/option_rotation/v2/test/references_only",
+  "graded55": "results/option_rotation/v2/test/qwen_graded",
+  "full_history": "results/option_rotation/v2/test/full_history",
+  "finetuned57_cut3_mem8192": "results/embedding_ab/transfer_cutoff/v2_cut3_mem8192"
+ }
+}

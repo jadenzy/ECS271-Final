@@ -1,0 +1,8 @@
+{
+ "personamem_v2": {
+  "twoview_t0.4_c0.4": "results/selector_graded/v2_twoview_t0.4_c0.4",
+  "routed_t0.4_c0.4": "results/selector_graded/v2_routed_t0.4_c0.4",
+  "finetuned57_cut3_mem8192": "results/embedding_ab/transfer_cutoff/v2_cut3_mem8192",
+  "reference55": "results/option_rotation/v2/test/references_only"
+ }
+}

@@ -1,0 +1,10 @@
+{
+ "personamem_v1": {
+  "selector_graded_t0.07": "results/selector_graded/v1_t0.07",
+  "finetuned57_cut3_mem8192": "results/embedding_ab/transfer_cutoff/v1_cut3_mem8192",
+  "finetuned57": "results/embedding_ab/transfer/v1",
+  "reference55": "results/option_rotation/v1/comparison/references_only",
+  "graded55": "results/option_rotation/v1/comparison/qwen_graded",
+  "full_history": "results/option_rotation/v1/comparison/full_history"
+ }
+}

@@ -1,0 +1,20 @@
+{
+  "questions": 1986,
+  "accuracy": {
+    "one_pass": 0.6988922457200403
+  },
+  "status": "complete",
+  "dataset": "locomo",
+  "split": "comparison",
+  "rotations": 1,
+  "memory_tokens": 8192,
+  "score_cutoff": 3.0,
+  "mean_selected_messages": 84.70594159113797,
+  "mean_memory_tokens": 4207.604733131923,
+  "mean_messages_within_cutoff_in_pool": 60.98439073514602,
+  "share_questions_capped": 0.14904330312185296,
+  "neighbour_margin": 5.0,
+  "share_questions_expanded": 0.9587109768378651,
+  "mean_neighbours_added": 25.682779456193355,
+  "share_reused_cutoff_reads": 0.041289023162134945
+}

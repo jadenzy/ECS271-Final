@@ -5,6 +5,7 @@ python scripts/reader_validation.py --stage select                     # save th
 python scripts/reader_validation.py --stage judge                      # grade each ranker-selected message
 python scripts/reader_validation.py --stage policies                   # reference coverage of filter rules (CPU)
 python scripts/reader_validation.py --arms ranker_clean filter_useful_clean
+python scripts/reader_validation.py --arms selector_current --limit 500   # graded selector's tight set
 python scripts/reader_validation.py --summarize-only
 
 Validation only (909 questions; personas disjoint from the encoder's A cohort and the ranker's B
@@ -16,6 +17,9 @@ Memory sources
   ranker   the frozen fine-tuned 57-feature ranker's 2,048-token selection (saved validation scores)
   filter_* a subset of the ranker's selection chosen from Qwen's per-message judgment
            (label_reference_messages' judge: question and one message, useful or not; no options)
+  selector the graded selector's tight set (evaluate_graded_selector.py): every message with usefulness
+           u = P(2) + 0.5 P(1) >= 0.4, the most useful always kept, packed by u under the same 2,048-token
+           cap; u is the V2 validation cache that --train wrote (hash checked against its training record)
 Templates
   current  configs/evaluate_qwen.json: the question message starts with an empty "Memories:" heading
   clean    the same message without that heading
@@ -35,15 +39,19 @@ import numpy as np
 
 from embedding_ab_math import CachedInputs
 from evaluate_embedding_ab_transfer import FrozenHistories, answer_scores
-from evaluate_qwen import ReferenceHistories, build_messages, evaluation_config, order_for_cache, runtime_metadata, selected_history
+from evaluate_qwen import (ReferenceHistories, build_messages, evaluation_config, order_for_cache, pack_selector_messages,
+                           runtime_metadata, selected_history)
 from label_reference_messages import judge_candidate, judge_config
 from option_rotation_pilot import bootstrap, rotated, summarize
-from raw_datasets import ROOT, load_dataset
+from raw_datasets import ROOT, load_dataset, sha256
 import qwen_llamacpp_server as qwen_server
 
 OUTPUT = ROOT / 'results/reader_validation'
 FEATURES = ROOT / 'data/ranker55/embedding_ab/finetuned/v2/val/features.npz'
 SCORES = ROOT / 'models/embedding_ab/finetuned_math/validation_scores.npy'
+USEFULNESS = FEATURES.parent / 'selector_graded_usefulness.npy'
+SELECTOR_RECORD = ROOT / 'results/selector_graded/training.json'
+SELECTOR_THRESHOLD = 0.4
 MEMORY_TOKENS = 2048
 CLEAN_TEMPLATE = 'Question: {question}\nOptions:\n{options}\nAnswer:'
 
@@ -111,9 +119,31 @@ FILTERS = {'useful': keep_useful, 'top4': keep_top(4), 'top6': keep_top(6), 'top
 
 def arm_parts(arm):
     memory, _, template = arm.rpartition('_')
-    if template not in ('current', 'clean') or not (memory in ('oracle', 'ranker') or memory.removeprefix('filter_') in FILTERS):
-        raise ValueError(f'Unknown arm {arm}: use oracle|ranker|filter_<{"|".join(FILTERS)}> + _current|_clean')
+    if template not in ('current', 'clean') or not (memory in ('oracle', 'ranker', 'selector') or memory.removeprefix('filter_') in FILTERS):
+        raise ValueError(f'Unknown arm {arm}: use oracle|ranker|selector|filter_<{"|".join(FILTERS)}> + _current|_clean')
     return memory, template
+
+
+def selector_usefulness():
+    if sha256(USEFULNESS) != json.loads(SELECTOR_RECORD.read_text())['validation_usefulness_sha256']:
+        raise ValueError('Graded selector validation usefulness differs from its training record')
+    return np.load(USEFULNESS)
+
+
+def selector_get(ranker, u_all, question, server, config):
+    """The graded selector's tight set: u >= SELECTOR_THRESHOLD plus the most useful message, packed by u."""
+    key = question['history_id'], question['source_end_index']
+    members = ranker.pools[key]
+    i = ranker.groups[question['example_id']]
+    a, b = map(int, ranker.data.offsets[i:i+2])
+    u = u_all[a:b]
+    ranked = np.argsort(-u, kind='stable')
+    tight = [int(j) for j in ranked if u[j] >= SELECTOR_THRESHOLD or j == ranked[0]]
+    chosen, packing = pack_selector_messages(server, question, config, members, tight, MEMORY_TOKENS, blocks=ranker.blocks[key])
+    history = selected_history(members, chosen)
+    return history, dict(packed_memory_tokens=packing['packed_memory_tokens'], selector_set_size=len(tight),
+                         selected_messages=[dict(message_id=members[j]['message_id'], message_index=members[j]['message_index'],
+                                                 usefulness=float(u[j])) for j in chosen])
 
 
 def setup():
@@ -136,6 +166,7 @@ def score_arms(arms, limit=0):
     if limit:
         questions = questions[:limit]
     judgments = load_judgments() if any(a.startswith('filter_') for a in arms) else {}
+    u_all = selector_usefulness() if any(arm_parts(a)[0] == 'selector' for a in arms) else None
     # Arms sharing a memory block run back to back, so the prompt cache carries it across templates.
     arms = sorted(arms, key=lambda a: (arm_parts(a)[0], arm_parts(a)[1]))
     templates = {'current': config, 'clean': {**config, 'user_template': CLEAN_TEMPLATE}}
@@ -162,6 +193,8 @@ def score_arms(arms, limit=0):
                         if memory == 'oracle':
                             history, source = oracle.get(q)
                             extra = dict(reference_message_count=source['reference_message_count'])
+                        elif memory == 'selector':
+                            history, extra = selector_get(ranker, u_all, q, server, config)
                         else:
                             if selection is None:
                                 selection_history, selection = ranker.get(q, server, config)

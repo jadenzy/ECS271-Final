@@ -1,0 +1,6 @@
+{
+ "personamem_v1": {
+  "cut3_mem8192_nb5": "results/embedding_ab/transfer_cutoff/v1_cut3_mem8192_nb5",
+  "cut3_mem8192": "results/embedding_ab/transfer_cutoff/v1_cut3_mem8192"
+ }
+}

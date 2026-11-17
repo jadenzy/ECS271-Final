@@ -1,0 +1,118 @@
+{
+  "arm": "selector_current",
+  "questions": 500,
+  "personas": 23,
+  "accuracy": {
+    "one_pass": 0.496,
+    "rotation_sum_logprob": 0.538,
+    "rotation_mean_prob": 0.532,
+    "one_pass_letter_balanced": 0.506
+  },
+  "accuracy_of_each_single_order": [
+    0.496,
+    0.476,
+    0.442,
+    0.49
+  ],
+  "letter_share_per_order": [
+    {
+      "a": 0.064,
+      "b": 0.206,
+      "c": 0.256,
+      "d": 0.474
+    },
+    {
+      "a": 0.07,
+      "b": 0.212,
+      "c": 0.264,
+      "d": 0.454
+    },
+    {
+      "a": 0.104,
+      "b": 0.194,
+      "c": 0.25,
+      "d": 0.452
+    },
+    {
+      "a": 0.054,
+      "b": 0.212,
+      "c": 0.274,
+      "d": 0.46
+    }
+  ],
+  "letter_share_all_orders": {
+    "a": 0.073,
+    "b": 0.206,
+    "c": 0.261,
+    "d": 0.46
+  },
+  "correct_letter_share_one_pass": {
+    "a": 0.222,
+    "b": 0.238,
+    "c": 0.294,
+    "d": 0.246
+  },
+  "same_answer_in_all_orders": 0.22,
+  "one_pass_changed_by_rotation": 0.338,
+  "rotation_agrees_with_letter_balanced": 0.72,
+  "rotation_minus_one_pass": {
+    "difference": 0.04200000000000004,
+    "ci95_persona_bootstrap": [
+      0.0071939217028531574,
+      0.07692307692307693
+    ],
+    "gained": 69,
+    "lost": 48
+  },
+  "accuracy_by_type": {
+    "anti_stereotypical_pref": {
+      "questions": 92,
+      "one_pass": 0.5869565217391305,
+      "rotation": 0.6521739130434783
+    },
+    "ask_to_forget": {
+      "questions": 104,
+      "one_pass": 0.46153846153846156,
+      "rotation": 0.5576923076923077
+    },
+    "health_and_medical_conditions": {
+      "questions": 62,
+      "one_pass": 0.5,
+      "rotation": 0.5483870967741935
+    },
+    "neutral_preferences": {
+      "questions": 97,
+      "one_pass": 0.5463917525773195,
+      "rotation": 0.5773195876288659
+    },
+    "stereotypical_pref": {
+      "questions": 58,
+      "one_pass": 0.5172413793103449,
+      "rotation": 0.5344827586206896
+    },
+    "therapy_background": {
+      "questions": 87,
+      "one_pass": 0.367816091954023,
+      "rotation": 0.3448275862068966
+    }
+  },
+  "seconds_per_order": [
+    0.1757776534002478,
+    0.10567605079992791,
+    0.10706640459985647,
+    0.10562051160000556
+  ],
+  "cached_prompt_tokens_per_order": [
+    56.28,
+    274.466,
+    274.466,
+    274.466
+  ],
+  "evaluated_prompt_tokens_per_order": [
+    734.79,
+    516.604,
+    516.604,
+    516.604
+  ],
+  "mean_prompt_tokens": 791.07
+}

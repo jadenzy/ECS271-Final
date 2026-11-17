@@ -1,0 +1,136 @@
+{
+  "questions": 589,
+  "personas": 20,
+  "accuracy": {
+    "one_pass": 0.6129032258064516,
+    "rotation_sum_logprob": 0.6842105263157895,
+    "rotation_mean_prob": 0.6825127334465195,
+    "one_pass_letter_balanced": 0.6689303904923599
+  },
+  "accuracy_of_each_single_order": [
+    0.6129032258064516,
+    0.5942275042444821,
+    0.5891341256366723,
+    0.6196943972835314
+  ],
+  "letter_share_per_order": [
+    {
+      "a": 0.10865874363327674,
+      "b": 0.18845500848896435,
+      "c": 0.2495755517826825,
+      "d": 0.4533106960950764
+    },
+    {
+      "a": 0.100169779286927,
+      "b": 0.21222410865874364,
+      "c": 0.27164685908319186,
+      "d": 0.4159592529711375
+    },
+    {
+      "a": 0.100169779286927,
+      "b": 0.2597623089983022,
+      "c": 0.2597623089983022,
+      "d": 0.38030560271646857
+    },
+    {
+      "a": 0.12224108658743633,
+      "b": 0.23769100169779286,
+      "c": 0.23259762308998302,
+      "d": 0.4074702886247878
+    }
+  ],
+  "letter_share_all_orders": {
+    "a": 0.10780984719864177,
+    "b": 0.22453310696095077,
+    "c": 0.2533955857385399,
+    "d": 0.4142614601018676
+  },
+  "correct_letter_share_one_pass": {
+    "a": 0.2427843803056027,
+    "b": 0.24787775891341257,
+    "c": 0.26825127334465193,
+    "d": 0.24108658743633277
+  },
+  "same_answer_in_all_orders": 0.3735144312393888,
+  "one_pass_changed_by_rotation": 0.2835314091680815,
+  "rotation_agrees_with_letter_balanced": 0.8064516129032258,
+  "rotation_minus_one_pass": {
+    "difference": 0.07130730050933787,
+    "ci95_persona_bootstrap": [
+      0.03571283862005094,
+      0.10766721044045677
+    ],
+    "gained": 86,
+    "lost": 44
+  },
+  "accuracy_by_type": {
+    "generalizing_to_new_scenarios": {
+      "questions": 57,
+      "one_pass": 0.6491228070175439,
+      "rotation": 0.8421052631578947
+    },
+    "provide_preference_aligned_recommendations": {
+      "questions": 55,
+      "one_pass": 0.8363636363636363,
+      "rotation": 0.7454545454545455
+    },
+    "recall_user_shared_facts": {
+      "questions": 129,
+      "one_pass": 0.5348837209302325,
+      "rotation": 0.6356589147286822
+    },
+    "recalling_facts_mentioned_by_the_user": {
+      "questions": 17,
+      "one_pass": 0.7647058823529411,
+      "rotation": 0.8235294117647058
+    },
+    "recalling_the_reasons_behind_previous_updates": {
+      "questions": 99,
+      "one_pass": 0.8484848484848485,
+      "rotation": 0.9292929292929293
+    },
+    "suggest_new_ideas": {
+      "questions": 93,
+      "one_pass": 0.21505376344086022,
+      "rotation": 0.1935483870967742
+    },
+    "track_full_preference_evolution": {
+      "questions": 139,
+      "one_pass": 0.6618705035971223,
+      "rotation": 0.7769784172661871
+    }
+  },
+  "seconds_per_order": [
+    0.5737151444822293,
+    0.12211657504267288,
+    0.12451964719893992,
+    0.12433275042481301
+  ],
+  "cached_prompt_tokens_per_order": [
+    578.4040747028862,
+    4696.027164685908,
+    4681.9779286927,
+    4681.9779286927
+  ],
+  "evaluated_prompt_tokens_per_order": [
+    4731.093378607809,
+    613.4702886247878,
+    627.5195246179966,
+    627.5195246179966
+  ],
+  "mean_prompt_tokens": 5309.497453310696,
+  "status": "complete",
+  "dataset": "v1",
+  "split": "comparison",
+  "rotations": 4,
+  "memory_tokens": 8192,
+  "score_cutoff": 3.0,
+  "mean_selected_messages": 29.191850594227503,
+  "mean_memory_tokens": 4889.387096774193,
+  "mean_messages_within_cutoff_in_pool": 22.475382003395584,
+  "share_questions_capped": 0.2529711375212224,
+  "neighbour_margin": 5.0,
+  "share_questions_expanded": 0.9168081494057725,
+  "mean_neighbours_added": 7.719864176570458,
+  "share_reused_cutoff_reads": 0.0831918505942275
+}
