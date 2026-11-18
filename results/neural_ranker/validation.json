@@ -1,0 +1,415 @@
+{
+  "questions": 909,
+  "methods": {
+    "A": {
+      "ndcg_at_10": 0.7769560955819458,
+      "hit_at_10": 0.9372937293729373,
+      "every_reference_at_5": 0.6193619361936193,
+      "every_reference_at_10": 0.8272827282728272,
+      "every_reference_at_15": 0.878987898789879,
+      "precision_at_5": 0.464026402640264
+    },
+    "B": {
+      "ndcg_at_10": 0.7768763948035426,
+      "hit_at_10": 0.9515951595159516,
+      "every_reference_at_5": 0.6182618261826183,
+      "every_reference_at_10": 0.8107810781078107,
+      "every_reference_at_15": 0.8943894389438944,
+      "precision_at_5": 0.4622662266226623
+    },
+    "C": {
+      "ndcg_at_10": 0.7762400151313861,
+      "hit_at_10": 0.9493949394939494,
+      "every_reference_at_5": 0.6215621562156216,
+      "every_reference_at_10": 0.8030803080308031,
+      "every_reference_at_15": 0.8855885588558856,
+      "precision_at_5": 0.460946094609461
+    }
+  },
+  "paired": {
+    "B - A": {
+      "ndcg_at_10": {
+        "difference": -7.970077840320119e-05,
+        "ci95": [
+          -0.00902267913773047,
+          0.00843410102029674
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": 0.0016046576319237941,
+          "ask_to_forget": -0.011705646050911574,
+          "health_and_medical_conditions": -0.008268206861699809,
+          "neutral_preferences": -0.011335962248323042,
+          "stereotypical_pref": 0.03860254243969725,
+          "therapy_background": 0.0021658686152749842
+        },
+        "persona_share_positive": 0.55
+      },
+      "every_reference_at_5": {
+        "difference": -0.0011001100110011,
+        "ci95": [
+          -0.020338983050847456,
+          0.019481047121892185
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": -0.005988023952095809,
+          "ask_to_forget": 0.0,
+          "health_and_medical_conditions": -0.016260162601626018,
+          "neutral_preferences": -0.006024096385542169,
+          "stereotypical_pref": 0.017241379310344827,
+          "therapy_background": 0.00684931506849315
+        },
+        "persona_share_positive": 0.35
+      },
+      "every_reference_at_10": {
+        "difference": -0.0165016501650165,
+        "ci95": [
+          -0.032030373940530044,
+          -0.0011350737797956867
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": 0.011976047904191617,
+          "ask_to_forget": -0.015706806282722512,
+          "health_and_medical_conditions": -0.032520325203252036,
+          "neutral_preferences": -0.030120481927710843,
+          "stereotypical_pref": 0.008620689655172414,
+          "therapy_background": -0.0410958904109589
+        },
+        "persona_share_positive": 0.175
+      },
+      "every_reference_at_15": {
+        "difference": 0.015401540154015401,
+        "ci95": [
+          0.0011600256724241644,
+          0.028541981274539403
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": 0.0,
+          "ask_to_forget": 0.0,
+          "health_and_medical_conditions": 0.008130081300813009,
+          "neutral_preferences": 0.006024096385542169,
+          "stereotypical_pref": 0.0603448275862069,
+          "therapy_background": 0.03424657534246575
+        },
+        "persona_share_positive": 0.475
+      },
+      "precision_at_5": {
+        "difference": -0.0017601760176017606,
+        "ci95": [
+          -0.008163603562972152,
+          0.005107228077152504
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": 0.0,
+          "ask_to_forget": -0.0031413612565445006,
+          "health_and_medical_conditions": 0.0016260162601626008,
+          "neutral_preferences": -0.007228915662650602,
+          "stereotypical_pref": -2.392722035830079e-18,
+          "therapy_background": 1.140640093792969e-18
+        },
+        "persona_share_positive": 0.45
+      }
+    },
+    "C - A": {
+      "ndcg_at_10": {
+        "difference": -0.000716080450559687,
+        "ci95": [
+          -0.008565321878576525,
+          0.006780972233796456
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": -0.000333565236870724,
+          "ask_to_forget": -0.013502197024737315,
+          "health_and_medical_conditions": -0.006065592570704415,
+          "neutral_preferences": -0.017348417436718083,
+          "stereotypical_pref": 0.04245688719227215,
+          "therapy_background": 0.0046891381035051825
+        },
+        "persona_share_positive": 0.5
+      },
+      "every_reference_at_5": {
+        "difference": 0.0022002200220022,
+        "ci95": [
+          -0.01832144641723017,
+          0.02338530066815145
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": 0.0,
+          "ask_to_forget": -0.005235602094240838,
+          "health_and_medical_conditions": -0.032520325203252036,
+          "neutral_preferences": 0.006024096385542169,
+          "stereotypical_pref": 0.034482758620689655,
+          "therapy_background": 0.0136986301369863
+        },
+        "persona_share_positive": 0.35
+      },
+      "every_reference_at_10": {
+        "difference": -0.0242024202420242,
+        "ci95": [
+          -0.040393288783026775,
+          -0.007430800872672258
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": -0.011976047904191617,
+          "ask_to_forget": -0.020942408376963352,
+          "health_and_medical_conditions": -0.032520325203252036,
+          "neutral_preferences": -0.04819277108433735,
+          "stereotypical_pref": -0.008620689655172414,
+          "therapy_background": -0.02054794520547945
+        },
+        "persona_share_positive": 0.15
+      },
+      "every_reference_at_15": {
+        "difference": 0.006600660066006601,
+        "ci95": [
+          -0.006667037861915368,
+          0.019371358364567083
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": -0.005988023952095809,
+          "ask_to_forget": 0.005235602094240838,
+          "health_and_medical_conditions": 0.016260162601626018,
+          "neutral_preferences": -0.012048192771084338,
+          "stereotypical_pref": 0.034482758620689655,
+          "therapy_background": 0.0136986301369863
+        },
+        "persona_share_positive": 0.325
+      },
+      "precision_at_5": {
+        "difference": -0.00308030803080308,
+        "ci95": [
+          -0.00994229026714576,
+          0.004386909503094162
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": 0.0011976047904191601,
+          "ask_to_forget": -0.006282722513089004,
+          "health_and_medical_conditions": -2.2565508630592612e-18,
+          "neutral_preferences": -0.014457831325301202,
+          "stereotypical_pref": 0.0017241379310344838,
+          "therapy_background": 0.0027397260273972625
+        },
+        "persona_share_positive": 0.45
+      }
+    },
+    "C - B": {
+      "ndcg_at_10": {
+        "difference": -0.0006363796721564853,
+        "ci95": [
+          -0.005292144688173566,
+          0.004157359349518902
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": -0.0019382228687945128,
+          "ask_to_forget": -0.001796550973825741,
+          "health_and_medical_conditions": 0.002202614290995393,
+          "neutral_preferences": -0.006012455188395039,
+          "stereotypical_pref": 0.0038543447525749017,
+          "therapy_background": 0.0025232694882302014
+        },
+        "persona_share_positive": 0.45
+      },
+      "every_reference_at_5": {
+        "difference": 0.0033003300330033004,
+        "ci95": [
+          -0.00892907078938958,
+          0.015855489043484505
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": 0.005988023952095809,
+          "ask_to_forget": -0.005235602094240838,
+          "health_and_medical_conditions": -0.016260162601626018,
+          "neutral_preferences": 0.012048192771084338,
+          "stereotypical_pref": 0.017241379310344827,
+          "therapy_background": 0.00684931506849315
+        },
+        "persona_share_positive": 0.25
+      },
+      "every_reference_at_10": {
+        "difference": -0.007700770077007701,
+        "ci95": [
+          -0.018418700925727904,
+          0.0032397408207343412
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": -0.023952095808383235,
+          "ask_to_forget": -0.005235602094240838,
+          "health_and_medical_conditions": 0.0,
+          "neutral_preferences": -0.018072289156626505,
+          "stereotypical_pref": -0.017241379310344827,
+          "therapy_background": 0.02054794520547945
+        },
+        "persona_share_positive": 0.2
+      },
+      "every_reference_at_15": {
+        "difference": -0.0088008800880088,
+        "ci95": [
+          -0.017679558011049725,
+          0.0
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": -0.005988023952095809,
+          "ask_to_forget": 0.005235602094240838,
+          "health_and_medical_conditions": 0.008130081300813009,
+          "neutral_preferences": -0.018072289156626505,
+          "stereotypical_pref": -0.02586206896551724,
+          "therapy_background": -0.02054794520547945
+        },
+        "persona_share_positive": 0.075
+      },
+      "precision_at_5": {
+        "difference": -0.0013201320132013195,
+        "ci95": [
+          -0.006432312131790832,
+          0.00354018999287002
+        ],
+        "by_type": {
+          "anti_stereotypical_pref": 0.0011976047904191617,
+          "ask_to_forget": -0.0031413612565445023,
+          "health_and_medical_conditions": -0.0016260162601626016,
+          "neutral_preferences": -0.007228915662650601,
+          "stereotypical_pref": 0.0017241379310344838,
+          "therapy_background": 0.0027397260273972607
+        },
+        "persona_share_positive": 0.425
+      }
+    }
+  },
+  "by_type": {
+    "A": {
+      "anti_stereotypical_pref": {
+        "ndcg_at_10": 0.7692080248831655,
+        "every_reference_at_5": 0.6287425149700598,
+        "every_reference_at_10": 0.8083832335329342,
+        "every_reference_at_15": 0.8862275449101796,
+        "precision_at_5": 0.40479041916167663
+      },
+      "ask_to_forget": {
+        "ndcg_at_10": 0.9093207199122092,
+        "every_reference_at_5": 0.7801047120418848,
+        "every_reference_at_10": 0.9214659685863874,
+        "every_reference_at_15": 0.9581151832460733,
+        "precision_at_5": 0.7036649214659685
+      },
+      "health_and_medical_conditions": {
+        "ndcg_at_10": 0.8133507837815127,
+        "every_reference_at_5": 0.6585365853658537,
+        "every_reference_at_10": 0.8780487804878049,
+        "every_reference_at_15": 0.9349593495934959,
+        "precision_at_5": 0.4487804878048781
+      },
+      "neutral_preferences": {
+        "ndcg_at_10": 0.7173954874137848,
+        "every_reference_at_5": 0.5481927710843374,
+        "every_reference_at_10": 0.7951807228915663,
+        "every_reference_at_15": 0.8373493975903614,
+        "precision_at_5": 0.3783132530120482
+      },
+      "stereotypical_pref": {
+        "ndcg_at_10": 0.6695535453412352,
+        "every_reference_at_5": 0.49137931034482757,
+        "every_reference_at_10": 0.7241379310344828,
+        "every_reference_at_15": 0.7844827586206896,
+        "precision_at_5": 0.3862068965517242
+      },
+      "therapy_background": {
+        "ndcg_at_10": 0.7350485249991129,
+        "every_reference_at_5": 0.547945205479452,
+        "every_reference_at_10": 0.8013698630136986,
+        "every_reference_at_15": 0.8424657534246576,
+        "precision_at_5": 0.3904109589041096
+      }
+    },
+    "B": {
+      "anti_stereotypical_pref": {
+        "ndcg_at_10": 0.7708126825150893,
+        "every_reference_at_5": 0.6227544910179641,
+        "every_reference_at_10": 0.8203592814371258,
+        "every_reference_at_15": 0.8862275449101796,
+        "precision_at_5": 0.40479041916167663
+      },
+      "ask_to_forget": {
+        "ndcg_at_10": 0.8976150738612976,
+        "every_reference_at_5": 0.7801047120418848,
+        "every_reference_at_10": 0.9057591623036649,
+        "every_reference_at_15": 0.9581151832460733,
+        "precision_at_5": 0.7005235602094239
+      },
+      "health_and_medical_conditions": {
+        "ndcg_at_10": 0.8050825769198129,
+        "every_reference_at_5": 0.6422764227642277,
+        "every_reference_at_10": 0.8455284552845529,
+        "every_reference_at_15": 0.943089430894309,
+        "precision_at_5": 0.4504065040650406
+      },
+      "neutral_preferences": {
+        "ndcg_at_10": 0.7060595251654619,
+        "every_reference_at_5": 0.5421686746987951,
+        "every_reference_at_10": 0.7650602409638554,
+        "every_reference_at_15": 0.8433734939759037,
+        "precision_at_5": 0.37108433734939766
+      },
+      "stereotypical_pref": {
+        "ndcg_at_10": 0.7081560877809325,
+        "every_reference_at_5": 0.5086206896551724,
+        "every_reference_at_10": 0.7327586206896551,
+        "every_reference_at_15": 0.8448275862068966,
+        "precision_at_5": 0.3862068965517242
+      },
+      "therapy_background": {
+        "ndcg_at_10": 0.737214393614388,
+        "every_reference_at_5": 0.5547945205479452,
+        "every_reference_at_10": 0.7602739726027398,
+        "every_reference_at_15": 0.8767123287671232,
+        "precision_at_5": 0.3904109589041096
+      }
+    },
+    "C": {
+      "anti_stereotypical_pref": {
+        "ndcg_at_10": 0.7688744596462948,
+        "every_reference_at_5": 0.6287425149700598,
+        "every_reference_at_10": 0.7964071856287425,
+        "every_reference_at_15": 0.8802395209580839,
+        "precision_at_5": 0.4059880239520957
+      },
+      "ask_to_forget": {
+        "ndcg_at_10": 0.8958185228874719,
+        "every_reference_at_5": 0.774869109947644,
+        "every_reference_at_10": 0.900523560209424,
+        "every_reference_at_15": 0.9633507853403142,
+        "precision_at_5": 0.6973821989528796
+      },
+      "health_and_medical_conditions": {
+        "ndcg_at_10": 0.8072851912108083,
+        "every_reference_at_5": 0.6260162601626016,
+        "every_reference_at_10": 0.8455284552845529,
+        "every_reference_at_15": 0.9512195121951219,
+        "precision_at_5": 0.44878048780487806
+      },
+      "neutral_preferences": {
+        "ndcg_at_10": 0.7000470699770668,
+        "every_reference_at_5": 0.5542168674698795,
+        "every_reference_at_10": 0.7469879518072289,
+        "every_reference_at_15": 0.8253012048192772,
+        "precision_at_5": 0.36385542168674695
+      },
+      "stereotypical_pref": {
+        "ndcg_at_10": 0.7120104325335074,
+        "every_reference_at_5": 0.5258620689655172,
+        "every_reference_at_10": 0.7155172413793104,
+        "every_reference_at_15": 0.8189655172413793,
+        "precision_at_5": 0.3879310344827587
+      },
+      "therapy_background": {
+        "ndcg_at_10": 0.7397376631026182,
+        "every_reference_at_5": 0.5616438356164384,
+        "every_reference_at_10": 0.7808219178082192,
+        "every_reference_at_15": 0.8561643835616438,
+        "precision_at_5": 0.3931506849315068
+      }
+    }
+  },
+  "top10_B_vs_C": {
+    "mean_overlap": 0.9273927392739275,
+    "identical_sets": 0.40924092409240925
+  }
+}

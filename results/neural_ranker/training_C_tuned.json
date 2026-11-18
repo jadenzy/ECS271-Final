@@ -1,0 +1,27 @@
+{
+  "variant": "C_tuned",
+  "config": {
+    "learning_rate": 0.003,
+    "hidden": 256,
+    "layers": 1,
+    "projection": 32,
+    "dropout": 0.0,
+    "weight_decay": 0.1,
+    "batch_questions": 16
+  },
+  "answer_weight": 0.1,
+  "epochs": 4,
+  "seed": 271,
+  "model_sha256": "c84792c8cce87f6faab2896ef1dec79787539d759191a9e5d1f65cabb4343649",
+  "validation_scores_sha256": "fd1c9c02c7dbdfb449c847ed85cd277953eee123f2fb88d52cb1ad952e7400e4",
+  "answer_temperature": 0.05526985973119736,
+  "answer_loss_excludes": [
+    "ask_to_forget"
+  ],
+  "training_features_sha256": "07b42094030bba4b530533484636cf2dcb488863c41637e320eae6ad8a074a8c",
+  "training_extra_sha256": "902d1b26f3e07495d329e42956a0484598c3b7834d7d713ea5afe5060fbfd453",
+  "option_vectors_sha256": "f4682aba8f07fcace8426188d2e46235f20e1e95180399617e18bfee1f9db55e",
+  "training_questions": 9192,
+  "selection": "tuning fold of half B (persona fold 0); V2 validation not used for any choice",
+  "script_sha256": "21bc3e304731708ccc1cd63861d38e0caca373b4203441b20e44d779c74c4613"
+}

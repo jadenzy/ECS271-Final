@@ -330,11 +330,12 @@ class SelectorMessageBlocks:
 
 
 def pack_selector_messages(server, question, config, members, ranked, memory_tokens, *, blocks=None,
-                           scores=None, score_cutoff=None, floor_tokens=0):
+                           scores=None, score_cutoff=None, floor_tokens=0, max_messages=None):
     """Greedily accept whole messages using exact native, templated token costs.
 
     With score_cutoff, packing stops at the first message scoring more than score_cutoff
-    below the top score once accepted memory has reached floor_tokens.
+    below the top score once accepted memory has reached floor_tokens. With max_messages,
+    packing stops once that many messages are accepted.
     """
     started = time.perf_counter()
     if config.get('baseline') != 'selector':
@@ -352,6 +353,8 @@ def pack_selector_messages(server, question, config, members, ranked, memory_tok
     lowest = scores[ranked[0]] - score_cutoff if score_cutoff is not None and ranked else None
     stopped = False
     for index in ranked:
+        if max_messages is not None and len(chosen) >= max_messages:
+            break
         if lowest is not None and used >= floor_tokens and scores[index] < lowest:
             stopped = True
             break

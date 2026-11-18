@@ -1,0 +1,8 @@
+{
+ "personamem_v1": {
+  "neural_C": "results/neural_ranker/v1_C_matched",
+  "neural_B": "results/neural_ranker/v1_B_matched",
+  "cut3_mem8192": "results/embedding_ab/transfer_cutoff/v1_cut3_mem8192",
+  "cut3_mem8192_nb5": "results/embedding_ab/transfer_cutoff/v1_cut3_mem8192_nb5"
+ }
+}

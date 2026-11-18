@@ -88,6 +88,8 @@ Use that same `--selector-features` option for inference with the existing test 
 | `evaluate_embedding_ab_mmr.py` | Score the frozen fine-tuned ranker with redundancy-aware (MMR) packing, four answer orders | CLI; GPU |
 | `evaluate_selector.py` | Train a two-pass yes/no message selector on the 57 features (no ranker) and score it with Qwen | CLI; CPU training, GPU scoring |
 | `evaluate_graded_selector.py` | The same two-pass selector trained on Qwen-graded 0/1/2 labels, references first | CLI; CPU training, GPU scoring |
+| `neural_ranker.py` | Train a neural message ranker on the 57 features plus projected embedding interactions (reference loss, optional answer loss), validate it, and score the evaluation datasets | CLI; GPU (small) |
+| `evaluate_neural_ranker.py` | Score a frozen neural ranker with Qwen at the 3.0-cutoff baseline's per-question message counts | CLI; GPU |
 | `compare_selector_runs.py` | Compare saved prediction accuracies with paired bootstrap intervals | CLI; CPU |
 | `exclude_eval_questions.py` | Remove a question type from V2 evaluation IDs and filter selected bundles | CLI; CPU; changes split files with `--apply` |
 | `raw_datasets.py` | Read raw benchmarks, answers, cutoffs, IDs, and source hashes | Importable module |
@@ -506,6 +508,49 @@ python scripts/evaluate_graded_selector.py --datasets v2 --threshold 0.4 --route
 - Training record: `results/selector_graded/training.json`.
 - Runs: `results/selector_graded/{dataset}_t{threshold}/`.
 - Comparisons: `results/selector_graded/{dataset}_comparison_{rotation,one_pass}.json`.
+
+### `neural_ranker.py` and `evaluate_neural_ranker.py`
+
+**Purpose:** Train a new message ranker on the frozen half-A embeddings and the 57 features, using V2 half B's annotated references (variant B) and, in variant C, also the dataset's correct answer. Then test the frozen rankers with Qwen at the same message counts as the 3.0-cutoff baseline. No Qwen call is made during training, checkpoint selection or scoring.
+
+```powershell
+python scripts/neural_ranker.py --stage options              # embed V2 B/validation answer options once (frozen encoder)
+python scripts/neural_ranker.py --stage check                # Signal B check on half B
+python scripts/neural_ranker.py --stage train --variant B    # reference loss
+python scripts/neural_ranker.py --stage train --variant C    # reference loss + 0.25 x answer loss
+python scripts/neural_ranker.py --stage validate             # A (saved LightGBM) vs B vs C on V2 validation
+python scripts/neural_ranker.py --stage score --variant B    # V2 test, V1, LoCoMo scores for the frozen model
+python scripts/evaluate_neural_ranker.py --variant B --datasets v2 v1 locomo
+```
+
+- **Model:** the 57 features (standardized on B, clipped to ±5) plus, through one shared 768→64 projection of the question and message vectors, their elementwise product and absolute difference; one 128-unit hidden layer gives one score per message. AdamW at 0.001 (weight decay 0.01), 16 complete histories per batch, five epochs, seed 271. The checkpoint with the best V2 validation NDCG@10 is kept (ties: every-reference coverage@15).
+- **Reference loss:** softmax over the visible history; the mean of −log p over the question's references; every question weighs the same, `ask_to_forget` 0.5.
+- **Answer loss (variant C):** each message's cosine to each answer option, minus that option's mean over the history, is averaged with the ranker's probabilities; a cross-entropy over options at the temperature set by the check (0.0553) rewards evidence favouring the correct option. It skips `ask_to_forget`, whose references favour a wrong option on half B. Answer texts are never ranker inputs.
+- **`--stage check`:** compares the correct-versus-best-alternative margin of the annotated references with that of role- and length-matched messages from the same history (20 draws), by persona and question type. It writes `results/neural_ranker/signal_b_check.json`, and training C refuses to run unless the check passed.
+- **Qwen test:** for each question, `evaluate_neural_ranker.py` takes the message count of `results/embedding_ab/transfer_cutoff/{dataset}_cut3_mem8192`. It accepts the neural ranker's highest-ranked whole messages that fit the 8,192-token cap until it has that many, and shows them chronologically. A question whose set equals the baseline's reuses the baseline's reads. The Qwen configuration must equal the baseline's.
+- **Outputs:**
+  - models: `models/neural_ranker/{B,C}.pt`;
+  - records: `results/neural_ranker/training_{B,C}.json` and `validation.json`;
+  - scores: `neural_{B,C}_scores.npy` next to each dataset's cached features;
+  - Qwen runs: `results/neural_ranker/{dataset}_{variant}_matched/`;
+  - comparisons: `results/neural_ranker/{dataset}_comparison_*.json`.
+
+**Tuning (`neural_ranker_tune.py`):**
+
+```powershell
+python scripts/neural_ranker_tune.py --stage search                  # 21 settings, early stopping on a held-out half-B persona fold
+python scripts/neural_ranker_tune.py --stage answer-weight           # best setting, answer-loss weight 0.1/0.25/0.5/1.0
+python scripts/neural_ranker_tune.py --stage final                   # retrain both winners on all of B; score V2 validation once
+python scripts/neural_ranker_tune.py --stage score --variant C_tuned # V2 test, V1, LoCoMo scores
+```
+
+- **Search:** tunes on persona fold 0 of half B (1,835 questions) and trains on the other four. Each setting runs up to 20 epochs and stops after 3 without a better tuning NDCG@10.
+- **Final models:** retrained on all of half B for the chosen epoch count, without early stopping. V2 validation is read only by `final`, after every choice is made.
+- **Outputs:**
+  - tuning records: `results/neural_ranker/tuning_search.json`, `tuning_answer_weight.json`;
+  - model records and validation: `training_{B,C}_tuned.json`, `validation_tuned.json`;
+  - models: `models/neural_ranker/{B,C}_tuned.pt`.
+- **Qwen:** `evaluate_neural_ranker.py` accepts only `B` and `C` today; add the tuned variants to its `--variant` choices before scoring them with Qwen.
 
 ## 7. Compare runs and maintain evaluation splits
 

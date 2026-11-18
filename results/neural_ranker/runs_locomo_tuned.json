@@ -1,0 +1,7 @@
+{
+ "locomo_mc10": {
+  "neural_C_tuned": "results/neural_ranker/locomo_C_tuned_matched",
+  "neural_C": "results/neural_ranker/locomo_C_matched",
+  "cut3_mem8192": "results/embedding_ab/transfer_cutoff/locomo_cut3_mem8192"
+ }
+}

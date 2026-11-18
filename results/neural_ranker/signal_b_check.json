@@ -1,0 +1,104 @@
+{
+  "status": "complete",
+  "cohort": "V2 persona half B",
+  "questions": 9192,
+  "controls_per_question": 20,
+  "control_policy": "per reference, a non-reference message of the same role with content length within x2/3..x1.5 (nearest length if none), without replacement; margin = mean centred similarity to the correct option minus the best alternative",
+  "all": {
+    "questions": 9192,
+    "reference_margin": 0.0022923876382483477,
+    "control_margin": -0.021146197509021372,
+    "difference": 0.02343858514726972,
+    "ci95": [
+      0.02058384990557842,
+      0.026283069055092794
+    ],
+    "reference_gold_top": 0.5621192341166231,
+    "control_gold_top": 0.2813207136640557,
+    "share_reference_above_control": 0.6298955613577023
+  },
+  "by_type": {
+    "anti_stereotypical_pref": {
+      "questions": 1870,
+      "reference_margin": 0.03982622413821319,
+      "control_margin": -0.023187184528009417,
+      "difference": 0.0630134086662226,
+      "ci95": [
+        0.058968114371490604,
+        0.06714630319534191
+      ],
+      "reference_gold_top": 0.727807486631016,
+      "control_gold_top": 0.2445187165775401,
+      "share_reference_above_control": 0.8101604278074866
+    },
+    "ask_to_forget": {
+      "questions": 1948,
+      "reference_margin": -0.11955877056142633,
+      "control_margin": -0.008863286614595879,
+      "difference": -0.11069548394683044,
+      "ci95": [
+        -0.1147434191701316,
+        -0.10651106919075484
+      ],
+      "reference_gold_top": 0.08213552361396304,
+      "control_gold_top": 0.388629363449692,
+      "share_reference_above_control": 0.1026694045174538
+    },
+    "health_and_medical_conditions": {
+      "questions": 1234,
+      "reference_margin": 0.058839073578255005,
+      "control_margin": -0.02253101896999345,
+      "difference": 0.08137009254824845,
+      "ci95": [
+        0.0762015217960566,
+        0.08659990585054818
+      ],
+      "reference_gold_top": 0.7739059967585089,
+      "control_gold_top": 0.26158833063209075,
+      "share_reference_above_control": 0.8306320907617504
+    },
+    "neutral_preferences": {
+      "questions": 1766,
+      "reference_margin": 0.05741768020615488,
+      "control_margin": -0.025317117119633692,
+      "difference": 0.08273479732578858,
+      "ci95": [
+        0.07789706730249944,
+        0.08754011652283948
+      ],
+      "reference_gold_top": 0.766704416761042,
+      "control_gold_top": 0.2465458663646659,
+      "share_reference_above_control": 0.8323895809739524
+    },
+    "stereotypical_pref": {
+      "questions": 1054,
+      "reference_margin": 0.03288258188289274,
+      "control_margin": -0.022957187414715655,
+      "difference": 0.0558397692976084,
+      "ci95": [
+        0.05074107343660105,
+        0.06074872343089682
+      ],
+      "reference_gold_top": 0.7182163187855788,
+      "control_gold_top": 0.24141366223908917,
+      "share_reference_above_control": 0.8102466793168881
+    },
+    "therapy_background": {
+      "questions": 1320,
+      "reference_margin": -0.02209712746835342,
+      "control_margin": -0.028060566918908136,
+      "difference": 0.005963439450554716,
+      "ci95": [
+        0.000917066410072843,
+        0.010721616472185
+      ],
+      "reference_gold_top": 0.4393939393939394,
+      "control_gold_top": 0.2719318181818182,
+      "share_reference_above_control": 0.55
+    }
+  },
+  "persona_share_positive": 0.785,
+  "answer_temperature": 0.05526985973119736,
+  "answer_temperature_rule": "median over B questions of the std across options of the reference-averaged centred similarity (logits then have unit scale)",
+  "keep_signal_b": true
+}

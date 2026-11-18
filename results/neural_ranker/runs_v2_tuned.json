@@ -1,0 +1,8 @@
+{
+ "personamem_v2": {
+  "neural_C_tuned": "results/neural_ranker/v2_C_tuned_matched",
+  "neural_C": "results/neural_ranker/v2_C_matched",
+  "cut3_mem8192": "results/embedding_ab/transfer_cutoff/v2_cut3_mem8192",
+  "routed": "results/selector_graded/v2_routed_t0.4_c0.4"
+ }
+}
